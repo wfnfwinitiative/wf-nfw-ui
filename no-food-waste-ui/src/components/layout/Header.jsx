@@ -54,7 +54,7 @@ export function Header({ onMenuClick }) {
           onClick={() => navigate('/dashboard')}
           className="lg:hidden flex-1 flex items-center justify-center gap-2 text-lg font-semibold text-primary-700 hover:opacity-75 transition-opacity"
         >
-          <img src="https://nofoodwastechennai.ngo/wp-content/uploads/2025/11/logo.png" alt="NoFoodWaste" className="w-6 h-6" />
+          <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-6 h-6" />
           <span>NoFoodWaste</span>
         </button>
 

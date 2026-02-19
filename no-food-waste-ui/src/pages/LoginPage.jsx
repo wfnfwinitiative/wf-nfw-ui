@@ -58,7 +58,7 @@ export function LoginPage() {
             rel="noopener noreferrer"
             className="flex items-center gap-3 mb-8 hover:opacity-80 transition-opacity w-fit"
           >
-            <img src="https://nofoodwastechennai.ngo/wp-content/uploads/2025/11/logo.png" alt="NoFoodWaste" className="w-12 h-12" />
+            <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-12 h-12" />
             <span className="text-2xl font-bold">NoFoodWaste</span>
           </a>
           <h1 className="text-4xl font-bold mb-4 leading-tight">
@@ -97,7 +97,7 @@ export function LoginPage() {
             rel="noopener noreferrer"
             className="lg:hidden flex items-center justify-center gap-2 mb-8 hover:opacity-80 transition-opacity"
           >
-            <img src="https://nofoodwastechennai.ngo/wp-content/uploads/2025/11/logo.png" alt="NoFoodWaste" className="w-10 h-10" />
+            <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-10 h-10" />
             <span className="text-xl font-bold text-gray-900">NoFoodWaste</span>
           </a>
 

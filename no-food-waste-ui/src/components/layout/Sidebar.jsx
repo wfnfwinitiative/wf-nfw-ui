@@ -44,7 +44,7 @@ export function Sidebar({ isOpen, onClose }) {
             className="flex items-center gap-2 hover:opacity-75 transition-opacity"
             title="Go to Dashboard"
           >
-            <img src="https://nofoodwastechennai.ngo/wp-content/uploads/2025/11/logo.png" alt="NoFoodWaste" className="w-8 h-8" />
+            <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-8 h-8" />
             <span className="text-lg font-bold text-gray-900">NoFoodWaste</span>
           </button>
           <button
