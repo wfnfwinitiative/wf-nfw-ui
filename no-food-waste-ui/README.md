@@ -231,10 +231,5 @@ For issues or questions:
 - Email: support@nofoodwaste.org
 
 ## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-**Happy Coding! 🍲**
+No Food Waste
 
