@@ -105,7 +105,7 @@ npm run lint -- --fix
 ## Project Structure
 
 ```
-no-food-waste-ui/
+wf-nfw-ui/
 ├── public/                 # Static assets
 ├── src/
 │   ├── assets/            # Images, logos, PDFs
