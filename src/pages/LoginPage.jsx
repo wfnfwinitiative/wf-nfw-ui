@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/common';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import logo from '../assets/NoFoodWaste_Logo_Orange.png';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ export function LoginPage() {
             rel="noopener noreferrer"
             className="flex items-center gap-3 mb-8 hover:opacity-80 transition-opacity w-fit"
           >
-            <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-12 h-12" />
+            <img src={logo} alt="NoFoodWaste" className="w-12 h-12" />
             <span className="text-2xl font-bold">NoFoodWaste</span>
           </a>
           <h1 className="text-4xl font-bold mb-4 leading-tight">
@@ -97,7 +98,7 @@ export function LoginPage() {
             rel="noopener noreferrer"
             className="lg:hidden flex items-center justify-center gap-2 mb-8 hover:opacity-80 transition-opacity"
           >
-            <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-10 h-10" />
+            <img src={logo} alt="NoFoodWaste" className="w-10 h-10" />
             <span className="text-xl font-bold text-gray-900">NoFoodWaste</span>
           </a>
 

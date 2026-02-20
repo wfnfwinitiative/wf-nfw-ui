@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { X, Home, Truck, ClipboardList, Users, BarChart3, Settings } from 'lucide-react';
 import { useAuth, ROLES } from '../../contexts/AuthContext';
+import logo from '../../assets/NoFoodWaste_Logo_Orange.png';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.DRIVER] },
@@ -44,7 +45,7 @@ export function Sidebar({ isOpen, onClose }) {
             className="flex items-center gap-2 hover:opacity-75 transition-opacity"
             title="Go to Dashboard"
           >
-            <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-8 h-8" />
+            <img src={logo} alt="NoFoodWaste" className="w-8 h-8" />
             <span className="text-lg font-bold text-gray-900">NoFoodWaste</span>
           </button>
           <button

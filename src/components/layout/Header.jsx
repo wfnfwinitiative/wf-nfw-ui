@@ -2,6 +2,7 @@ import { Menu, Bell, User, LogOut, Settings } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import logo from '../../assets/NoFoodWaste_Logo_Orange.png';
 
 export function Header({ onMenuClick }) {
   const { user, logout } = useAuth();
@@ -54,7 +55,7 @@ export function Header({ onMenuClick }) {
           onClick={() => navigate('/dashboard')}
           className="lg:hidden flex-1 flex items-center justify-center gap-2 text-lg font-semibold text-primary-700 hover:opacity-75 transition-opacity"
         >
-          <img src="./src/assets/NoFoodWaste_Logo_Orange.png" alt="NoFoodWaste" className="w-6 h-6" />
+          <img src={logo} alt="NoFoodWaste" className="w-6 h-6" />
           <span>NoFoodWaste</span>
         </button>
 
