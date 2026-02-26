@@ -1,14 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useVoiceRecording } from '../../hooks/useVoiceRecording';
-import { Button, Textarea } from '../common';
-import { Mic, MicOff, Languages, Volume2, Activity, Loader2, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
+import { Mic, MicOff, Loader2, List, Volume2, Camera, X, Image } from 'lucide-react';
+import { processAudio } from '../../services/api/voiceService';
+import { FoodItemsGrid } from './FoodItemsGrid';
 
-export function VoiceInputPanel({ onDataParsed, disabled = false, onComplete }) {
-  const [language, setLanguage] = useState('en');
-  const [transcript, setTranscript] = useState('');
+export function VoiceInputPanel({ disabled = false }) {
+  const [view, setView] = useState('voice'); // 'voice' or 'list'
+  const [foodItems, setFoodItems] = useState([]);
   const [processing, setProcessing] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [apiError, setApiError] = useState(null);
+  const [lastTranscript, setLastTranscript] = useState('');
+  const [images, setImages] = useState([]); // Common images for all items
+  const [viewingImage, setViewingImage] = useState(null); // For fullscreen view
+  const fileInputRef = useRef(null);
+  const imagesSectionRef = useRef(null);
+  const contentRef = useRef(null);
 
   const {
     isRecording,
@@ -19,235 +25,315 @@ export function VoiceInputPanel({ onDataParsed, disabled = false, onComplete }) 
     clearRecording,
   } = useVoiceRecording();
 
-  const languages = [
-    { code: 'en', name: 'English' },
-    { code: 'hi', name: 'Hindi' },
-    { code: 'kn', name: 'Kannada' },
-    { code: 'ta', name: 'Tamil' },
-    { code: 'te', name: 'Telugu' },
-  ];
+  // Auto-process audio when recording stops
+  useEffect(() => {
+    if (audioBlob && !isRecording) {
+      handleProcessAudio();
+    }
+  }, [audioBlob, isRecording]);
 
   const handleRecordToggle = () => {
     if (isRecording) {
       stopRecording();
     } else {
       clearRecording();
-      setTranscript('');
+      setApiError(null);
+      setLastTranscript('');
       startRecording();
     }
   };
 
-  const handleTranscribe = async () => {
+  const handleProcessAudio = async () => {
     if (!audioBlob) return;
 
-    setTranscribing(true);
-    try {
-      // Simulate transcription API call
-      // In production, this would call: transcriptionApi.transcribe(audioBlob, language)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Simulated transcript based on language
-      const mockTranscripts = {
-        en: 'I have collected 45 kilograms of biryani and curries from Taj Krishna Banjara Hills. Will deliver to Akshaya Patra Gachibowli by 11 AM.',
-        hi: 'Maine Taj Krishna Banjara Hills se 45 kilo biryani aur curry liya hai. Akshaya Patra Gachibowli mein 11 baje tak pahuncha dunga.',
-        te: 'Nenu Taj Krishna Banjara Hills nundi 45 kilo biryani mariyu curries teesukunnanu. Akshaya Patra Gachibowli ki 11 gantalaku delivery chestanu.',
-        ta: 'Naan Taj Krishna Banjara Hills idhirundhu 45 kilo biryani matrum curries eduthen. Akshaya Patra Gachibowli ku 11 maniku delivery seivaen.',
-      };
-
-      setTranscript(mockTranscripts[language] || mockTranscripts.en);
-    } catch (err) {
-      console.error('Transcription error:', err);
-    } finally {
-      setTranscribing(false);
-    }
-  };
-
-  const handleProcessVoiceInput = async () => {
-    if (!transcript) return;
-
     setProcessing(true);
+    setApiError(null);
+    
     try {
-      // Simulate parsing API call
-      // In production, this would call: transcriptionApi.parseTranscript(transcript)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Simulated parsed data
-      const parsedData = {
-        foodName: 'Biryani and Curries',
-        quantityCollected: '45 kg',
-        pickupLocation: 'Taj Krishna, Banjara Hills, Hyderabad',
-        hungerSpotName: 'Akshaya Patra - Gachibowli',
-        estimatedDeliveryTime: new Date(
-          Date.now() + 2 * 60 * 60 * 1000
-        ).toISOString().slice(0, 16),
-      };
-
-      onDataParsed(parsedData);
-      // Switch back to form view on mobile after successful processing
-      onComplete?.();
+      const response = await processAudio(audioBlob);
+      
+      // Log the response for debugging
+      console.log('=== LLM API Response ===' );
+      console.log('Transcript:', response.transcript);
+      console.log('Metadata:', JSON.stringify(response.metadata, null, 2));
+      console.log('========================');
+      
+      setLastTranscript(response.transcript || '');
+      
+      // Add extracted items to the grid
+      if (response.metadata?.items?.length > 0) {
+        const newItems = response.metadata.items.map((item, index) => ({
+          id: Date.now() + index,
+          foodName: item.foodName || 'Unknown Item',
+          quantity: item.quantity || '',
+          quality: item.quality || 'Good'
+        }));
+        setFoodItems(prev => [...prev, ...newItems]);
+        
+        // Switch to list view to show added items
+        setView('list');
+      }
     } catch (err) {
-      console.error('Parsing error:', err);
+      console.error('Processing error:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to process audio';
+      setApiError(errorMessage);
     } finally {
       setProcessing(false);
     }
   };
 
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const newImages = files.map(file => ({
+      id: Date.now() + Math.random(),
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name
+    }));
+    setImages(prev => [...prev, ...newImages]);
+    
+    // Scroll to images section after a short delay
+    setTimeout(() => {
+      imagesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+  };
+
+  const handleRemoveImage = (id) => {
+    setImages(prev => {
+      const img = prev.find(i => i.id === id);
+      if (img?.preview) URL.revokeObjectURL(img.preview);
+      return prev.filter(i => i.id !== id);
+    });
+  };
+
+  const handleCameraCapture = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
-    <div className="space-y-4 lg:space-y-6">
-      <div>
-        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-1">
-          Voice Input Assistance
-        </h3>
-        <p className="text-xs lg:text-sm text-gray-500">
-          Speak in your preferred language to fill the form automatically.
-        </p>
+    <div className="flex flex-col min-h-full">
+      {/* Header with Toggle */}
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-white sticky top-0 z-10">
+        <h2 className="text-base sm:text-xl font-bold text-gray-900">Food Collection</h2>
+        <div className="flex bg-gray-100 rounded-lg p-0.5 sm:p-1">
+          <button
+            onClick={() => setView('voice')}
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+              view === 'voice'
+                ? 'bg-white text-primary-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            Voice
+          </button>
+          <button
+            onClick={() => setView('list')}
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+              view === 'list'
+                ? 'bg-white text-primary-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <List className="w-3 h-3 sm:w-4 sm:h-4" />
+            Items ({foodItems.length})
+          </button>
+        </div>
       </div>
 
-      {/* Language Selection - Compact on mobile */}
-      <div>
-        <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-2">
-          <Languages className="w-4 h-4 inline mr-1" />
-          Language
-        </label>
-        <div className="flex flex-wrap gap-1.5 lg:gap-2">
-          {languages.map((lang) => (
+      {/* Content Area */}
+      <div ref={contentRef} className="flex-1 p-4">
+        {view === 'voice' ? (
+          // Voice Recording View
+          <div className="flex flex-col items-center justify-center min-h-100 space-y-6">
+            {/* Simple Instructions */}
+            <p className="text-lg text-gray-600 text-center">
+              {isRecording 
+                ? '🎙️ Listening... Speak now!' 
+                : processing 
+                ? '⏳ Processing your voice...'
+                : '👇 Tap to speak'}
+            </p>
+
+            {/* Big Mic Button - Smaller on mobile */}
             <button
-              key={lang.code}
-              onClick={() => setLanguage(lang.code)}
-              disabled={disabled}
+              onClick={handleRecordToggle}
+              disabled={disabled || processing}
               className={`
-                px-2.5 py-1 lg:px-3 lg:py-1.5 rounded-full text-xs lg:text-sm font-medium transition-colors
+                w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center
+                transition-all duration-300 shadow-xl
                 ${
-                  language === lang.code
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  isRecording
+                    ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110'
+                    : processing
+                    ? 'bg-gray-400'
+                    : 'bg-primary-600 hover:bg-primary-700 hover:scale-105'
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed
               `}
             >
-              {lang.name}
+              {processing ? (
+                <Loader2 className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 text-white animate-spin" />
+              ) : isRecording ? (
+                <MicOff className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 text-white" />
+              ) : (
+                <Mic className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 text-white" />
+              )}
             </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Record Button - Responsive size */}
-      <div className="text-center py-2">
-        <button
-          onClick={handleRecordToggle}
-          disabled={disabled}
-          className={`
-            w-16 h-16 lg:w-24 lg:h-24 rounded-full flex items-center justify-center mx-auto
-            transition-all duration-300 shadow-lg
-            ${
-              isRecording
-                ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                : 'bg-primary-600 hover:bg-primary-700'
-            }
-            disabled:opacity-50 disabled:cursor-not-allowed
-          `}
-        >
-          {isRecording ? (
-            <MicOff className="w-7 h-7 lg:w-10 lg:h-10 text-white" />
-          ) : (
-            <Mic className="w-7 h-7 lg:w-10 lg:h-10 text-white" />
-          )}
-        </button>
-        <p className="mt-2 text-xs lg:text-sm text-gray-600">
-          {isRecording ? 'Tap to stop' : 'Tap to record'}
-        </p>
-      </div>
+            {/* Status Text */}
+            <p className="text-sm text-gray-500">
+              {isRecording 
+                ? 'Tap again to stop' 
+                : processing 
+                ? 'Please wait...'
+                : 'Say food items like "5 kg biryani, 10 rotis Or Add manually'}
+            </p>
 
-      {/* Waveform Animation */}
-      {isRecording && (
-        <div className="flex items-center justify-center gap-1 h-6 lg:h-8">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="w-1 bg-primary-500 rounded-full waveform-bar"
-              style={{ height: '8px' }}
+            {/* Waveform Animation */}
+            {isRecording && (
+              <div className="flex items-center justify-center gap-1 h-8">
+                {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <div
+                    key={i}
+                    className="w-2 bg-red-500 rounded-full animate-pulse"
+                    style={{ 
+                      height: `${Math.random() * 24 + 8}px`,
+                      animationDelay: `${i * 0.1}s`
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Error Message */}
+            {(error || apiError) && (
+              <div className="w-full max-w-md p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-center">
+                {error || apiError}
+              </div>
+            )}
+
+            {/* Last Transcript  need to remove in future*/}
+            {lastTranscript && !isRecording && !processing && (
+              <div className="w-full max-w-md p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-600 mb-1">You said:</p>
+                <p className="text-gray-900">{lastTranscript}</p>
+              </div>
+            )}
+
+            {/* Items Count Badge */}
+            {foodItems.length > 0 && (
+              <button
+                onClick={() => setView('list')}
+                className="px-4 py-2 bg-primary-100 text-primary-700 rounded-full text-sm font-medium hover:bg-primary-200"
+              >
+                View {foodItems.length} item{foodItems.length > 1 ? 's' : ''} →
+              </button>
+            )}
+          </div>
+        ) : (
+          // List View
+          <div className="space-y-4">
+            <FoodItemsGrid 
+              items={foodItems} 
+              onItemsChange={setFoodItems} 
             />
-          ))}
+            
+            {/* Image Upload Section - Common for all items */}
+            <div ref={imagesSectionRef} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-medium text-gray-700 flex items-center gap-1">
+                  <Image className="w-3 h-3" />
+                  Photos ({images.length})
+                </h3>
+                <button
+                  onClick={handleCameraCapture}
+                  className="flex items-center gap-1 px-2 py-1 bg-primary-600 text-white rounded text-xs hover:bg-primary-700"
+                >
+                  <Camera className="w-3 h-3" />
+                  Add
+                </button>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              
+              {images.length > 0 ? (
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-1">
+                  {images.map((img) => (
+                    <div key={img.id} className="relative aspect-square group">
+                      <img
+                        src={img.preview}
+                        alt={img.name}
+                        onClick={() => setViewingImage(img)}
+                        className="w-full h-full object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
+                      />
+                      <button
+                        onClick={() => handleRemoveImage(img.id)}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 text-center py-2">
+                  No photos. Tap "Add" to capture.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer with total count */}
+      {foodItems.length > 0 && (
+        <div className="p-4 border-t bg-gray-50 sticky bottom-0 z-10">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">
+              Total: <strong>{foodItems.length}</strong> item{foodItems.length > 1 ? 's' : ''}
+            </span>
+            {view === 'list' && (
+              <button
+                onClick={() => setView('voice')}
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              >
+                <Mic className="w-4 h-4" />
+                Add More
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Error Message */}
-      {error && (
-        <div className="p-2 lg:p-3 bg-red-50 border border-red-200 rounded-lg text-xs lg:text-sm text-red-600">
-          {error}
-        </div>
-      )}
-
-      {/* Transcribe Button */}
-      {audioBlob && !isRecording && (
-        <Button
-          onClick={handleTranscribe}
-          variant="secondary"
-          className="w-full"
-          loading={transcribing}
-          disabled={transcribing}
+      {/* Full Screen Image Viewer */}
+      {viewingImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setViewingImage(null)}
         >
-          <Volume2 className="w-4 h-4 mr-2" />
-          Transcribe Audio
-        </Button>
-      )}
-
-      {/* Transcript Display */}
-      {transcript && (
-        <div>
-          <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1.5">
-            Transcript
-          </label>
-          <Textarea
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            rows={3}
-            className="text-sm"
-            placeholder="Transcript will appear here..."
+          <button
+            onClick={() => setViewingImage(null)}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={viewingImage.preview}
+            alt={viewingImage.name}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
-
-      {/* Process Voice Input Button */}
-      {transcript && (
-        <Button
-          onClick={handleProcessVoiceInput}
-          variant="primary"
-          className="w-full"
-          loading={processing}
-          disabled={processing}
-        >
-          Apply to Form
-        </Button>
-      )}
-
-      {/* Collapsible Help Text */}
-      <div className="bg-blue-50 rounded-lg overflow-hidden">
-        <button 
-          onClick={() => setShowHelp(!showHelp)}
-          className="w-full p-3 flex items-center justify-between text-left"
-        >
-          <span className="flex items-center gap-2 text-sm font-medium text-blue-900">
-            <HelpCircle className="w-4 h-4" />
-            How to use voice input
-          </span>
-          {showHelp ? (
-            <ChevronUp className="w-4 h-4 text-blue-700" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-blue-700" />
-          )}
-        </button>
-        {showHelp && (
-          <ol className="px-3 pb-3 text-xs lg:text-sm text-blue-700 space-y-1 list-decimal list-inside">
-            <li>Select your preferred language</li>
-            <li>Tap the microphone to start recording</li>
-            <li>Speak clearly about the pickup details</li>
-            <li>Tap again to stop recording</li>
-            <li>Click "Transcribe Audio" to convert to text</li>
-            <li>Click "Apply to Form" to fill the form</li>
-          </ol>
-        )}
-      </div>
     </div>
   );
 }

@@ -18,13 +18,13 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg', showClose
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-6xl',
+    lg: 'w-full sm:max-w-lg md:max-w-2xl lg:max-w-4xl',
+    xl: 'w-full sm:max-w-xl md:max-w-4xl lg:max-w-6xl',
     full: 'max-w-[95vw]',
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -42,15 +42,15 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg', showClose
       >
         {/* Header */}
         {(title || showClose) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-primary-600 rounded-t-2xl">
+            <h2 className="text-xl font-semibold text-white">{title}</h2>
             {showClose && (
               <button
                 onClick={onClose}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label="Close modal"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-white" />
               </button>
             )}
           </div>

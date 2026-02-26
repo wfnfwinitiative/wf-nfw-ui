@@ -1,0 +1,7 @@
+// API Configuration
+export const config = {
+  // LLM Services API Base URL
+  llmServiceUrl: import.meta.env.VITE_LLM_SERVICE_URL || 'http://localhost:8000',
+};
+
+export default config;

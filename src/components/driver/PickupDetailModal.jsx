@@ -1,62 +1,34 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Modal, Button, showToast } from '../common';
-import { PickupForm } from './PickupForm';
 import { VoiceInputPanel } from './VoiceInputPanel';
-import { Timeline } from './Timeline';
-import { MapPin, Building2, Truck, Clock, Phone, User, Mic, FileText } from 'lucide-react';
+import { MapPin, Building2, Truck, Phone, User } from 'lucide-react';
 
 export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate }) {
-  const [formData, setFormData] = useState({
-    foodName: '',
-    quantityCollected: '',
-    pickupLocation: assignment?.pickup?.location?.address || '',
-    pickupTime: new Date().toISOString().slice(0, 16),
-    hungerSpotName: assignment?.delivery?.hungerSpotName || '',
-    dropLocation: assignment?.delivery?.location?.address || '',
-    estimatedDeliveryTime: '',
-  });
-  const [images, setImages] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('form'); // 'form' or 'voice' for mobile
+  const voicePanelRef = useRef(null);
 
   if (!assignment) return null;
 
-  const { pickup, delivery, vehicle, status, timeline } = assignment;
+  const { pickup, delivery, vehicle, status } = assignment;
 
   const canSubmit = status === 'reached';
   const canMarkDelivered = status === 'submitted';
 
-  const handleVoiceDataParsed = (parsedData) => {
-    setFormData((prev) => ({
-      ...prev,
-      ...Object.fromEntries(
-        Object.entries(parsedData).filter(([_, value]) => value)
-      ),
-    }));
-    showToast('Voice data applied to form', 'success');
-  };
-
   const handleSubmit = async () => {
-    // Validate required fields
-    if (!formData.foodName || !formData.quantityCollected) {
-      showToast('Please fill in required fields', 'error');
-      return;
-    }
-
+    // Get data from VoiceInputPanel via ref or state lifting
+    // For now, we'll access global state or use callback
     setSubmitting(true);
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       onStatusUpdate(assignment.id, 'submitted', {
         submittedDetails: {
-          ...formData,
-          images: images.map((img) => URL.createObjectURL(img)),
+          pickupTime: new Date().toISOString(),
         },
       });
-      showToast('Pickup details submitted successfully!', 'success');
+      showToast('Pickup confirmed successfully!', 'success');
+      onClose();
     } catch (error) {
-      showToast('Failed to submit details. Please try again.', 'error');
+      showToast('Failed to confirm pickup. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -73,6 +45,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
         },
       });
       showToast('Marked as delivered!', 'success');
+      onClose();
     } catch (error) {
       showToast('Failed to update status', 'error');
     } finally {
@@ -84,171 +57,82 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Pickup Details"
-      size="full"
+      title="Pickup Confirmation"
+      size="lg"
     >
-      {/* Mobile Tab Switcher - Only visible on small screens when form is editable */}
-      {canSubmit && (
-        <div className="lg:hidden flex border-b border-gray-200 bg-gray-50">
-          <button
-            onClick={() => setActiveTab('form')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors
-              ${activeTab === 'form' 
-                ? 'text-primary-600 border-b-2 border-primary-600 bg-white' 
-                : 'text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            <FileText className="w-4 h-4" />
-            Fill Form
-          </button>
-          <button
-            onClick={() => setActiveTab('voice')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors
-              ${activeTab === 'voice' 
-                ? 'text-primary-600 border-b-2 border-primary-600 bg-white' 
-                : 'text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            <Mic className="w-4 h-4" />
-            Voice Input
-          </button>
+      <div className="flex flex-col h-[70vh]">
+        {/* Compact Assignment Info Header */}
+        <div className="p-3 sm:p-4 border-b border-gray-200 bg-white">
+          <div className="flex items-start sm:items-center justify-between mb-2 sm:mb-3 gap-2">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm sm:text-lg font-semibold text-gray-900 truncate">
+                {pickup.organizationName}
+              </h3>
+              <div className="flex items-center gap-2 sm:gap-4 mt-1 text-xs sm:text-sm text-gray-500">
+                <span className="flex items-center gap-1 truncate">
+                  <User className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="truncate">{pickup.contactPerson}</span>
+                </span>
+                <a
+                  href={`tel:${pickup.contactNumber}`}
+                  className="flex items-center gap-1 text-primary-600 shrink-0"
+                >
+                  <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
+                  Call
+                </a>
+              </div>
+            </div>
+            <div className="text-right text-xs text-gray-500 shrink-0">
+              <div className="flex items-center gap-1">
+                <Truck className="w-3 h-3 sm:w-4 sm:h-4" />
+                {vehicle.number}
+              </div>
+            </div>
+          </div>
+
+          {/* Compact Location Info - Stack on mobile */}
+          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 text-xs">
+            <div className="flex-1 p-2 bg-blue-50 rounded flex items-center gap-2 min-w-0">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 shrink-0" />
+              <span className="text-gray-700 truncate">{pickup.location.address}</span>
+            </div>
+            <div className="hidden sm:flex items-center text-gray-400">→</div>
+            <div className="flex-1 p-2 bg-green-50 rounded flex items-center gap-2 min-w-0">
+              <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 shrink-0" />
+              <span className="text-gray-700 truncate">{delivery.hungerSpotName}</span>
+            </div>
+          </div>
         </div>
-      )}
 
-      <div className="flex flex-col lg:flex-row h-[calc(90vh-120px)] lg:h-[calc(90vh-80px)]">
-        {/* Left Side - Form or Details */}
-        <div className={`flex-1 overflow-y-auto p-4 sm:p-6 lg:border-r border-gray-200
-          ${activeTab === 'form' ? 'block' : 'hidden'} lg:block`}>
-          {/* Assignment Info Header */}
-          <div className="mb-6 pb-6 border-b border-gray-200">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {pickup.organizationName}
-                </h3>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <User className="w-4 h-4" />
-                    {pickup.contactPerson}
-                  </span>
-                  <a
-                    href={`tel:${pickup.contactNumber}`}
-                    className="flex items-center gap-1 text-primary-600 hover:underline"
-                  >
-                    <Phone className="w-4 h-4" />
-                    {pickup.contactNumber}
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Location Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-2 text-blue-700 mb-2">
-                  <MapPin className="w-4 h-4" />
-                  <span className="font-medium text-sm">Pickup Location</span>
-                </div>
-                <p className="text-sm text-gray-700">{pickup.location.address}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Scheduled: {new Date(pickup.scheduledTime).toLocaleString()}
-                </p>
-              </div>
-              <div className="p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-2 text-green-700 mb-2">
-                  <Building2 className="w-4 h-4" />
-                  <span className="font-medium text-sm">Delivery Location</span>
-                </div>
-                <p className="text-sm font-medium text-gray-700">
-                  {delivery.hungerSpotName}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {delivery.location.address}
-                </p>
-              </div>
-            </div>
-
-            {/* Vehicle Info */}
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-              <Truck className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  {vehicle.number} - {vehicle.type}
-                </p>
-                {vehicle.pickupLocation && (
-                  <p className="text-xs text-gray-500">
-                    Vehicle from: {vehicle.pickupLocation}
-                  </p>
+        {/* Main Content - VoiceInputPanel with Grid */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {canSubmit ? (
+            <VoiceInputPanel ref={voicePanelRef} disabled={!canSubmit} />
+          ) : (
+            <div className="p-6">
+              <div className="text-center py-8">
+                <h4 className="font-semibold text-gray-900 mb-2">Pickup Confirmed</h4>
+                {assignment.submittedDetails ? (
+                  <div className="text-sm text-gray-600">
+                    <p>Submitted at: {new Date(assignment.submittedDetails.pickupTime).toLocaleString()}</p>
+                    {assignment.submittedDetails.actualDeliveryTime && (
+                      <p className="text-green-600 mt-2">
+                        Delivered at: {new Date(assignment.submittedDetails.actualDeliveryTime).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Awaiting confirmation</p>
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Form or Submitted Details */}
-          {canSubmit ? (
-            <PickupForm
-              formData={formData}
-              setFormData={setFormData}
-              images={images}
-              setImages={setImages}
-              organizationName={pickup.organizationName}
-              vehicleInfo={vehicle}
-            />
-          ) : (
-            <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900">Submitted Details</h4>
-              {assignment.submittedDetails ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500">Food Name</p>
-                    <p className="text-sm font-medium">{assignment.submittedDetails.foodName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Quantity Collected</p>
-                    <p className="text-sm font-medium">{assignment.submittedDetails.quantityCollected}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Pickup Time</p>
-                    <p className="text-sm font-medium">
-                      {new Date(assignment.submittedDetails.pickupTime).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Est. Delivery Time</p>
-                    <p className="text-sm font-medium">
-                      {assignment.submittedDetails.estimatedDeliveryTime
-                        ? new Date(assignment.submittedDetails.estimatedDeliveryTime).toLocaleString()
-                        : '-'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-500">No details submitted yet</p>
-              )}
-            </div>
           )}
-
-          {/* Timeline */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-4">Progress Timeline</h4>
-            <Timeline events={timeline} />
-          </div>
-        </div>
-
-        {/* Right Side - Voice Input Panel */}
-        <div className={`w-full lg:w-96 bg-gray-50 p-4 sm:p-6 overflow-y-auto
-          ${activeTab === 'voice' ? 'block' : 'hidden'} lg:block`}>
-          <VoiceInputPanel
-            onDataParsed={handleVoiceDataParsed}
-            disabled={!canSubmit}
-            onComplete={() => setActiveTab('form')} // Switch to form after voice processing on mobile
-          />
         </div>
       </div>
 
       {/* Footer Actions */}
-      <div className="px-6 py-4 border-t border-gray-200 bg-white flex justify-end gap-3">
-        <Button variant="secondary" onClick={onClose}>
+      <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-white flex justify-end gap-2 sm:gap-3">
+        <Button variant="secondary" onClick={onClose} className="text-sm sm:text-base">
           Close
         </Button>
         {canSubmit && (
@@ -256,8 +140,9 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
             variant="primary"
             onClick={handleSubmit}
             loading={submitting}
+            className="text-sm sm:text-base"
           >
-            Submit Pickup Details
+            Confirm
           </Button>
         )}
         {canMarkDelivered && (
@@ -265,8 +150,9 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
             variant="success"
             onClick={handleMarkDelivered}
             loading={submitting}
+            className="text-sm sm:text-base"
           >
-            Mark as Delivered
+            Delivered
           </Button>
         )}
       </div>
