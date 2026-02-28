@@ -21,7 +21,6 @@ export function FeatureFlagsProvider({ children }) {
       const flagsMap = {};
       flagsList.forEach(flag => {
         flagsMap[flag.feature_flag_name] = {
-          id: flag.feature_flag_id,
           enabled: flag.enabled,
           name: flag.feature_flag_name,
         };
@@ -53,12 +52,12 @@ export function FeatureFlagsProvider({ children }) {
   // Update a feature flag (Admin only)
   const updateFlag = useCallback(async (flagName, enabled) => {
     const flag = flags[flagName];
-    if (!flag?.id) {
+    if (!flag) {
       throw new Error(`Flag ${flagName} not found`);
     }
 
     try {
-      const updatedFlag = await featureFlagsService.updateFlag(flag.id, enabled);
+      const updatedFlag = await featureFlagsService.updateFlag(flag, enabled);
       setFlags(prev => ({
         ...prev,
         [flagName]: {
@@ -80,7 +79,6 @@ export function FeatureFlagsProvider({ children }) {
       setFlags(prev => ({
         ...prev,
         [newFlag.feature_flag_name]: {
-          id: newFlag.feature_flag_id,
           enabled: newFlag.enabled,
           name: newFlag.feature_flag_name,
         },

@@ -26,22 +26,22 @@ export const featureFlagsService = {
   /**
    * Update a feature flag (Admin only)
    */
-  async updateFlag(flagId, enabled) {
-    return backendApi.put(`/api/feature-flags/${flagId}`, { enabled });
+  async updateFlag(feature_flag_name, enabled) {
+    return backendApi.put(`/api/feature-flags/${feature_flag_name.name}`, { enabled });
   },
 
   /**
    * Create a new feature flag (Admin only)
    */
-  async createFlag(featureFlagName, enabled = true) {
-    return backendApi.post('/api/feature-flags', { feature_flag_name: featureFlagName, enabled });
+  async createFlag(feature_flag_name, enabled = true) {
+    return backendApi.post('/api/feature-flags', { feature_flag_name, enabled });
   },
 
   /**
    * Delete a feature flag (Admin only)
    */
-  async deleteFlag(flagId) {
-    return backendApi.delete(`/api/feature-flags/${flagId}`);
+  async deleteFlag(feature_flag_name) {
+    return backendApi.delete(`/api/feature-flags/${feature_flag_name}`);
   },
 };
 

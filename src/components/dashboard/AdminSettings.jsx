@@ -13,7 +13,7 @@ export function AdminSettings() {
     setUpdating(true);
     try {
       // If flag doesn't exist, create it first
-      if (!voiceFlag?.id) {
+      if (!voiceFlag) {
         await createFlag(FEATURE_FLAGS.VOICE_SUPPORT, true);
         showToast('Voice support flag created and enabled', 'success');
       } else {
