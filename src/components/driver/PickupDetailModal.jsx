@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react';
 import { Modal, Button, showToast } from '../common';
 import { VoiceInputPanel } from './VoiceInputPanel';
-import { MapPin, Building2, Truck, Phone, User } from 'lucide-react';
+import { MapPin, Building2, Truck, Phone, User, VolumeX } from 'lucide-react';
+import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
 
 export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate }) {
   const [submitting, setSubmitting] = useState(false);
   const voicePanelRef = useRef(null);
+  const { isVoiceEnabled } = useFeatureFlags();
 
   if (!assignment) return null;
 
@@ -107,7 +109,21 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
         {/* Main Content - VoiceInputPanel with Grid */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {canSubmit ? (
-            <VoiceInputPanel ref={voicePanelRef} disabled={!canSubmit} />
+            isVoiceEnabled ? (
+              <VoiceInputPanel ref={voicePanelRef} disabled={!canSubmit} />
+            ) : (
+              <div className="p-6">
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                    <VolumeX className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Voice Input Disabled</h4>
+                  <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                    Voice input has been disabled by the administrator. Please contact your admin for assistance.
+                  </p>
+                </div>
+              </div>
+            )
           ) : (
             <div className="p-6">
               <div className="text-center py-8">

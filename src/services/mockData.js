@@ -272,3 +272,269 @@ export const mockRecentActivity = [
   { id: 5, type: 'user', message: 'New driver Ganesh registered', time: '3 hours ago', user: 'Rajesh Kumar' },
   { id: 6, type: 'pickup', message: 'Pickup completed at ITC Grand Chola Chennai', time: '4 hours ago', user: 'Ganesh Babu' },
 ];
+
+// =====================================================
+// SCHEMA-ALIGNED MOCK DATA
+// =====================================================
+
+// Statuses (matches statuses table)
+export const mockStatuses = [
+  { status_id: 1, status_name: 'created' },
+  { status_id: 2, status_name: 'assigned' },
+  { status_id: 7, status_name: 'reached' },
+  { status_id: 3, status_name: 'picked_up' },
+  { status_id: 4, status_name: 'delivered' },
+  { status_id: 5, status_name: 'verified' },
+  { status_id: 6, status_name: 'cancelled' },
+];
+
+// Donors (matches donors table)
+export const mockDonors = [
+  { 
+    donor_id: 1, 
+    donor_name: 'Taj Krishna Hotel', 
+    city: 'Hyderabad',
+    pincode: '500034',
+    contact_person: 'Nargis Siddique', 
+    mobile_number: '+91 98765 43210',
+    address: 'Road No. 1, Banjara Hills, Hyderabad',
+    location: '17.4156,78.4347',
+    is_active: true,
+  },
+  { 
+    donor_id: 2, 
+    donor_name: 'ITC Kohenur', 
+    city: 'Hyderabad',
+    pincode: '500081',
+    contact_person: 'Lakshmi Prasad', 
+    mobile_number: '+91 98765 12345',
+    address: 'HITEC City Main Road, Madhapur, Hyderabad',
+    location: '17.4504,78.3814',
+    is_active: true,
+  },
+  { 
+    donor_id: 3, 
+    donor_name: 'Taj Coromandel Chennai', 
+    city: 'Chennai',
+    pincode: '600034',
+    contact_person: 'Karthik Subramanian', 
+    mobile_number: '+91 99887 76655',
+    address: '37 MG Road, Nungambakkam, Chennai',
+    location: '13.0604,80.2496',
+    is_active: true,
+  },
+  { 
+    donor_id: 4, 
+    donor_name: 'Novotel HICC Hyderabad', 
+    city: 'Hyderabad',
+    pincode: '500081',
+    contact_person: 'Srikanth Rao', 
+    mobile_number: '+91 98123 45678',
+    address: 'HICC Complex, Madhapur, Hyderabad',
+    location: '17.4574,78.3726',
+    is_active: true,
+  },
+  { 
+    donor_id: 5, 
+    donor_name: 'ITC Grand Chola Chennai', 
+    city: 'Chennai',
+    pincode: '600032',
+    contact_person: 'Arun Kumar', 
+    mobile_number: '+91 97654 32100',
+    address: '63 Mount Road, Guindy, Chennai',
+    location: '13.0108,80.2197',
+    is_active: true,
+  },
+  { 
+    donor_id: 6, 
+    donor_name: 'Marriott Hyderabad', 
+    city: 'Hyderabad',
+    pincode: '500034',
+    contact_person: 'Priya Menon', 
+    mobile_number: '+91 99001 22334',
+    address: 'Tank Bund Road, Hyderabad',
+    location: '17.4239,78.4738',
+    is_active: true,
+  },
+];
+
+// Hunger Spots (schema-aligned)
+export const mockHungerSpotsSchema = [
+  { 
+    hunger_spot_id: 1, 
+    spot_name: 'Akshaya Patra - Gachibowli', 
+    city: 'Hyderabad',
+    pincode: '500032',
+    contact_person: 'Srinivas Rao',
+    mobile_number: '+91 98765 11111',
+    address: 'DLF Cyber City, Gachibowli, Hyderabad',
+    location: '17.4435,78.3772',
+    capacity_meals: 200,
+    is_active: true,
+  },
+  { 
+    hunger_spot_id: 2, 
+    spot_name: 'Robin Hood Army - Kondapur', 
+    city: 'Hyderabad',
+    pincode: '500084',
+    contact_person: 'Ramya Krishna',
+    mobile_number: '+91 98765 22222',
+    address: 'Kondapur Junction, Hyderabad',
+    location: '17.4603,78.3527',
+    capacity_meals: 150,
+    is_active: true,
+  },
+  { 
+    hunger_spot_id: 3, 
+    spot_name: 'Roti Bank - Secunderabad', 
+    city: 'Hyderabad',
+    pincode: '500003',
+    contact_person: 'Mahesh Kumar',
+    mobile_number: '+91 98765 33333',
+    address: 'Platform 1, Secunderabad Station',
+    location: '17.4344,78.5013',
+    capacity_meals: 300,
+    is_active: true,
+  },
+  { 
+    hunger_spot_id: 4, 
+    spot_name: 'Anna Annadhanam Trust - T Nagar', 
+    city: 'Chennai',
+    pincode: '600017',
+    contact_person: 'Vijay Kumar',
+    mobile_number: '+91 98765 44444',
+    address: 'Panagal Park, T Nagar, Chennai',
+    location: '13.0418,80.2341',
+    capacity_meals: 250,
+    is_active: true,
+  },
+];
+
+// Drivers (users with DRIVER role)
+export const mockDrivers = [
+  { user_id: 3, name: 'Ravi Shankar', mobile_number: '+91 98765 33333', is_active: true },
+  { user_id: 4, name: 'Murali Krishna', mobile_number: '+91 98765 44444', is_active: true },
+  { user_id: 6, name: 'Ganesh Babu', mobile_number: '+91 98765 66666', is_active: true },
+];
+
+// Vehicles (schema-aligned)
+export const mockVehiclesSchema = [
+  { vehicle_id: 1, vehicle_no: 'TS-09-AB-1234', notes: 'Mini Truck - 500 kg capacity' },
+  { vehicle_id: 2, vehicle_no: 'TS-09-CD-5678', notes: 'Van - 200 kg capacity' },
+  { vehicle_id: 3, vehicle_no: 'TN-07-EF-9012', notes: 'Mini Truck - 500 kg capacity' },
+  { vehicle_id: 4, vehicle_no: 'TS-09-GH-3456', notes: 'Large Truck - 1000 kg capacity' },
+  { vehicle_id: 5, vehicle_no: 'TN-07-IJ-7890', notes: 'Van - 200 kg capacity' },
+];
+
+// Opportunities with items (main pickup data)
+export const mockOpportunities = [
+  {
+    opportunity_id: 1,
+    donor_id: 1,
+    hunger_spot_id: 1,
+    status_id: 2, // assigned
+    driver_id: 3,
+    vehicle_id: 1,
+    creator_id: 2,
+    assignee_id: 3,
+    feeding_count: 50,
+    pickup_eta: '2026-02-27T10:00:00',
+    notes: 'Please use service entrance',
+    created_at: '2026-02-27T08:00:00',
+    // Denormalized for display
+    donor: { donor_id: 1, donor_name: 'Taj Krishna Hotel', contact_person: 'Nargis Siddique', mobile_number: '+91 98765 43210', address: 'Road No. 1, Banjara Hills, Hyderabad', location: '17.4156,78.4347' },
+    hunger_spot: { hunger_spot_id: 1, spot_name: 'Akshaya Patra - Gachibowli', contact_person: 'Srinivas Rao', mobile_number: '+91 98765 11111', address: 'DLF Cyber City, Gachibowli, Hyderabad', location: '17.4435,78.3772' },
+    driver: { user_id: 3, name: 'Ravi Shankar', mobile_number: '+91 98765 33333' },
+    vehicle: { vehicle_id: 1, vehicle_no: 'TS-09-AB-1234', notes: 'Mini Truck - 500 kg capacity' },
+    status: { status_id: 2, status_name: 'assigned' },
+    items: [
+      { opportunity_item_id: 1, food_name: 'Biryani', quality: 'Good', quantity_value: 25, quantity_unit: 'kg' },
+      { opportunity_item_id: 2, food_name: 'Raita', quality: 'Good', quantity_value: 10, quantity_unit: 'kg' },
+    ],
+  },
+  {
+    opportunity_id: 2,
+    donor_id: 2,
+    hunger_spot_id: 2,
+    status_id: 3, // picked_up
+    driver_id: 4,
+    vehicle_id: 2,
+    creator_id: 2,
+    assignee_id: 4,
+    feeding_count: 30,
+    pickup_eta: '2026-02-27T11:30:00',
+    notes: null,
+    created_at: '2026-02-27T09:00:00',
+    donor: { donor_id: 2, donor_name: 'ITC Kohenur', contact_person: 'Lakshmi Prasad', mobile_number: '+91 98765 12345', address: 'HITEC City Main Road, Madhapur, Hyderabad', location: '17.4504,78.3814' },
+    hunger_spot: { hunger_spot_id: 2, spot_name: 'Robin Hood Army - Kondapur', contact_person: 'Ramya Krishna', mobile_number: '+91 98765 22222', address: 'Kondapur Junction, Hyderabad', location: '17.4603,78.3527' },
+    driver: { user_id: 4, name: 'Murali Krishna', mobile_number: '+91 98765 44444' },
+    vehicle: { vehicle_id: 2, vehicle_no: 'TS-09-CD-5678', notes: 'Van - 200 kg capacity' },
+    status: { status_id: 3, status_name: 'picked_up' },
+    items: [
+      { opportunity_item_id: 3, food_name: 'Pulao', quality: 'Excellent', quantity_value: 15, quantity_unit: 'kg' },
+      { opportunity_item_id: 4, food_name: 'Dal Makhani', quality: 'Good', quantity_value: 8, quantity_unit: 'kg' },
+      { opportunity_item_id: 5, food_name: 'Naan', quality: 'Good', quantity_value: 50, quantity_unit: 'pieces' },
+    ],
+  },
+  {
+    opportunity_id: 3,
+    donor_id: 3,
+    hunger_spot_id: 4,
+    status_id: 1, // created (not yet assigned)
+    driver_id: null,
+    vehicle_id: null,
+    creator_id: 2,
+    assignee_id: null,
+    feeding_count: 45,
+    pickup_eta: '2026-02-27T14:00:00',
+    notes: 'Vegetarian items only',
+    created_at: '2026-02-27T10:00:00',
+    donor: { donor_id: 3, donor_name: 'Taj Coromandel Chennai', contact_person: 'Karthik Subramanian', mobile_number: '+91 99887 76655', address: '37 MG Road, Nungambakkam, Chennai', location: '13.0604,80.2496' },
+    hunger_spot: { hunger_spot_id: 4, spot_name: 'Anna Annadhanam Trust - T Nagar', contact_person: 'Vijay Kumar', mobile_number: '+91 98765 44444', address: 'Panagal Park, T Nagar, Chennai', location: '13.0418,80.2341' },
+    driver: null,
+    vehicle: null,
+    status: { status_id: 1, status_name: 'created' },
+    items: [
+      { opportunity_item_id: 6, food_name: 'Idli', quality: 'Fresh', quantity_value: 100, quantity_unit: 'pieces' },
+      { opportunity_item_id: 7, food_name: 'Sambar', quality: 'Good', quantity_value: 10, quantity_unit: 'liters' },
+    ],
+  },
+  {
+    opportunity_id: 4,
+    donor_id: 4,
+    hunger_spot_id: 3,
+    status_id: 4, // delivered
+    driver_id: 6,
+    vehicle_id: 4,
+    creator_id: 2,
+    assignee_id: 6,
+    feeding_count: 60,
+    pickup_eta: '2026-02-27T08:00:00',
+    notes: null,
+    created_at: '2026-02-27T06:00:00',
+    donor: { donor_id: 4, donor_name: 'Novotel HICC Hyderabad', contact_person: 'Srikanth Rao', mobile_number: '+91 98123 45678', address: 'HICC Complex, Madhapur, Hyderabad', location: '17.4574,78.3726' },
+    hunger_spot: { hunger_spot_id: 3, spot_name: 'Roti Bank - Secunderabad', contact_person: 'Mahesh Kumar', mobile_number: '+91 98765 33333', address: 'Platform 1, Secunderabad Station', location: '17.4344,78.5013' },
+    driver: { user_id: 6, name: 'Ganesh Babu', mobile_number: '+91 98765 66666' },
+    vehicle: { vehicle_id: 4, vehicle_no: 'TS-09-GH-3456', notes: 'Large Truck - 1000 kg capacity' },
+    status: { status_id: 4, status_name: 'delivered' },
+    items: [
+      { opportunity_item_id: 8, food_name: 'Hyderabadi Biryani', quality: 'Excellent', quantity_value: 30, quantity_unit: 'kg' },
+      { opportunity_item_id: 9, food_name: 'Mirchi Ka Salan', quality: 'Good', quantity_value: 5, quantity_unit: 'kg' },
+    ],
+  },
+];
+
+// Helper to get opportunities for a specific driver
+export const getDriverOpportunities = (driverId) => {
+  return mockOpportunities.filter(opp => opp.driver_id === driverId);
+};
+
+// Helper to get unassigned opportunities
+export const getUnassignedOpportunities = () => {
+  return mockOpportunities.filter(opp => opp.driver_id === null);
+};
+
+// Helper to get all active opportunities (for coordinator view)
+export const getAllActiveOpportunities = () => {
+  return mockOpportunities.filter(opp => opp.status_id !== 5 && opp.status_id !== 6);
+};

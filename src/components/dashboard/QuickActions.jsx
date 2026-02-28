@@ -22,7 +22,7 @@ export function QuickActions() {
       description: 'Create a new pickup request',
       icon: Plus,
       color: 'bg-primary-500',
-      onClick: () => navigate('/pickups/new'),
+      onClick: () => navigate('/pickups/create'),
     },
     {
       title: 'Driver Status',
@@ -49,11 +49,11 @@ export function QuickActions() {
       onClick: () => navigate('/users'),
     },
     {
-      title: 'Assign Pickup',
+      title: 'Create Pickup',
       description: 'Create and assign pickups',
       icon: Plus,
       color: 'bg-primary-500',
-      onClick: () => navigate('/assign'),
+      onClick: () => navigate('/pickups/create'),
     },
     {
       title: 'View Analytics',

@@ -5,13 +5,13 @@ import logo from '../../assets/NoFoodWaste_Logo_Orange.png';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.DRIVER] },
+  { name: 'Pickups', href: '/pickups', icon: ClipboardList, roles: [ROLES.COORDINATOR, ROLES.ADMIN] },
 //   { name: 'My Assignments', href: '/assignments', icon: Truck, roles: [ROLES.DRIVER] },
-//   { name: 'Pickup Requests', href: '/pickups', icon: ClipboardList, roles: [ROLES.COORDINATOR] },
 //   { name: 'Driver Status', href: '/drivers', icon: Truck, roles: [ROLES.COORDINATOR] },
 //   { name: 'User Management', href: '/users', icon: Users, roles: [ROLES.ADMIN] },
 //   { name: 'Assign Pickups', href: '/assign', icon: ClipboardList, roles: [ROLES.ADMIN] },
 //   { name: 'Analytics', href: '/analytics', icon: BarChart3, roles: [ROLES.ADMIN] },
-  // { name: 'Settings', href: '/settings', icon: Settings, roles: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.DRIVER] },
+  { name: 'Settings', href: '/settings', icon: Settings, roles: [ROLES.ADMIN] },
 ];
 
 export function Sidebar({ isOpen, onClose }) {

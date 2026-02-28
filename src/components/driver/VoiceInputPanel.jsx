@@ -75,7 +75,8 @@ export function VoiceInputPanel({ disabled = false }) {
       }
     } catch (err) {
       console.error('Processing error:', err);
-      const errorMessage = err.response?.data?.error || err.message || 'Failed to process audio';
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to process audio';
       setApiError(errorMessage);
     } finally {
       setProcessing(false);
