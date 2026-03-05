@@ -45,15 +45,22 @@ export const DashboardLayout = () => {
         />
       )}
       <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 md:translate-x-0 ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full md:w-0 md:overflow-hidden'} overflow-y-auto`}>
-        <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
           <Logo />
+          {/* Show close button only on mobile */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label="Close sidebar"
+          >
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-300" />
+          </button>
         </div>
-
         <nav className="p-4 space-y-2">
           {currentMenu.map((item, idx) => (
             <button
               key={idx}
-              onClick={() => navigate(item.path)}
+              onClick={() => { setSidebarOpen(false); navigate(item.path); }}
               className="w-full flex items-center gap-3 px-4 py-3 min-h-[44px] text-gray-800 dark:text-gray-200 hover:bg-ngo-light dark:hover:bg-gray-800 rounded-xl transition-colors text-left touch-manipulation text-sm md:text-base"
             >
               <item.icon className="w-5 h-5 text-ngo-orange flex-shrink-0" />

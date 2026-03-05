@@ -29,11 +29,6 @@ const statusStyles = {
     text: 'text-gray-800',
     dot: 'bg-gray-500',
   },
-  created: {
-    bg: 'bg-gray-100',
-    text: 'text-gray-700',
-    dot: 'bg-gray-500',
-  },
   active: {
     bg: 'bg-green-100',
     text: 'text-green-800',
@@ -53,14 +48,13 @@ const statusLabels = {
   delivered: 'Delivered',
   verified: 'Verified',
   pending: 'Pending',
-  created: 'Created',
   active: 'Active',
   inactive: 'Inactive',
 };
 
 export function StatusBadge({ status, showDot = true, className = '' }) {
-  const style = statusStyles[status?.toLowerCase?.()] || statusStyles.pending;
-  const label = statusLabels[status?.toLowerCase?.()] || status;
+  const style = statusStyles[status] || statusStyles.pending;
+  const label = statusLabels[status] || status;
 
   return (
     <span

@@ -2,9 +2,12 @@ import React from 'react';
 import { TileCard } from '../../components/TileCard';
 import { Truck, Users, FileCheck } from 'lucide-react';
 
+import { HeroBanner } from '../../components/common';
+
 export const CoordinatorDashboard = () => {
   return (
     <div>
+      <HeroBanner />
       <div className="mb-6 md:mb-8">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark mb-1 md:mb-2">Coordinator Dashboard</h1>
         <p className="text-sm md:text-base text-ngo-gray">Manage pickups and operations</p>

@@ -1,267 +1,148 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockApi } from '../../services/mockApi';
-import { StatusBadge } from '../../components/StatusBadge';
-import { ArrowLeft, MapPin, Clock, Package, Camera, Mic, CheckCircle, Upload } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { MapPin, Clock, Building2, Phone, User, Truck, ArrowLeft } from 'lucide-react';
 
 export const TaskDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [task, setTask] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [accepted, setAccepted] = useState(false);
-  const [proofData, setProofData] = useState({
-    pickupPhotos: '',
-    deliveryPhotos: '',
-    voiceNote: '',
-    actualQuantity: '',
-    gpsLat: '',
-    gpsLng: ''
-  });
 
-  useEffect(() => {
-    loadTask();
-  }, [id]);
-
-  const loadTask = async () => {
-    const pickup = await mockApi.getPickupById(id);
-    setTask(pickup);
-    setAccepted(pickup.status !== 'ASSIGNED');
-    setLoading(false);
+  // Mock data - in a real app, this would come from an API
+  const task = {
+    id: 1,
+    status: 'reached',
+    pickup: {
+      organizationName: 'Taj Krishna Hotel',
+      contactPerson: 'Nargis Siddique',
+      contactNumber: '+91 98765 43210',
+      location: {
+        address: 'Road No. 1, Banjara Hills, Hyderabad',
+        coordinates: { lat: 17.4156, lng: 78.4347 },
+        mapLink: 'https://maps.google.com/?q=17.4156,78.4347',
+      },
+      scheduledTime: '2026-02-14T10:00:00',
+      estimatedQuantity: '50 kg',
+    },
+    delivery: {
+      hungerSpotName: 'Akshaya Patra - Gachibowli',
+      location: {
+        address: 'DLF Cyber City, Gachibowli, Hyderabad',
+      },
+    },
+    vehicle: {
+      number: 'TS-09-AB-1234',
+      type: 'Mini Truck',
+    },
   };
-
-  const handleAccept = async () => {
-    await mockApi.acceptPickup(id);
-    setAccepted(true);
-    loadTask();
-  };
-
-  const handlePhotoUpload = (field) => {
-    const mockUrl = `https://drive.google.com/file/d/${Math.random().toString(36).substr(2, 9)}`;
-    setProofData({ ...proofData, [field]: mockUrl });
-  };
-
-  const handleVoiceRecord = async () => {
-    const mockVoiceUrl = `https://drive.google.com/file/d/${Math.random().toString(36).substr(2, 9)}/audio.mp3`;
-    setProofData({ ...proofData, voiceNote: mockVoiceUrl });
-  };
-
-  const handleGetGPS = () => {
-    setProofData({
-      ...proofData,
-      gpsLat: (28.5 + Math.random() * 0.2).toFixed(6),
-      gpsLng: (77.2 + Math.random() * 0.2).toFixed(6)
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    await mockApi.submitProof(id, {
-      ...proofData,
-      submittedAt: new Date().toISOString()
-    });
-
-    setTimeout(() => {
-      navigate('/driver/dashboard');
-    }, 1500);
-  };
-
-  if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
-  }
-
-  if (!task) {
-    return <div className="text-center py-12">Task not found</div>;
-  }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Button onClick={() => navigate('/driver/dashboard')} variant="secondary" className="mb-6 text-ngo-gray hover:text-ngo-dark border-0 bg-transparent shadow-none">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </Button>
-
-      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-ngo-dark mb-1">Pickup #{task.id}</h1>
-            <p className="text-ngo-gray">{task.scheduledDate} at {task.scheduledTime}</p>
-          </div>
-          <StatusBadge status={task.status} />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <div>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark mb-1">Task Details</h1>
+          <p className="text-sm md:text-base text-ngo-gray">Pickup from {task.pickup.organizationName}</p>
         </div>
-
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          <div className="p-4 bg-orange-50 rounded-xl">
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-ngo-orange mt-1" />
-              <div>
-                <p className="text-xs text-ngo-gray mb-1">PICKUP FROM</p>
-                <p className="font-semibold text-ngo-dark">{task.pickupLocationName}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 bg-green-50 rounded-xl">
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-ngo-green mt-1" />
-              <div>
-                <p className="text-xs text-ngo-gray mb-1">DELIVER TO</p>
-                <p className="font-semibold text-ngo-dark">{task.hungerSpotName}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 p-4 bg-ngo-light rounded-xl">
-          <Package className="w-6 h-6 text-ngo-orange" />
-          <div>
-            <p className="text-sm text-ngo-gray">Estimated Quantity</p>
-            <p className="font-semibold text-ngo-dark">{task.estimatedQuantity}</p>
-          </div>
-        </div>
-
-        {task.notes && (
-          <div className="mt-4 p-4 bg-blue-50 rounded-xl">
-            <p className="text-sm font-semibold text-ngo-dark mb-1">Notes:</p>
-            <p className="text-sm text-ngo-gray">{task.notes}</p>
-          </div>
-        )}
       </div>
 
-      {!accepted && task.status === 'ASSIGNED' && (
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-xl font-bold text-ngo-dark mb-4">Accept this task?</h2>
-          <Button onClick={handleAccept} variant="primary" fullWidth>
-            Accept Task
-          </Button>
-        </div>
-      )}
-
-      {accepted && !['VERIFIED', 'REJECTED', 'PENDING_VERIFICATION'].includes(task.status) && (
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-ngo-dark mb-6">Submit Proof of Delivery</h2>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-3">Pickup Photos</label>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => handlePhotoUpload('pickupPhotos')}
-                  className="flex items-center gap-2 px-4 py-3 bg-ngo-light hover:bg-gray-200 rounded-xl transition-colors"
-                >
-                  <Camera className="w-5 h-5 text-ngo-orange" />
-                  Upload Photos
-                </button>
-                {proofData.pickupPhotos && (
-                  <span className="text-sm text-ngo-green flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Uploaded
-                  </span>
-                )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pickup Information */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Pickup Location</h2>
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <Building2 className="w-5 h-5 text-orange-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Organization</p>
+                <p className="text-gray-900 font-medium">{task.pickup.organizationName}</p>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-3">Delivery Photos</label>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => handlePhotoUpload('deliveryPhotos')}
-                  className="flex items-center gap-2 px-4 py-3 bg-ngo-light hover:bg-gray-200 rounded-xl transition-colors"
-                >
-                  <Camera className="w-5 h-5 text-ngo-orange" />
-                  Upload Photos
-                </button>
-                {proofData.deliveryPhotos && (
-                  <span className="text-sm text-ngo-green flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Uploaded
-                  </span>
-                )}
+            <div className="flex gap-3">
+              <User className="w-5 h-5 text-blue-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Contact Person</p>
+                <p className="text-gray-900 font-medium">{task.pickup.contactPerson}</p>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-3">Voice Note (Optional)</label>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={handleVoiceRecord}
-                  className="flex items-center gap-2 px-4 py-3 bg-ngo-light hover:bg-gray-200 rounded-xl transition-colors"
-                >
-                  <Mic className="w-5 h-5 text-ngo-orange" />
-                  Record Voice Note
-                </button>
-                {proofData.voiceNote && (
-                  <span className="text-sm text-ngo-green flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Recorded
-                  </span>
-                )}
+            <div className="flex gap-3">
+              <Phone className="w-5 h-5 text-green-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Phone</p>
+                <a href={`tel:${task.pickup.contactNumber}`} className="text-primary-600 hover:underline">
+                  {task.pickup.contactNumber}
+                </a>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-2">Actual Quantity Delivered</label>
-              <input
-                type="text"
-                value={proofData.actualQuantity}
-                onChange={(e) => setProofData({ ...proofData, actualQuantity: e.target.value })}
-                placeholder="e.g., 45 meals, 18kg"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-                required
-              />
+            <div className="flex gap-3">
+              <MapPin className="w-5 h-5 text-red-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Address</p>
+                <p className="text-gray-900">{task.pickup.location.address}</p>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-3">GPS Location</label>
-              <div className="flex items-center gap-4 mb-3">
-                <button
-                  type="button"
-                  onClick={handleGetGPS}
-                  className="flex items-center gap-2 px-4 py-3 bg-ngo-light hover:bg-gray-200 rounded-xl transition-colors"
-                >
-                  <MapPin className="w-5 h-5 text-ngo-orange" />
-                  Get Current Location
-                </button>
-                {proofData.gpsLat && (
-                  <span className="text-sm text-ngo-green flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Captured
-                  </span>
-                )}
-              </div>
-              {proofData.gpsLat && (
-                <p className="text-xs text-ngo-gray">
-                  Lat: {proofData.gpsLat}, Lng: {proofData.gpsLng}
+            <div className="flex gap-3">
+              <Clock className="w-5 h-5 text-purple-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Scheduled Time</p>
+                <p className="text-gray-900">
+                  {new Date(task.pickup.scheduledTime).toLocaleString()}
                 </p>
-              )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery Information */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Location</h2>
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <Building2 className="w-5 h-5 text-green-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Hunger Spot</p>
+                <p className="text-gray-900 font-medium">{task.delivery.hungerSpotName}</p>
+              </div>
             </div>
 
-            <Button
-              type="submit"
-              disabled={submitting || !proofData.pickupPhotos || !proofData.deliveryPhotos || !proofData.gpsLat}
-              variant="primary"
-              fullWidth
-            >
-              {submitting ? 'Submitting...' : 'Submit Proof'}
-            </Button>
-          </form>
-        </div>
-      )}
+            <div className="flex gap-3">
+              <MapPin className="w-5 h-5 text-red-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Address</p>
+                <p className="text-gray-900">{task.delivery.location.address}</p>
+              </div>
+            </div>
 
-      {task.status === 'PENDING_VERIFICATION' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
-          <Clock className="w-12 h-12 text-amber-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-ngo-dark mb-2">Pending Verification</h3>
-          <p className="text-ngo-gray">Your submission is being reviewed by the coordinator.</p>
+            <div className="flex gap-3">
+              <Truck className="w-5 h-5 text-orange-600 shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Vehicle Information</p>
+                <p className="text-gray-900 font-medium">{task.vehicle.number}</p>
+                <p className="text-sm text-gray-500">{task.vehicle.type}</p>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Action Button */}
+      <div className="flex gap-3">
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          Back
+        </Button>
+        <Button variant="primary">
+          Start Task
+        </Button>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import logo from '../assets/NoFoodWaste_Logo_Orange.png'; 
 
 /**
  * Official logo. Use /logo.png consistently across Login, Sidebar, Dashboard header.
@@ -11,7 +12,7 @@ export const Logo = ({ className = '' }) => {
 
   return (
     <img
-      src="/logo.png"
+      src={logo}
       alt="NoFoodWaste"
       className={combined}
     />
