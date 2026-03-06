@@ -15,6 +15,8 @@ import {
 } from 'recharts';
 import { TrendingUp, CheckCircle, Clock, Truck } from 'lucide-react';
 
+import { HeroBanner } from '../../components/common';
+
 export const AdminDashboard = () => {
   const [dateRange, setDateRange] = useState('30d');
   const [data, setData] = useState(null);
@@ -53,6 +55,7 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 md:space-y-8">
+      <HeroBanner />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark mb-1 md:mb-2">

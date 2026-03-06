@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { RoleGuard } from './auth/RoleGuard';
 import { DashboardLayout } from './layouts/DashboardLayout';
 
@@ -32,9 +33,10 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-      <BrowserRouter>
-        <SidebarProvider>
-        <Routes>
+        <FeatureFlagsProvider>
+          <BrowserRouter>
+            <SidebarProvider>
+              <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -72,9 +74,10 @@ function App() {
           </Route>
 
           <Route path="/" element={<Navigate to="/login" replace />} />
-        </Routes>
-        </SidebarProvider>
-      </BrowserRouter>
+          </Routes>
+            </SidebarProvider>
+          </BrowserRouter>
+        </FeatureFlagsProvider>
       </ThemeProvider>
     </AuthProvider>
   );
