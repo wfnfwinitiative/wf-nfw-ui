@@ -4,12 +4,14 @@ import { useAuth } from '../auth/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
-import { Menu, X, Home, Users, Truck, MapPin, FileCheck } from 'lucide-react';
+import { ToastContainer, useToast } from '../components/common/Toast';
+import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag } from 'lucide-react';
 
 export const DashboardLayout = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isSidebarOpen, setSidebarOpen } = useSidebar();
+  const { toasts, removeToast } = useToast();
 
   const menuItems = {
     admin: [
@@ -19,6 +21,7 @@ export const DashboardLayout = () => {
       { icon: Truck, label: 'Vehicles', path: '/admin/vehicles' },
       { icon: MapPin, label: 'Pickup Locations', path: '/admin/pickup-locations' },
       { icon: MapPin, label: 'HungerSpots', path: '/admin/hungerspots' },
+      { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
       { icon: FileCheck, label: 'Verifications', path: '/verification' }
     ],
     coordinator: [
@@ -60,7 +63,7 @@ export const DashboardLayout = () => {
           {currentMenu.map((item, idx) => (
             <button
               key={idx}
-              onClick={() => { setSidebarOpen(false); navigate(item.path); }}
+              onClick={() => navigate(item.path)}
               className="w-full flex items-center gap-3 px-4 py-3 min-h-[44px] text-gray-800 dark:text-gray-200 hover:bg-ngo-light dark:hover:bg-gray-800 rounded-xl transition-colors text-left touch-manipulation text-sm md:text-base"
             >
               <item.icon className="w-5 h-5 text-ngo-orange flex-shrink-0" />
@@ -91,6 +94,8 @@ export const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

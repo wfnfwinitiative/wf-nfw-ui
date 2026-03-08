@@ -421,5 +421,19 @@ export const mockApi = {
       byMonth,
       byDriver
     };
+  },
+
+  /**
+   * Mock: POST /mock/feature-flag
+   * Request: { feature: string, enabled: boolean }
+   * Response: { status: 'success', feature: string, enabled: boolean }
+   */
+  async updateFeatureFlag(payload) {
+    await delay(300);
+    return {
+      status: 'success',
+      feature: payload?.feature ?? 'LLM_FEATURE',
+      enabled: Boolean(payload?.enabled)
+    };
   }
 };
