@@ -103,7 +103,7 @@ export const llmApi = new ApiClient(config.llmServiceUrl, {
 });
 
 // Add more API clients as needed
-// export const backendApi = new ApiClient(config.backendUrl);
+export const backendApi = new ApiClient(config.backendServiceUrl);
 // export const authApi = new ApiClient(config.authServiceUrl);
 
 export default ApiClient;
