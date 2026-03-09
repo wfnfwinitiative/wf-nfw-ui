@@ -1,31 +1,45 @@
 import { useState, useRef } from 'react';
 import { Modal, Button, showToast } from '../../components/common';
 import { VoiceInputPanel } from './VoiceInputPanel';
-import { MapPin, Building2, Truck, Phone, User, VolumeX } from 'lucide-react';
+import { MapPin, Building2, Truck, Phone, User, Camera, X } from 'lucide-react';
 import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
+import { uploadImageToDrive } from '../../services/api/googleDriveService';
+
 
 export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate }) {
   const [submitting, setSubmitting] = useState(false);
+  const [deliveryImages, setDeliveryImages] = useState([]);
   const voicePanelRef = useRef(null);
+  const deliveryFileInputRef = useRef(null);
   const { isVoiceEnabled } = useFeatureFlags();
+
+  // Read driver info directly from localStorage to ensure we have the latest data, especially after login or profile updates need to revisit this approach later to see if we can centralize user state better
+  const storedUser = (() => { try { return JSON.parse(localStorage.getItem('nofoodwaste_user') || '{}'); } catch { return {}; } })();
 
   if (!assignment) return null;
 
   const { pickup, delivery, vehicle, status } = assignment;
+  const driverName = storedUser?.name || storedUser?.phone || `Driver${storedUser?.id || ''}`;
+  const opportunityId = String(assignment.id || '');
 
   const canSubmit = status === 'reached';
   const canMarkDelivered = status === 'submitted';
 
   const handleSubmit = async () => {
-    // Get data from VoiceInputPanel via ref or state lifting
-    // For now, we'll access global state or use callback
     setSubmitting(true);
     try {
+      // Upload all pickup images to Google Drive
+      const images = voicePanelRef.current?.getImages() || [];
+      if (images.length > 0) {
+        await Promise.all(
+          images.map(img => uploadImageToDrive(img.file, { uploadType: 'pickup', driverName, opportunityId }))
+        );
+        showToast(`${images.length} pickup image(s) uploaded to Google Drive`, 'success');
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
       onStatusUpdate(assignment.id, 'submitted', {
-        submittedDetails: {
-          pickupTime: new Date().toISOString(),
-        },
+        submittedDetails: { pickupTime: new Date().toISOString() },
       });
       showToast('Pickup confirmed successfully!', 'success');
       onClose();
@@ -36,9 +50,36 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
     }
   };
 
+  const handleDeliveryImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    const newImages = files.map(file => ({
+      id: Date.now() + Math.random(),
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name,
+    }));
+    setDeliveryImages(prev => [...prev, ...newImages]);
+  };
+
+  const handleRemoveDeliveryImage = (id) => {
+    setDeliveryImages(prev => {
+      const img = prev.find(i => i.id === id);
+      if (img?.preview) URL.revokeObjectURL(img.preview);
+      return prev.filter(i => i.id !== id);
+    });
+  };
+
   const handleMarkDelivered = async () => {
     setSubmitting(true);
     try {
+      // Upload delivery images to Google Drive
+      if (deliveryImages.length > 0) {
+        await Promise.all(
+          deliveryImages.map(img => uploadImageToDrive(img.file, { uploadType: 'deliver', driverName, opportunityId }))
+        );
+        showToast(`${deliveryImages.length} delivery image(s) uploaded to Google Drive`, 'success');
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 500));
       onStatusUpdate(assignment.id, 'delivered', {
         submittedDetails: {
@@ -106,25 +147,80 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
           </div>
         </div>
 
-        {/* Main Content - VoiceInputPanel with Grid */}
+        {/* Main Content */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {canSubmit ? (
             <VoiceInputPanel ref={voicePanelRef} disabled={!canSubmit} />
+          ) : canMarkDelivered ? (
+            <div className="p-4">
+              <div className="mb-4">
+                <h4 className="font-semibold text-gray-900 mb-1">Pickup Confirmed</h4>
+                {assignment.submittedDetails?.pickupTime && (
+                  <p className="text-xs text-gray-500">
+                    Picked up at: {new Date(assignment.submittedDetails.pickupTime).toLocaleString()}
+                  </p>
+                )}
+              </div>
+
+              {/* Delivery Image Upload */}
+              <div className="border border-dashed border-gray-300 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-800 mb-2 text-sm">
+                  Delivery Photos
+                </h4>
+                <p className="text-xs text-gray-500 mb-3">
+                  Add photos of the delivered food. They will be uploaded to Google Drive on submit.
+                </p>
+
+                <input
+                  ref={deliveryFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleDeliveryImageChange}
+                />
+
+                <button
+                  onClick={() => deliveryFileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm mb-3"
+                >
+                  <Camera className="w-4 h-4" />
+                  Add Delivery Photos
+                </button>
+
+                {deliveryImages.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {deliveryImages.map(img => (
+                      <div key={img.id} className="relative aspect-square group">
+                        <img
+                          src={img.preview}
+                          alt={img.name}
+                          className="w-full h-full object-cover rounded cursor-pointer hover:opacity-90"
+                        />
+                        <button
+                          onClick={() => handleRemoveDeliveryImage(img.id)}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {deliveryImages.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-2">No delivery photos added yet.</p>
+                )}
+              </div>
+            </div>
           ) : (
             <div className="p-6">
               <div className="text-center py-8">
-                <h4 className="font-semibold text-gray-900 mb-2">Pickup Confirmed</h4>
-                {assignment.submittedDetails ? (
-                  <div className="text-sm text-gray-600">
-                    <p>Submitted at: {new Date(assignment.submittedDetails.pickupTime).toLocaleString()}</p>
-                    {assignment.submittedDetails.actualDeliveryTime && (
-                      <p className="text-green-600 mt-2">
-                        Delivered at: {new Date(assignment.submittedDetails.actualDeliveryTime).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">Awaiting confirmation</p>
+                <h4 className="font-semibold text-gray-900 mb-2">Delivered</h4>
+                {assignment.submittedDetails?.actualDeliveryTime && (
+                  <p className="text-green-600 text-sm mt-2">
+                    Delivered at: {new Date(assignment.submittedDetails.actualDeliveryTime).toLocaleString()}
+                  </p>
                 )}
               </div>
             </div>
