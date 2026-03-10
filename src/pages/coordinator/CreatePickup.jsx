@@ -63,7 +63,7 @@ export const CreatePickup = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-ngo-green" />
           </div>
-          <h2 className="text-2xl font-bold text-ngo-dark mb-2">Pickup Created Successfully!</h2>
+          <h2 className="text-2xl font-bold text-ngo-dark mb-2">Opportunity Created Successfully!</h2>
           <p className="text-ngo-gray">Driver has been notified. Redirecting...</p>
         </div>
       </div>
@@ -78,7 +78,7 @@ export const CreatePickup = () => {
       </Button>
 
       <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <h1 className="text-3xl font-bold text-ngo-dark mb-2">Create New Pickup</h1>
+        <h1 className="text-3xl font-bold text-ngo-dark mb-2">Create New Opportunity</h1>
         <p className="text-ngo-gray mb-8">Schedule a food rescue operation</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -179,7 +179,7 @@ export const CreatePickup = () => {
           </div>
 
           <Button type="submit" variant="primary" fullWidth>
-            Create Pickup & Assign Driver
+            Create Opportunity & Assign Driver
           </Button>
         </form>
       </div>
