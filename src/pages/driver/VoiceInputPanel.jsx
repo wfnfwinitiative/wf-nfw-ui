@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useVoiceRecording } from '../../hooks/useVoiceRecording';
 import { Mic, MicOff, Loader2, List, Volume2, Camera, X, Image } from 'lucide-react';
 import { processAudio } from '../../services/api/voiceService';
 import { FoodItemsGrid } from './FoodItemsGrid';
 import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
+import { uploadImageToDrive } from '../../services/api/googleDriveService';
 
-export function VoiceInputPanel({ disabled = false }) {
+export const VoiceInputPanel = forwardRef(function VoiceInputPanel({ disabled = false }, ref) {
   const { isVoiceEnabled } = useFeatureFlags();
   const [view, setView] = useState(isVoiceEnabled ? 'voice' : 'list'); // 'voice' or 'list'
   const [foodItems, setFoodItems] = useState([]);
@@ -17,6 +18,11 @@ export function VoiceInputPanel({ disabled = false }) {
   const fileInputRef = useRef(null);
   const imagesSectionRef = useRef(null);
   const contentRef = useRef(null);
+
+  // Expose getImages to parent via ref so parent can upload on submit
+  useImperativeHandle(ref, () => ({
+    getImages: () => images,
+  }));
 
   const {
     isRecording,
@@ -85,6 +91,9 @@ export function VoiceInputPanel({ disabled = false }) {
     }
   };
 
+  // Example: get refresh token from localStorage or context
+  const refreshToken = localStorage.getItem('google_drive_refresh_token');
+
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const newImages = files.map(file => ({
@@ -94,11 +103,17 @@ export function VoiceInputPanel({ disabled = false }) {
       name: file.name
     }));
     setImages(prev => [...prev, ...newImages]);
-    
     // Scroll to images section after a short delay
     setTimeout(() => {
       imagesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, 100);
+    // Optionally, upload immediately or on submit
+    // Example: upload first image
+    if (refreshToken && newImages.length > 0) {
+      uploadImageToDrive(newImages[0].file, refreshToken)
+        .then(res => console.log('Uploaded to Drive:', res))
+        .catch(err => console.error('Drive upload error:', err));
+    }
   };
 
   const handleRemoveImage = (id) => {
@@ -341,6 +356,6 @@ export function VoiceInputPanel({ disabled = false }) {
       )}
     </div>
   );
-}
+});
 
 export default VoiceInputPanel;
