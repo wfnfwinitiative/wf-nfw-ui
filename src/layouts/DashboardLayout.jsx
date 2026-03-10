@@ -23,9 +23,9 @@ export const DashboardLayout = () => {
     ],
     coordinator: [
       { icon: Home, label: 'Dashboard', path: '/coordinator/dashboard' },
-      { icon: Truck, label: 'Create Pickup', path: '/coordinator/create-pickup' },
-      { icon: Users, label: 'Driver Status', path: '/coordinator/drivers' },
-      { icon: FileCheck, label: 'Verifications', path: '/verification' }
+      { icon: Truck, label: 'Create Opportunity', path: '/coordinator/create-opportunity' },
+      // { icon: Users, label: 'Driver Status', path: '/coordinator/drivers' },
+      { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' }
     ],
     driver: [
       { icon: Home, label: 'Dashboard', path: '/driver/dashboard' },

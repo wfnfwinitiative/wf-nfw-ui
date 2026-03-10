@@ -10,31 +10,31 @@ export const CoordinatorDashboard = () => {
       <HeroBanner />
       <div className="mb-6 md:mb-8">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark mb-1 md:mb-2">Coordinator Dashboard</h1>
-        <p className="text-sm md:text-base text-ngo-gray">Manage pickups and operations</p>
+        <p className="text-sm md:text-base text-ngo-gray">Manage opportunities and operations</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <TileCard
           icon={Truck}
-          title="Create Pickup"
-          description="Schedule new food pickup and assign drivers"
-          to="/coordinator/create-pickup"
+          title="Create Opportunity"
+          description="Schedule new opportunity and assign drivers"
+          to="/coordinator/create-opportunity"
           color="orange"
         />
 
-        <TileCard
+        {/* <TileCard
           icon={Users}
           title="Driver Status"
           description="View active drivers and their current tasks"
           to="/coordinator/drivers"
           color="green"
-        />
+        /> */}
 
         <TileCard
           icon={FileCheck}
-          title="Pending Verifications"
-          description="Review submitted pickup proofs"
-          to="/verification"
+          title="Review Opportunities"
+          description="Review submitted opportunity proofs"
+          to="/coordinator/review-opportunities"
           color="blue"
         />
       </div>
