@@ -1,10 +1,10 @@
-import { backendApi } from './apiClient';
+import { serviceApi } from './apiClient';
 import config from '../../config';
 
 export const hungerSpotApi = {
     async getHungerSpot(){
         try {
-            const response = await backendApi.get('/api/hunger-spots/');
+            const response = await serviceApi.get('/api/hunger-spots/');
             console.log('Hunger Spot API Response:', response);
             
             let data = [];

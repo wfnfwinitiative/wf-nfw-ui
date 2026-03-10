@@ -1,10 +1,10 @@
-import { backendApi } from './apiClient';
+import { serviceApi } from './apiClient';
 import config from '../../config';
 
 export const opportunityApi = {
     async createOpportunity(opportunityData) {
         try {
-            const response = await backendApi.post('/api/opportunities/', opportunityData);
+            const response = await serviceApi.post('/api/opportunities/', opportunityData);
             console.log('Create Opportunity Response:', response);
             
             return response;
@@ -16,7 +16,7 @@ export const opportunityApi = {
 
     async getOpportunities() {
         try {
-            const response = await backendApi.get('/api/opportunities/');
+            const response = await serviceApi.get('/api/opportunities/');
             console.log('Opportunities API Response:', response);
             
             let data = [];

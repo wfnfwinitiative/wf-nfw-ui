@@ -1,11 +1,11 @@
-import { backendApi } from './apiClient';
+import { serviceApi } from './apiClient';
 import config from '../../config';
 
 export const UserApi = {
-    async getDrivers(){
+    async getUserByRole(role){
         try {
-            const response = await backendApi.get('/api/users/get-drivers');
-            console.log('Drivers API Response:', response);
+            const response = await serviceApi.get(`/api/users/by-role/${role}`);
+            console.log(`Users API Response for role ${role}:`, response);
             
             let data = [];
             
@@ -19,17 +19,17 @@ export const UserApi = {
             }
             
             // Transform API response fields to component expected fields
-            return data.map(driver => ({
-                id: driver.user_id || driver.id,
-                name: driver.name,
-                phone: driver.mobile_number,
-                status: driver.is_active ? 'active' : 'inactive',
-                isActive: driver.is_active,
-                createdAt: driver.created_at,
-                ...driver // Include all original fields
+            return data.map(user => ({
+                id: user.user_id || user.id,
+                name: user.name,
+                phone: user.mobile_number,
+                status: user.is_active ? 'active' : 'inactive',
+                isActive: user.is_active,
+                createdAt: user.created_at,
+                ...user // Include all original fields
             }));
         } catch (error) {
-            console.error('Error fetching drivers:', error);
+            console.error(`Error fetching users for role ${role}:`, error);
             throw error;
         }
     }

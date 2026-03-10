@@ -55,6 +55,8 @@ function App() {
             <Route path="dashboard" element={<CoordinatorDashboard />} />
             <Route path="create-opportunity" element={<CreatePickup />} />
             <Route path="drivers" element={<CoordinatorDrivers />} />
+            <Route path="review-opportunities" element={<Verification />} />
+            <Route path="review-opportunities/:id" element={<VerificationDetail />} />
           </Route>
 
           <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DashboardLayout /></RoleGuard>}>

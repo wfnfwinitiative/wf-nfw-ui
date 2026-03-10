@@ -2,7 +2,7 @@ import ApiClient from './apiClient';
 import config from '../../config';
 
 // API client for backend auth services
-const backendApi = new ApiClient(config.backendServiceUrl);
+const serviceApi = new ApiClient(config.backendServiceUrl);
 
 /**
  * Auth Service
@@ -16,7 +16,7 @@ export const authService = {
    * @returns {Promise<{access_token: string, token_type: string}>}
    */
   async login(mobileNumber, password) {
-    return backendApi.post('/api/auth/login', {
+    return serviceApi.post('/api/auth/login', {
       mobile_number: mobileNumber,
       password: password,
     });

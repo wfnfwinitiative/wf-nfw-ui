@@ -1,10 +1,10 @@
-import { backendApi } from './apiClient';
+import { serviceApi } from './apiClient';
 import config from '../../config';
 
 export const VehicleApi = {
     async getVehicles(){
         try {
-            const response = await backendApi.get('/api/vehicles/');
+            const response = await serviceApi.get('/api/vehicles/');
             console.log('Vehicles API Response:', response);
             
             let data = [];

@@ -1,10 +1,10 @@
-import { backendApi } from './apiClient';
+import { serviceApi } from './apiClient';
 import config from '../../config';
 
 export const donorApi = {
     async getDonors(){
         try {
-            const response = await backendApi.get('/api/donors/');
+            const response = await serviceApi.get('/api/donors/');
             console.log('Donors API Response:', response);
             
             let data = [];

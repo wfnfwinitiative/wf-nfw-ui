@@ -8,6 +8,7 @@ import { donorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
 import { opportunityApi } from '../../services/api/oppurtunityService';
+import { DRIVER } from '../../constants';
 
 export const CreatePickup = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ export const CreatePickup = () => {
       const [pickup, hunger, driversData, tranportations] = await Promise.all([
         donorApi.getDonors(),
         hungerSpotApi.getHungerSpot(),
-        UserApi.getDrivers(),
+        UserApi.getUserByRole(DRIVER),
         VehicleApi.getVehicles()
       ]);
       console.log(hunger)
@@ -80,7 +81,8 @@ export const CreatePickup = () => {
       pickup_eta: new Date(formData.scheduledDateTime).toISOString(),
       delivery_by: new Date(formData.scheduledDateTime).toISOString(),
       notes: formData.notes || '',
-      image_link: ''
+      image_link: '',
+      creator_id: 2, // This should ideally come from the logged-in user context
     };
   };
 
