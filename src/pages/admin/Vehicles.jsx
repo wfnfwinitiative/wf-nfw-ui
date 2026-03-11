@@ -4,6 +4,7 @@ import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { mockApi } from '../../services/mockApi';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
+import { validateVehicleNumber } from '../../utils/validation';
 import { Plus, X } from 'lucide-react';
 
 const emptyForm = { number: '', type: 'Van', capacity: '' };
@@ -13,6 +14,7 @@ export const Vehicles = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState({ number: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -57,6 +59,7 @@ export const Vehicles = () => {
   const openAdd = () => {
     setEditingId(null);
     setFormData(emptyForm);
+    setFieldErrors({ number: '' });
     setShowForm(true);
   };
 
@@ -67,11 +70,24 @@ export const Vehicles = () => {
       type: row.type ?? 'Van',
       capacity: row.capacity ?? ''
     });
+    setFieldErrors({ number: '' });
     setShowForm(true);
+  };
+
+  const getSubmitDisabled = () => {
+    const numberResult = validateVehicleNumber(formData.number);
+    if (!numberResult.valid) return true;
+    if (!formData.capacity.trim()) return true;
+    return false;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = { number: '' };
+    const numberResult = validateVehicleNumber(formData.number);
+    if (!numberResult.valid) errors.number = numberResult.message;
+    setFieldErrors(errors);
+    if (errors.number) return;
     if (editingId) {
       await mockApi.updateVehicle(editingId, formData);
     } else {
@@ -127,6 +143,7 @@ export const Vehicles = () => {
                   setShowForm(false);
                   setEditingId(null);
                   setFormData(emptyForm);
+                  setFieldErrors({ number: '' });
                 }}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200"
                 aria-label="Close"
@@ -143,13 +160,20 @@ export const Vehicles = () => {
                 <input
                   type="text"
                   value={formData.number}
-                  onChange={(e) =>
-                    setFormData({ ...formData, number: e.target.value })
-                  }
-                  placeholder="e.g., DL-01-AB-1234"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-                  required
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^[a-zA-Z0-9]*$/.test(val) && val.length <= 8)
+                      setFormData({ ...formData, number: val });
+                  }}
+                  maxLength={8}
+                  placeholder="e.g. AB12CD34"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.number ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                {fieldErrors.number && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.number}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -167,6 +191,7 @@ export const Vehicles = () => {
                   <option value="Truck">Truck</option>
                   <option value="Bike">Bike</option>
                   <option value="Auto">Auto</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
 
@@ -180,13 +205,13 @@ export const Vehicles = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, capacity: e.target.value })
                   }
-                  placeholder="e.g., 500kg"
+                  placeholder="e.g., 500"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                   required
                 />
               </div>
 
-              <Button type="submit" variant="primary" fullWidth>
+              <Button type="submit" variant="primary" fullWidth disabled={getSubmitDisabled()}>
                 {editingId ? 'Update Vehicle' : 'Add Vehicle'}
               </Button>
             </form>

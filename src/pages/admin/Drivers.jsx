@@ -4,15 +4,17 @@ import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { mockApi } from '../../services/mockApi';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
+import { validatePassword, validatePhone } from '../../utils/validation';
 import { Plus, X } from 'lucide-react';
 
-const emptyForm = { name: '', phone: '', licenseNumber: '' };
+const emptyForm = { name: '', phone: '', password: '' };
 
 export const Drivers = () => {
   const [drivers, setDrivers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', password: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -35,7 +37,6 @@ export const Drivers = () => {
       (d) =>
         (d.name || '').toLowerCase().includes(q) ||
         (d.phone || '').toString().includes(q) ||
-        (d.licenseNumber || '').toLowerCase().includes(q) ||
         (d.status || '').toLowerCase().includes(q)
     );
   }, [drivers, searchQuery]);
@@ -57,6 +58,7 @@ export const Drivers = () => {
   const openAdd = () => {
     setEditingId(null);
     setFormData(emptyForm);
+    setFieldErrors({ name: '', phone: '', password: '' });
     setShowForm(true);
   };
 
@@ -65,17 +67,46 @@ export const Drivers = () => {
     setFormData({
       name: row.name ?? '',
       phone: row.phone ?? '',
-      licenseNumber: row.licenseNumber ?? ''
+      password: ''
     });
+    setFieldErrors({ name: '', phone: '', password: '' });
     setShowForm(true);
+  };
+
+  const getSubmitDisabled = () => {
+    if (!formData.name.trim()) return true;
+    const phoneResult = validatePhone(formData.phone, true);
+    if (!phoneResult.valid) return true;
+    if (!editingId) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) return true;
+    } else if (formData.password) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) return true;
+    }
+    return false;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = { name: '', phone: '', password: '' };
+    const phoneResult = validatePhone(formData.phone, true);
+    if (!phoneResult.valid) errors.phone = phoneResult.message;
+    if (!editingId) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) errors.password = pwdResult.message;
+    } else if (formData.password) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) errors.password = pwdResult.message;
+    }
+    setFieldErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
+    const payload = { name: formData.name, phone: formData.phone };
+    if (formData.password) payload.password = formData.password;
     if (editingId) {
-      await mockApi.updateDriver(editingId, formData);
+      await mockApi.updateDriver(editingId, payload);
     } else {
-      await mockApi.addDriver(formData);
+      await mockApi.addDriver({ ...payload, password: formData.password });
     }
     setFormData(emptyForm);
     setEditingId(null);
@@ -127,6 +158,7 @@ export const Drivers = () => {
                   setShowForm(false);
                   setEditingId(null);
                   setFormData(emptyForm);
+                  setFieldErrors({ name: '', phone: '', password: '' });
                 }}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200"
                 aria-label="Close"
@@ -160,25 +192,39 @@ export const Drivers = () => {
                       setFormData({ ...formData, phone: val });
                   }}
                   maxLength={10}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-                  required
+                  placeholder="e.g. 9876543210"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.phone ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.phone}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  License Number
+                  Password {!editingId && <span className="text-red-500">*</span>}
+                  {editingId && <span className="text-gray-500 font-normal">(leave blank to keep current)</span>}
                 </label>
                 <input
-                  type="text"
-                  value={formData.licenseNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, licenseNumber: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-                  required
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.length <= 20 && /^[a-zA-Z0-9]*$/.test(val))
+                      setFormData({ ...formData, password: val });
+                  }}
+                  maxLength={20}
+                  placeholder={editingId ? 'Leave blank to keep current' : 'Alphanumeric only, max 20 characters'}
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                {fieldErrors.password && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.password}
+                  </p>
+                )}
               </div>
-              <Button type="submit" variant="primary" fullWidth>
+              <Button type="submit" variant="primary" fullWidth disabled={getSubmitDisabled()}>
                 {editingId ? 'Update Driver' : 'Add Driver'}
               </Button>
             </form>
@@ -201,8 +247,7 @@ export const Drivers = () => {
             title={driver.name || 'Unnamed Driver'}
             status={driver.status}
             fields={[
-              { label: 'Phone', value: driver.phone, mono: true },
-              { label: 'License', value: driver.licenseNumber }
+              { label: 'Phone', value: driver.phone, mono: true }
             ]}
             onEdit={() => openEdit(driver)}
             onDelete={() => setDeleteConfirm({ open: true, id: driver.id })}

@@ -51,7 +51,7 @@ export const FeatureFlag = () => {
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 max-w-md">
         <div className="flex items-center justify-between gap-4">
           <label htmlFor="llm-toggle" className="text-base font-medium text-gray-800 dark:text-gray-200">
-            LLM Feature
+            Voice Enable
           </label>
           <button
             id="llm-toggle"

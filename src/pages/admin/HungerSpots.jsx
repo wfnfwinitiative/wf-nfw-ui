@@ -5,21 +5,18 @@ import { mockApi } from '../../services/mockApi';
 import { LocationPicker } from '../../components/location/LocationPicker';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
+import { validatePhone } from '../../utils/validation';
 import { Plus, X } from 'lucide-react';
 
 const emptyForm = {
   name: '',
   address: '',
+  city: '',
   contactName: '',
   contactNumber: '',
   lat: '',
   lng: '',
   type: 'hungerspot'
-};
-
-const validateContactNumber = (value) => {
-  if (!value || !String(value).trim()) return true;
-  return /^\d{10}$/.test(String(value).trim());
 };
 
 export const HungerSpots = () => {
@@ -28,6 +25,7 @@ export const HungerSpots = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ contactNumber: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -50,6 +48,7 @@ export const HungerSpots = () => {
       (l) =>
         (l.name || '').toLowerCase().includes(q) ||
         (l.address || '').toLowerCase().includes(q) ||
+        (l.city || '').toLowerCase().includes(q) ||
         (l.contactName || '').toLowerCase().includes(q) ||
         (l.contactNumber || l.contact || '').toString().includes(q)
     );
@@ -73,6 +72,7 @@ export const HungerSpots = () => {
     setEditingId(null);
     setFormData(emptyForm);
     setFormError('');
+    setFieldErrors({ contactNumber: '' });
     setShowForm(true);
   };
 
@@ -81,6 +81,7 @@ export const HungerSpots = () => {
     setFormData({
       name: row.name ?? '',
       address: row.address ?? '',
+      city: row.city ?? '',
       contactName: row.contactName ?? '',
       contactNumber: row.contactNumber ?? row.contact ?? '',
       lat: row.lat != null ? String(row.lat) : '',
@@ -88,24 +89,22 @@ export const HungerSpots = () => {
       type: 'hungerspot'
     });
     setFormError('');
+    setFieldErrors({ contactNumber: '' });
     setShowForm(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-    if (!validateContactNumber(formData.contactNumber)) {
-      setFormError('Contact number must be 10 digits when provided.');
-      return;
-    }
-    if (formData.lat === '' || formData.lng === '') {
-      setFormError('Please provide latitude and longitude (select a location on the map or enter them manually).');
-      return;
-    }
+    const errors = { contactNumber: '' };
+    const phoneResult = validatePhone(formData.contactNumber, false);
+    if (!phoneResult.valid) errors.contactNumber = phoneResult.message;
+    setFieldErrors(errors);
+    if (errors.contactNumber) return;
     const payload = {
       ...formData,
-      lat: formData.lat,
-      lng: formData.lng,
+      lat: formData.lat || undefined,
+      lng: formData.lng || undefined,
       contact: formData.contactNumber || formData.contact
     };
     if (editingId) {
@@ -169,6 +168,7 @@ export const HungerSpots = () => {
                   setEditingId(null);
                   setFormData(emptyForm);
                   setFormError('');
+                  setFieldErrors({ contactNumber: '' });
                 }}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200 shrink-0"
                 aria-label="Close"
@@ -183,19 +183,6 @@ export const HungerSpots = () => {
                   {formError}
                 </p>
               )}
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Location Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Rajeev Gandhi Ashram"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
-                  required
-                />
-              </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Contact Name <span className="text-gray-500 font-normal">(optional)</span>
@@ -221,13 +208,43 @@ export const HungerSpots = () => {
                       setFormData({ ...formData, contactNumber: val });
                   }}
                   maxLength={10}
-                  placeholder="10 digits"
+                  placeholder="e.g. 9876543210"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none ${fieldErrors.contactNumber ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                />
+                {fieldErrors.contactNumber && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.contactNumber}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  City <span className="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="e.g., New Delhi"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
+                />
+              </div>
+               <div>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Rajeev Gandhi Ashram"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
+                  required
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Location (search or use current location — address and coordinates auto-fill)
+                  Location <span className="text-gray-500 font-normal">(optional — address and coordinates auto-fill when selected)</span>
                 </label>
                 <LocationPicker
                   value={{
@@ -279,12 +296,7 @@ export const HungerSpots = () => {
                   </p>
                 </div>
               </div>
-              <Button
-                type="submit"
-                variant="primary"
-                fullWidth
-                disabled={formData.lat === '' || formData.lng === ''}
-              >
+              <Button type="submit" variant="primary" fullWidth>
                 {editingId ? 'Update HungerSpot' : 'Add HungerSpot'}
               </Button>
               </form>
@@ -308,6 +320,7 @@ export const HungerSpots = () => {
             title={loc.name || 'Unnamed HungerSpot'}
             fields={[
               { label: 'Address', value: loc.address },
+              { label: 'City', value: loc.city },
               { label: 'Contact Name', value: loc.contactName },
               {
                 label: 'Contact Number',

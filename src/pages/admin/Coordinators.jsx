@@ -4,9 +4,10 @@ import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { mockApi } from '../../services/mockApi';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { CoordinatorCard } from '../../components/cards/CoordinatorCard';
+import { validatePassword, validatePhone } from '../../utils/validation';
 import { Plus, X } from 'lucide-react';
 
-const emptyForm = { name: '', phone: '', email: '', role: 'coordinator' };
+const emptyForm = { name: '', phone: '', email: '', password: '', role: 'coordinator' };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,6 +17,7 @@ export const Coordinators = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', email: '', password: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -60,6 +62,7 @@ export const Coordinators = () => {
     setEditingId(null);
     setFormData(emptyForm);
     setFormError('');
+    setFieldErrors({ name: '', phone: '', email: '', password: '' });
     setShowForm(true);
   };
 
@@ -69,9 +72,11 @@ export const Coordinators = () => {
       name: row.name ?? '',
       phone: row.phone ?? '',
       email: row.email ?? '',
+      password: '',
       role: 'coordinator'
     });
     setFormError('');
+    setFieldErrors({ name: '', phone: '', email: '', password: '' });
     setShowForm(true);
   };
 
@@ -80,25 +85,54 @@ export const Coordinators = () => {
     return EMAIL_REGEX.test(email.trim());
   };
 
+  const getSubmitDisabled = () => {
+    if (!formData.name.trim()) return true;
+    const phoneResult = validatePhone(formData.phone, true);
+    if (!phoneResult.valid) return true;
+    if (!editingId) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) return true;
+    } else if (formData.password) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) return true;
+    }
+    if (formData.email.trim() && !validateEmail(formData.email)) return true;
+    return false;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-    if (!validateEmail(formData.email)) {
-      setFormError('Please enter a valid email address.');
-      return;
+    const errors = { name: '', phone: '', email: '', password: '' };
+    const phoneResult = validatePhone(formData.phone, true);
+    if (!phoneResult.valid) errors.phone = phoneResult.message;
+    if (formData.email.trim() && !validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address.';
     }
+    if (!editingId) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) errors.password = pwdResult.message;
+    } else if (formData.password) {
+      const pwdResult = validatePassword(formData.password);
+      if (!pwdResult.valid) errors.password = pwdResult.message;
+    }
+    setFieldErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
     if (editingId) {
-      await mockApi.updateUser(editingId, {
+      const updates = {
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
         role: 'coordinator'
-      });
+      };
+      if (formData.password) updates.password = formData.password;
+      await mockApi.updateUser(editingId, updates);
     } else {
       await mockApi.addUser({
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
+        password: formData.password,
         role: 'coordinator'
       });
     }
@@ -155,6 +189,7 @@ export const Coordinators = () => {
                   setEditingId(null);
                   setFormData(emptyForm);
                   setFormError('');
+                  setFieldErrors({ name: '', phone: '', email: '', password: '' });
                 }}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200"
                 aria-label="Close"
@@ -194,9 +229,14 @@ export const Coordinators = () => {
                       setFormData({ ...formData, phone: val });
                   }}
                   maxLength={10}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-                  required
+                  placeholder="e.g. 9876543210"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.phone ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.phone}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -207,10 +247,38 @@ export const Coordinators = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="e.g. coordinator@example.com"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.email ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                {fieldErrors.email && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.email}
+                  </p>
+                )}
               </div>
-              <Button type="submit" variant="primary" fullWidth>
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Password {!editingId && <span className="text-red-500">*</span>}
+                  {editingId && <span className="text-gray-500 font-normal">(leave blank to keep current)</span>}
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.length <= 20 && /^[a-zA-Z0-9]*$/.test(val))
+                      setFormData({ ...formData, password: val });
+                  }}
+                  maxLength={20}
+                  placeholder={editingId ? 'Leave blank to keep current' : 'Alphanumeric only, max 20 characters'}
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                />
+                {fieldErrors.password && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.password}
+                  </p>
+                )}
+              </div>
+              <Button type="submit" variant="primary" fullWidth disabled={getSubmitDisabled()}>
                 {editingId ? 'Update Coordinator' : 'Add Coordinator'}
               </Button>
             </form>
