@@ -97,13 +97,17 @@ class ApiClient {
   }
 }
 
+export const serviceApi = new ApiClient(config.serviceUrl, {
+  timeout: 60000, // 60 seconds for file uploads
+});
+
 // Pre-configured API clients for different services -- Need to rename
 export const llmApi = new ApiClient(config.llmServiceUrl, {
   timeout: 60000, // 60 seconds for audio processing
 });
 
 // Add more API clients as needed
-// export const backendApi = new ApiClient(config.backendUrl);
+// export const backendApi = new ApiClient(config.backendServiceUrl);
 // export const authApi = new ApiClient(config.authServiceUrl);
 
 export default ApiClient;
