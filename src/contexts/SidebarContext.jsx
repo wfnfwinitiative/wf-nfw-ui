@@ -8,6 +8,8 @@ const getStored = () => {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v === 'true') return true;
     if (v === 'false') return false;
+    // No stored value: default to open (sidebar open by default after login)
+    return true;
   } catch (_) {}
   return true;
 };

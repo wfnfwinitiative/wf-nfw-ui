@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { useSidebar } from '../../contexts/SidebarContext';
 import { Logo } from '../../components/Logo';
 import { Phone, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -11,6 +12,7 @@ export const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { setSidebarOpen } = useSidebar();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -20,6 +22,7 @@ export const Login = () => {
 
     try {
       const user = await login(phone, password);
+      setSidebarOpen(true);
       navigate(`/${user.role}/dashboard`);
     } catch (err) {
       setError(err.message);
