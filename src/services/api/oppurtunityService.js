@@ -35,5 +35,21 @@ export const opportunityApi = {
             console.error('Error fetching opportunities:', error);
             throw error;
         }
+    },
+
+    async getOpportunityById(id) {
+        try {
+            const response = await serviceApi.get(`/api/opportunities/${id}`);
+            console.log('Opportunity Detail API Response:', response);
+            
+            // Handle different response formats
+            if (response.data) {
+                return response.data;
+            }
+            return response;
+        } catch (error) {
+            console.error('Error fetching opportunity by id:', error);
+            throw error;
+        }
     }
 }
