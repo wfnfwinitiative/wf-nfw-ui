@@ -26,6 +26,8 @@ import { CoordinatorDrivers } from './pages/coordinator/CoordinatorDrivers';
 import { DriverDashboard } from './pages/driver/DriverDashboard';
 import { TaskDetail } from './pages/driver/TaskDetail';
 
+import { ReviewOpportunities } from './pages/reviewOpportunities/ReviewOpportunities';
+import { ReviewOpportunityDetail } from './pages/reviewOpportunities/ReviewOpportunityDetail';
 import { Verification } from './pages/verification/Verification';
 import { VerificationDetail } from './pages/verification/VerificationDetail';
 import { Profile } from './pages/profile/Profile';
@@ -57,8 +59,8 @@ function App() {
             <Route path="dashboard" element={<CoordinatorDashboard />} />
             <Route path="create-opportunity" element={<CreatePickup />} />
             <Route path="drivers" element={<CoordinatorDrivers />} />
-            <Route path="review-opportunities" element={<Verification />} />
-            <Route path="review-opportunities/:id" element={<VerificationDetail />} />
+            <Route path="review-opportunities" element={<ReviewOpportunities />} />
+            <Route path="review-opportunities/:id" element={<ReviewOpportunityDetail />} />
           </Route>
 
           <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DashboardLayout /></RoleGuard>}>
