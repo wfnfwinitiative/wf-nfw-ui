@@ -4,6 +4,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
+import { ReviewOpportunitiesProvider } from './contexts/ReviewOpportunitiesContext';
 import { RoleGuard } from './auth/RoleGuard';
 import { DashboardLayout } from './layouts/DashboardLayout';
 
@@ -37,8 +38,9 @@ function App() {
     <AuthProvider>
       <ThemeProvider>
         <FeatureFlagsProvider>
-          <BrowserRouter>
-            <SidebarProvider>
+          <ReviewOpportunitiesProvider>
+            <BrowserRouter>
+              <SidebarProvider>
               <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -83,6 +85,7 @@ function App() {
           </Routes>
             </SidebarProvider>
           </BrowserRouter>
+        </ReviewOpportunitiesProvider>
         </FeatureFlagsProvider>
       </ThemeProvider>
     </AuthProvider>

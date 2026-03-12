@@ -7,11 +7,13 @@ import { hungerSpotApi } from '../../services/api/hungerSpotService';
 import { donorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
+import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { DRIVER } from '../../constants';
 
 export const ReviewOpportunityDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { metadata } = useReviewOpportunitiesMetadata();
   const [opportunity, setOpportunity] = useState(null);
   const [pickupLocations, setPickupLocations] = useState([]);
   const [hungerSpots, setHungerSpots] = useState([]);
@@ -47,15 +49,22 @@ export const ReviewOpportunityDetail = () => {
   };
 
   useEffect(() => {
-    // if metadata provided from list page, use it
-    const meta = location.state?.metadata || {};
-    if (meta.pickupLocations) setPickupLocations(meta.pickupLocations);
-    if (meta.hungerSpots) setHungerSpots(meta.hungerSpots);
-    if (meta.drivers) setDrivers(meta.drivers);
-    if (meta.vehicles) setVehicles(meta.vehicles);
+    // use metadata from context if available
+    if (metadata?.pickupLocations?.length > 0) {
+      setPickupLocations(metadata.pickupLocations);
+    }
+    if (metadata?.hungerSpots?.length > 0) {
+      setHungerSpots(metadata.hungerSpots);
+    }
+    if (metadata?.drivers?.length > 0) {
+      setDrivers(metadata.drivers);
+    }
+    if (metadata?.vehicles?.length > 0) {
+      setVehicles(metadata.vehicles);
+    }
 
     loadData();
-  }, [id, location.state]);
+  }, [id]);
 
   const loadData = async () => {
     try {

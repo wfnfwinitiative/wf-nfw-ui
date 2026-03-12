@@ -8,11 +8,13 @@ import { hungerSpotApi } from '../../services/api/hungerSpotService';
 import { donorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
+import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
 import { Edit } from 'lucide-react';
 
 export const ReviewOpportunities = () => {
   const navigate = useNavigate();
+  const { updateMetadata } = useReviewOpportunitiesMetadata();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +50,14 @@ export const ReviewOpportunities = () => {
       const activeDrivers = (driversData || []).filter((d) => d.status === 'active');
       setDrivers(activeDrivers);
       setVehicles(vehiclesData || []);
+
+      // update global metadata context so detail page can access it
+      updateMetadata({
+        pickupLocations: pickup || [],
+        hungerSpots: hunger || [],
+        drivers: activeDrivers,
+        vehicles: vehiclesData || [],
+      });
 
       // enrich items by matching IDs against metadata
       const enriched = (data || []).map((o) => {
@@ -121,12 +131,8 @@ export const ReviewOpportunities = () => {
   }, [searchQuery, fromDate, toDate, statusFilter]);
 
   const handleEdit = (opportunity) => {
-    // pass metadata along so detail page doesn't need to re-fetch
-    navigate(`/coordinator/review-opportunities/${opportunity.opportunity_id}`, {
-      state: {
-        metadata: { pickupLocations, hungerSpots, drivers, vehicles },
-      },
-    });
+    // navigate to detail page (metadata is available via context)
+    navigate(`/coordinator/review-opportunities/${opportunity.opportunity_id}`);
   };
 
   if (loading) {
