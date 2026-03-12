@@ -5,11 +5,13 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
 import { Menu, X, Home, Users, Truck, MapPin, FileCheck } from 'lucide-react';
+import { ToastContainer, useToast } from '../components/common/Toast';
 
 export const DashboardLayout = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isSidebarOpen, setSidebarOpen } = useSidebar();
+  const { toasts, removeToast } = useToast();
 
   const menuItems = {
     admin: [
@@ -91,6 +93,8 @@ export const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };
