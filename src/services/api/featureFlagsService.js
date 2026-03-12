@@ -1,8 +1,4 @@
-import ApiClient from './apiClient';
-import config from '../../config';
-
-// API client for backend services
-const serviceApi = new ApiClient(config.backendServiceUrl);
+import { serviceApi } from './apiClient';
 
 /**
  * Feature Flags Service

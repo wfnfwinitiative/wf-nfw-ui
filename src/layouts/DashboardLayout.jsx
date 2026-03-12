@@ -4,8 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
+import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag  } from 'lucide-react';
 import { ToastContainer, useToast } from '../components/common/Toast';
-import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag } from 'lucide-react';
 
 export const DashboardLayout = () => {
   const { user } = useAuth();

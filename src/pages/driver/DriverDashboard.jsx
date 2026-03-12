@@ -1,57 +1,87 @@
-import React from 'react';
-import { Truck, Clock, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Truck, Clock, Check, List } from 'lucide-react';
 import { DriverAssignmentsGrid } from './DriverAssignmentsGrid';
-
 import { HeroBanner } from '../../components/common';
 
+const FILTERS = [
+  {
+    key: 'all',
+    label: 'All Assignments',
+    icon: List,
+    color: 'bg-gray-100',
+    iconColor: 'text-gray-600',
+    statuses: null,
+  },
+  {
+    key: 'assigned',
+    label: 'Active Pickups',
+    icon: Truck,
+    color: 'bg-orange-100',
+    iconColor: 'text-orange-600',
+    statuses: ['assigned'],
+  },
+  {
+    key: 'reached',
+    label: 'In Progress',
+    icon: Clock,
+    color: 'bg-blue-100',
+    iconColor: 'text-blue-600',
+    statuses: ['reached', 'submitted'],
+  },
+  {
+    key: 'delivered',
+    label: 'Delivered',
+    icon: Check,
+    color: 'bg-green-100',
+    iconColor: 'text-green-600',
+    statuses: ['delivered', 'verified'],
+  },
+];
+
 export const DriverDashboard = () => {
+  const [activeFilter, setActiveFilter] = useState('all');
+
   return (
-    <div>
+    <div className="space-y-6">
       <HeroBanner />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Active Pickups</p>
-              <p className="text-3xl font-bold text-gray-900">3</p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <Truck className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">In Progress</p>
-              <p className="text-3xl font-bold text-gray-900">1</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Clock className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Completed Today</p>
-              <p className="text-3xl font-bold text-gray-900">2</p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Check className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
+      {/* Filter Cards */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {FILTERS.map((filter) => {
+          const Icon = filter.icon;
+          const isActive = activeFilter === filter.key;
+          return (
+            <button
+              key={filter.key}
+              onClick={() => setActiveFilter(filter.key)}
+              className={`bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border text-left w-full transition-all ${
+                isActive
+                  ? 'border-primary-500 ring-2 ring-primary-200'
+                  : 'border-gray-100 hover:shadow-lg hover:border-gray-200'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <div className={`w-10 h-10 md:w-12 md:h-12 ${filter.color} rounded-xl flex items-center justify-center`}>
+                  <Icon className={`w-5 h-5 md:w-6 md:h-6 ${filter.iconColor}`} />
+                </div>
+                {isActive && (
+                  <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                    Active
+                  </span>
+                )}
+              </div>
+              <p className="text-sm md:text-base font-medium text-gray-600">{filter.label}</p>
+            </button>
+          );
+        })}
       </div>
 
       {/* Assignments Grid */}
       <div>
-        <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Your Assignments</h2>
-        <DriverAssignmentsGrid />
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
+          {FILTERS.find((f) => f.key === activeFilter)?.label ?? 'Your Assignments'}
+        </h2>
+        <DriverAssignmentsGrid statusFilter={FILTERS.find((f) => f.key === activeFilter)?.statuses} />
       </div>
     </div>
   );
