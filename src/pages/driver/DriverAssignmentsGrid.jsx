@@ -55,7 +55,7 @@ const normalizeOpportunity = (opp) => ({
   timeline: [],
 });
 
-export function DriverAssignmentsGrid() {
+export function DriverAssignmentsGrid({ statusFilter = null }) {
   const { user } = useAuth();
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -131,9 +131,10 @@ export function DriverAssignmentsGrid() {
     );
   }
 
-  const activeAssignments = assignments.filter(
-    (a) => !['verified'].includes(a.status)
-  );
+  const activeAssignments = assignments.filter((a) => {
+    if (statusFilter) return statusFilter.includes(a.status);
+    return !['verified', 'closed', 'rejected', 'cancelled'].includes(a.status);
+  });
 
   if (activeAssignments.length === 0) {
     return (
