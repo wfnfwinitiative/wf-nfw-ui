@@ -28,6 +28,7 @@ export const VoiceInputPanel = forwardRef(function VoiceInputPanel(
     apiError,
     recordingError,
     lastTranscript,
+    elapsedSeconds,
     toggleRecording,
   } = useVoiceInput();
 
@@ -90,6 +91,7 @@ export const VoiceInputPanel = forwardRef(function VoiceInputPanel(
             recordingError={recordingError}
             lastTranscript={lastTranscript}
             foodItemCount={foodItems.length}
+            elapsedSeconds={elapsedSeconds}
             disabled={disabled}
             onToggleRecording={toggleRecording}
             onViewItems={() => setView('list')}

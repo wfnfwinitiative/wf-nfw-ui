@@ -1,5 +1,13 @@
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 
+const MAX_SECONDS = 60;
+
+function formatDuration(secs) {
+  const m = Math.floor(secs / 60).toString().padStart(2, '0');
+  const s = (secs % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 /**
  * Pure UI component for the voice recording screen.
  * All logic lives in the useVoiceInput hook.
@@ -11,10 +19,17 @@ export function VoiceRecordView({
   recordingError,
   lastTranscript,
   foodItemCount,
+  elapsedSeconds = 0,
   disabled,
   onToggleRecording,
   onViewItems,
 }) {
+  const remaining = MAX_SECONDS - elapsedSeconds;
+  const timerColor =
+    elapsedSeconds >= 55 ? 'text-red-600 font-bold' :
+    elapsedSeconds >= 50 ? 'text-orange-500 font-semibold' :
+    'text-gray-500';
+
   return (
     <div className="flex flex-col items-center justify-center min-h-100 space-y-6">
       <p className="text-lg text-gray-600 text-center">
@@ -47,6 +62,18 @@ export function VoiceRecordView({
           <Mic className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 text-white" />
         )}
       </button>
+
+      {/* Live timer shown only while recording */}
+      {isRecording && (
+        <div className="flex flex-col items-center gap-1">
+          <span className={`text-2xl tabular-nums ${timerColor}`}>
+            {formatDuration(elapsedSeconds)}
+          </span>
+          <span className="text-xs text-gray-400">
+            {remaining <= 10 ? `⚠️ ${remaining}s left` : `Max ${MAX_SECONDS}s`}
+          </span>
+        </div>
+      )}
 
       <p className="text-sm text-gray-500">
         {isRecording
