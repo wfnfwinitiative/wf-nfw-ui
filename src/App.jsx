@@ -17,6 +17,7 @@ import { Drivers } from './pages/admin/Drivers';
 import { Vehicles } from './pages/admin/Vehicles';
 import { PickupLocations } from './pages/admin/PickupLocations';
 import { HungerSpots } from './pages/admin/HungerSpots';
+import { FeatureFlag } from './pages/admin/FeatureFlag';
 
 import { CoordinatorDashboard } from './pages/coordinator/CoordinatorDashboard';
 import { CreatePickup } from './pages/coordinator/CreatePickup';
@@ -48,13 +49,16 @@ function App() {
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="pickup-locations" element={<PickupLocations />} />
             <Route path="hungerspots" element={<HungerSpots />} />
+            <Route path="feature-flag" element={<FeatureFlag />} />
             <Route path="settings" element={<div className="text-center py-12 text-ngo-gray">Settings page coming soon...</div>} />
           </Route>
 
           <Route path="/coordinator" element={<RoleGuard allowedRoles={['coordinator']}><DashboardLayout /></RoleGuard>}>
             <Route path="dashboard" element={<CoordinatorDashboard />} />
-            <Route path="create-pickup" element={<CreatePickup />} />
+            <Route path="create-opportunity" element={<CreatePickup />} />
             <Route path="drivers" element={<CoordinatorDrivers />} />
+            <Route path="review-opportunities" element={<Verification />} />
+            <Route path="review-opportunities/:id" element={<VerificationDetail />} />
           </Route>
 
           <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DashboardLayout /></RoleGuard>}>
