@@ -4,8 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
+import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag  } from 'lucide-react';
 import { ToastContainer, useToast } from '../components/common/Toast';
-import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag } from 'lucide-react';
 
 export const DashboardLayout = () => {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ export const DashboardLayout = () => {
       { icon: Users, label: 'Coordinators', path: '/admin/coordinators' },
       { icon: Truck, label: 'Drivers', path: '/admin/drivers' },
       { icon: Truck, label: 'Vehicles', path: '/admin/vehicles' },
-      { icon: MapPin, label: 'Pickup Locations', path: '/admin/pickup-locations' },
+      { icon: MapPin, label: 'Donors', path: '/admin/pickup-locations' },
       { icon: MapPin, label: 'HungerSpots', path: '/admin/hungerspots' },
       { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
       { icon: FileCheck, label: 'Verifications', path: '/verification' }

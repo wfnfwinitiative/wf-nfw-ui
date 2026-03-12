@@ -15,7 +15,9 @@ export function FeatureFlagsProvider({ children }) {
     try {
       setLoading(true);
       setError(null);
-      const flagsList = await featureFlagsService.getAllFlags();
+      const data = await featureFlagsService.getAllFlags();
+      // Defensively handle cases where the API might not return an array
+      const flagsList = Array.isArray(data) ? data : [];
       
       // Convert array to object for easier lookup
       const flagsMap = {};
