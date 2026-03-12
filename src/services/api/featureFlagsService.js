@@ -23,7 +23,10 @@ export const featureFlagsService = {
    * Update a feature flag (Admin only)
    */
   async updateFlag(feature_flag_name, enabled) {
-    return serviceApi.put(`/api/feature-flags/${feature_flag_name.name}`, { enabled });
+    // The previous implementation using query parameters resulted in a 404.
+    // This updates the endpoint to use a path parameter, which is consistent
+    // with the getFlagByName and deleteFlag methods in this service.
+    return serviceApi.patch(`/api/feature-flags/${feature_flag_name}`, { enabled });
   },
 
   /**
@@ -44,6 +47,8 @@ export const featureFlagsService = {
 // Feature flag names constants
 export const FEATURE_FLAGS = {
   VOICE_SUPPORT: 'voice_support',
+  GOOGLE_IMAGE_UPLOAD: 'google_image_upload'
+
 };
     
 export default featureFlagsService;

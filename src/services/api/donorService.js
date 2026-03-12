@@ -1,7 +1,7 @@
 import { serviceApi } from './apiClient';
 import config from '../../config';
 
-export const donorApi = {
+export const DonorApi = {
     async getDonors(){
         try {
             const response = await serviceApi.get('/api/donors/');
@@ -34,5 +34,38 @@ export const donorApi = {
             console.error('Error fetching donors:', error);
             throw error;
         }
-    }
+    },
+
+    async createDonor(data) {
+        try {
+            const response = await serviceApi.post('/api/donors/', data);
+            console.log('Donor created:', response);
+            return response;
+        } catch (error) {
+            console.error('Error creating Donor:', error);
+            throw error;
+        }
+    },
+
+    async updateDonor(donorid, data) {
+        try {
+            const response = await serviceApi.patch(`/api/donors/${donorid}`, data);
+            console.log(`Donor ${donorid} updated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error updating Donor ${donorid}:`, error);
+            throw error;
+        }
+    },
+
+    async deleteDonor(donorid) {
+        try {
+            const response = await serviceApi.delete(`/api/donors/${donorid}`);
+            console.log(`Donor ${donorid} deleted:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error deleting donor ${donorid}:`, error);
+            throw error;
+        }
+    },
 }

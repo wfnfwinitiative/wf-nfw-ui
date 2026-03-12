@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
-import { mockApi } from '../../services/mockApi';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { CoordinatorCard } from '../../components/cards/CoordinatorCard';
 import { validatePassword, validatePhone } from '../../utils/validation';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Loader2 } from 'lucide-react';
+import { UserApi } from '../../services/api/userService';
 
-const emptyForm = { name: '', phone: '', email: '', password: '', role: 'coordinator' };
+const emptyForm = { name: '', phone: '', email: '', password: '', role: 'COORDINATOR' };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const Coordinators = () => {
+  const [pageError, setPageError] = useState('');
   const [coordinators, setCoordinators] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -22,14 +24,31 @@ export const Coordinators = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadCoordinators();
   }, []);
 
   const loadCoordinators = async () => {
-    const users = await mockApi.getUsers();
-    setCoordinators(users.filter((u) => u.role === 'coordinator'));
+    setLoading(true);
+    try {
+      const users = await UserApi.getUserByRole('COORDINATOR');
+      const coordinatorsData = users
+        .filter((u) => u.roles && u.roles.includes('COORDINATOR'))
+        .map((u) => ({
+          id: u.user_id,
+          name: u.name,
+          phone: u.mobile_number,
+          email: u.email || '',
+        }));
+      setCoordinators(coordinatorsData);
+    } catch (error) {
+      console.error('Failed to load coordinators:', error);
+      setCoordinators([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -73,7 +92,7 @@ export const Coordinators = () => {
       phone: row.phone ?? '',
       email: row.email ?? '',
       password: '',
-      role: 'coordinator'
+      role: 'COORDINATOR'
     });
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -118,37 +137,67 @@ export const Coordinators = () => {
     }
     setFieldErrors(errors);
     if (Object.values(errors).some(Boolean)) return;
-    if (editingId) {
-      const updates = {
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        role: 'coordinator'
-      };
-      if (formData.password) updates.password = formData.password;
-      await mockApi.updateUser(editingId, updates);
-    } else {
-      await mockApi.addUser({
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        password: formData.password,
-        role: 'coordinator'
-      });
+
+    try {
+      if (editingId) {
+        const payload = {
+          name: formData.name,
+          mobile_number: formData.phone,
+        };
+        if (formData.email) {
+          payload.email = formData.email;
+        }
+        if (formData.password) {
+          payload.password = formData.password;
+        }
+        const response = await UserApi.updateCoordinator(editingId, payload);
+        setSuccessMessage(typeof response === 'string' ? response : 'Coordinator updated successfully.');
+        setTimeout(() => setSuccessMessage(''), 5000);
+      } else {
+        const payload = {
+          name: formData.name,
+          mobile_number: formData.phone,
+          password: formData.password,
+          role_name: 'COORDINATOR',
+        };
+        await UserApi.createCoordinator(payload);
+        setSuccessMessage('Coordinator created successfully.');
+        setTimeout(() => setSuccessMessage(''), 5000);
+      }
+      setFormData(emptyForm);
+      setEditingId(null);
+      setShowForm(false);
+      loadCoordinators();
+    } catch (error) {
+      console.error('Failed to save coordinator:', error);
+      const errorMessage =
+        (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while saving.';
+      setFormError(errorMessage);
     }
-    setFormData(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-    loadCoordinators();
   };
 
   const handleDeleteClick = (id) => setDeleteConfirm({ open: true, id });
 
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
-    await mockApi.deleteUser(deleteConfirm.id);
-    setDeleteConfirm({ open: false, id: null });
-    loadCoordinators();
+    try {
+      const response = await UserApi.deleteCoordinator(deleteConfirm.id);
+      setSuccessMessage(typeof response === 'string' ? response : 'Coordinator deleted successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+      loadCoordinators();
+    } catch (error) {
+      console.error('Failed to delete coordinator:', error);
+      const errorMessage =
+        (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while deleting.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+    }
   };
 
   return (
@@ -160,6 +209,17 @@ export const Coordinators = () => {
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
           Manage coordinator accounts
         </p>
+
+        {successMessage && (
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+            <p>{successMessage}</p>
+          </div>
+        )}
+        {pageError && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+            <p>{pageError}</p>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
           <SearchBar
@@ -294,25 +354,33 @@ export const Coordinators = () => {
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {paginated.map((coordinator) => (
-          <CoordinatorCard
-            key={coordinator.id}
-            coordinator={coordinator}
-            onEdit={() => openEdit(coordinator)}
-            onDelete={() => handleDeleteClick(coordinator.id)}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center p-16">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {paginated.map((coordinator) => (
+              <CoordinatorCard
+                key={coordinator.id}
+                coordinator={coordinator}
+                onEdit={() => openEdit(coordinator)}
+                onDelete={() => handleDeleteClick(coordinator.id)}
+              />
+            ))}
+          </div>
 
-      <div className="mt-6">
-        <Pagination
-          totalItems={sorted.length}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          itemsPerPage={ITEMS_PER_PAGE}
-        />
-      </div>
+          <div className="mt-6">
+            <Pagination
+              totalItems={sorted.length}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };
