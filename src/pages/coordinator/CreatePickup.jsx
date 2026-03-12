@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockApi } from '../../services/mockApi';
-import { hungerSpotApi } from '../../services/api/hungerSpotService';
+import { HungerSpotApi } from '../../services/api/hungerSpotService';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { donorApi } from '../../services/api/donorService';
+import { DonorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
 import { opportunityApi } from '../../services/api/oppurtunityService';
@@ -17,6 +17,7 @@ export const CreatePickup = () => {
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Initialize with current timestamp
@@ -46,20 +47,18 @@ export const CreatePickup = () => {
   };
 
   useEffect(() => {
-    console.log('Pre-loading')
     loadData();
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
-      console.log('===')
       const [pickup, hunger, driversData, tranportations] = await Promise.all([
-        donorApi.getDonors(),
-        hungerSpotApi.getHungerSpot(),
+        DonorApi.getDonors(),
+        HungerSpotApi.getHungerSpot(),
         UserApi.getUserByRole(DRIVER),
         VehicleApi.getVehicles()
       ]);
-      console.log(hunger)
       setPickupLocations(pickup || []);
       setHungerSpots(hunger || []);
       setVehicles(tranportations);
@@ -67,6 +66,8 @@ export const CreatePickup = () => {
     } catch (err) {
       console.error('Error loading data:', err);
       setError(err.message || 'Failed to load data');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,6 +103,14 @@ export const CreatePickup = () => {
       setError('Failed to create opportunity. Please try again.');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto text-center p-8">
+        <p className="text-gray-500">Loading form data...</p>
+      </div>
+    );
+  }
 
   if (success) {
     return (

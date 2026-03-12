@@ -32,5 +32,72 @@ export const UserApi = {
             console.error(`Error fetching users for role ${role}:`, error);
             throw error;
         }
-    }
+    },
+
+    async createCoordinator(data) {
+        try {
+            const response = await serviceApi.post('/api/users/', data);
+            console.log('Coordinator created:', response);
+            return response;
+        } catch (error) {
+            console.error('Error creating coordinator:', error);
+            throw error;
+        }
+    },
+
+    async updateCoordinator(userid, data) {
+        try {
+            const response = await serviceApi.patch(`/api/users/${userid}`, data);
+            console.log(`Coordinator ${userid} updated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error updating coordinator ${userid}:`, error);
+            throw error;
+        }
+    },
+
+    async deleteCoordinator(userid) {
+        try {
+            const response = await serviceApi.delete(`/api/users/${userid}`);
+            console.log(`Coordinator ${userid} deleted:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error deleting coordinator ${userid}:`, error);
+            throw error;
+        }
+    },
+
+
+    async createDriver(data) {
+        try {
+            const response = await serviceApi.post('/api/users/', data);
+            console.log('Driver created:', response);
+            return response;
+        } catch (error) {
+            console.error('Error creating Driver:', error);
+            throw error;
+        }
+    },
+
+    async updateDriver(userid, data) {
+        try {
+            const response = await serviceApi.patch(`/api/users/${userid}`, data);
+            console.log(`Driver ${userid} updated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error updating Driver ${userid}:`, error);
+            throw error;
+        }
+    },
+
+    async deleteDriver(userid) {
+        try {
+            const response = await serviceApi.delete(`/api/users/${userid}`);
+            console.log(`Driver ${userid} deleted:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error deleting Driver ${userid}:`, error);
+            throw error;
+        }
+    },
 }

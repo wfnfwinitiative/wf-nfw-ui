@@ -1,7 +1,7 @@
 import { serviceApi } from './apiClient';
 import config from '../../config';
 
-export const hungerSpotApi = {
+export const HungerSpotApi = {
     async getHungerSpot(){
         try {
             const response = await serviceApi.get('/api/hunger-spots/');
@@ -33,5 +33,38 @@ export const hungerSpotApi = {
             console.error('Error fetching hunger spots:', error);
             throw error;
         }
-    }
+    },
+
+      async createHungerSpot(data) {
+        try {
+            const response = await serviceApi.post('/api/hunger-spots/', data);
+            console.log('HungerSpot created:', response);
+            return response;
+        } catch (error) {
+            console.error('Error creating HungerSpot:', error);
+            throw error;
+        }
+    },
+
+    async updateHungerSpot(hunger_spot_id, data) {
+        try {
+            const response = await serviceApi.patch(`/api/hunger-spots/${hunger_spot_id}`, data);
+            console.log(`HungerSpot ${hunger_spot_id} updated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error updating Donor ${donorid}:`, error);
+            throw error;
+        }
+    },
+
+    async deleteHungerSpot(hunger_spot_id) {
+        try {
+            const response = await serviceApi.delete(`/api/hunger-spots/${hunger_spot_id}`);
+            console.log(`HungerSpot ${hunger_spot_id} deleted:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error deleting HungerSpot ${hunger_spot_id}:`, error);
+            throw error;
+        }
+    },
 }
