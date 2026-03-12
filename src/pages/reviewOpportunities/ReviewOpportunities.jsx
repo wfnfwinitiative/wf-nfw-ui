@@ -4,8 +4,8 @@ import { Button, SearchBar } from '../../components/ui';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
 import { opportunityApi } from '../../services/api/oppurtunityService';
-import { hungerSpotApi } from '../../services/api/hungerSpotService';
-import { donorApi } from '../../services/api/donorService';
+import { HungerSpotApi } from '../../services/api/hungerSpotService';
+import { DonorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
@@ -39,8 +39,8 @@ export const ReviewOpportunities = () => {
 
       // fetch all data in parallel
       const [pickup, hunger, driversData, vehiclesData, data] = await Promise.all([
-        donorApi.getDonors(),
-        hungerSpotApi.getHungerSpot(),
+        DonorApi.getDonors(),
+        HungerSpotApi.getHungerSpot(),
         UserApi.getUserByRole('DRIVER'),
         VehicleApi.getVehicles(),
         opportunityApi.getOpportunities(),

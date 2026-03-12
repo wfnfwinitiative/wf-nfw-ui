@@ -3,8 +3,8 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { ArrowLeft, X } from 'lucide-react';
 import { opportunityApi } from '../../services/api/oppurtunityService';
-import { hungerSpotApi } from '../../services/api/hungerSpotService';
-import { donorApi } from '../../services/api/donorService';
+import { HungerSpotApi } from '../../services/api/hungerSpotService';
+import { DonorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
@@ -79,8 +79,8 @@ export const ReviewOpportunityDetail = () => {
 
       if (!pickup.length || !hunger.length || !driversData.length || !vehiclesData.length) {
         const results = await Promise.all([
-          donorApi.getDonors(),
-          hungerSpotApi.getHungerSpot(),
+          DonorApi.getDonors(),
+          HungerSpotApi.getHungerSpot(),
           UserApi.getUserByRole(DRIVER),
           VehicleApi.getVehicles(),
         ]);
