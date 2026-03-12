@@ -31,5 +31,38 @@ export const VehicleApi = {
             console.error('Error fetching vehicles:', error);
             throw error;
         }
-    }
+    },
+
+    async createVehicle(data) {
+        try {
+            const response = await serviceApi.post('/api/vehicles/', data);
+            console.log('Vehicle created:', response);
+            return response;
+        } catch (error) {
+            console.error('Error creating Driver:', error);
+            throw error;
+        }
+    },
+
+    async updateVehicle(vehicleid, data) {
+        try {
+            const response = await serviceApi.patch(`/api/vehicles/${vehicleid}`, data);
+            console.log(`Vehicle ${vehicleid} updated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error updating Vehicle ${vehicleid}:`, error);
+            throw error;
+        }
+    },
+
+    async deleteVehicle(vehicleid) {
+        try {
+            const response = await serviceApi.delete(`/api/vehicles/${vehicleid}`);
+            console.log(`Vehicle ${vehicleid} deleted:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error deleting Vehicle ${vehicleid}:`, error);
+            throw error;
+        }
+    },
 }

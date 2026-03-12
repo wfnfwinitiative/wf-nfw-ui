@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
-import { mockApi } from '../../services/mockApi';
 import { LocationPicker } from '../../components/location/LocationPicker';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
 import { validatePhone } from '../../utils/validation';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Loader2 } from 'lucide-react';
+import { DonorApi } from '../../services/api/donorService';
+
 
 const emptyForm = {
   name: '',
@@ -21,7 +22,9 @@ const emptyForm = {
 };
 
 export const PickupLocations = () => {
+  const [pageError, setPageError] = useState('');
   const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -31,14 +34,40 @@ export const PickupLocations = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [successMessage, setSuccessMessage] = useState('');
+  
 
   useEffect(() => {
     loadLocations();
   }, []);
 
   const loadLocations = async () => {
-    const data = await mockApi.getLocations('pickup');
-    setLocations(data);
+    setLoading(true);
+    setPageError('');
+    try {
+      const data = await DonorApi.getDonors();
+      const mappedData = data.map((d) => ({
+        id: d.donor_id,
+        name: d.address,
+        address: d.location,
+        city: d.city,
+        donorName: d.donor_name,
+        contactName: d.contact_person,
+        contactNumber: d.mobile_number,
+        lat: d.latitude,
+        lng: d.longitude,
+        type: 'pickup'
+      }));
+      setLocations(mappedData);
+    } catch (error) {
+      console.error('Failed to load pickup locations:', error);
+      // Align with error handling in other admin pages (e.g., Coordinators)
+      // which console logs but does not always show a UI error for the initial load.
+      setLocations([]);
+      setPageError('Failed to load pickup locations. See console for details.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -52,7 +81,7 @@ export const PickupLocations = () => {
         (l.city || '').toLowerCase().includes(q) ||
         (l.donorName || '').toLowerCase().includes(q) ||
         (l.contactName || '').toLowerCase().includes(q) ||
-        (l.contactNumber || l.contact || '').toString().includes(q)
+        (l.contactNumber || '').toString().includes(q)
     );
   }, [locations, searchQuery]);
 
@@ -86,7 +115,7 @@ export const PickupLocations = () => {
       city: row.city ?? '',
       donorName: row.donorName ?? '',
       contactName: row.contactName ?? '',
-      contactNumber: row.contactNumber ?? row.contact ?? '',
+      contactNumber: row.contactNumber ?? '',
       lat: row.lat != null ? String(row.lat) : '',
       lng: row.lng != null ? String(row.lng) : '',
       type: 'pickup'
@@ -104,28 +133,64 @@ export const PickupLocations = () => {
     if (!phoneResult.valid) errors.contactNumber = phoneResult.message;
     setFieldErrors(errors);
     if (errors.contactNumber) return;
+
     const payload = {
-      ...formData,
-      lat: formData.lat || undefined,
-      lng: formData.lng || undefined,
-      contact: formData.contactNumber || formData.contact
+      donor_name: formData.donorName,
+      address: formData.name,
+      location: formData.address,
+      city: formData.city,
+      contact_person: formData.contactName,
+      mobile_number: formData.contactNumber,
+      latitude: formData.lat ? Number(formData.lat) : undefined,
+      longitude: formData.lng ? Number(formData.lng) : undefined
     };
-    if (editingId) {
-      await mockApi.updateLocation(editingId, payload);
-    } else {
-      await mockApi.addLocation(payload);
+
+    try {
+      if (editingId) {
+        await DonorApi.updateDonor(editingId, payload);
+        setSuccessMessage('Pickup location updated successfully.');
+      } else {
+        await DonorApi.createDonor(payload);
+        setSuccessMessage('Pickup location created successfully.');
+      }
+      setTimeout(() => setSuccessMessage(''), 5000);
+
+      setFormData(emptyForm);
+      setEditingId(null);
+      setShowForm(false);
+      loadLocations();
+    } catch (error) {
+      console.error('Failed to save pickup location:', error);
+      const errorMessage =
+        (error.response?.data?.detail &&
+          Array.isArray(error.response.data.detail) &&
+          error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while saving.';
+      setFormError(errorMessage);
     }
-    setFormData(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-    loadLocations();
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
-    await mockApi.deleteLocation(deleteConfirm.id);
-    setDeleteConfirm({ open: false, id: null });
-    loadLocations();
+    try {
+      await DonorApi.deleteDonor(deleteConfirm.id);
+      setSuccessMessage('Pickup location deleted successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+      loadLocations();
+    } catch (error) {
+      console.error('Failed to delete pickup location:', error);
+      const errorMessage =
+        (error.response?.data?.detail &&
+          Array.isArray(error.response.data.detail) &&
+          error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while deleting.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+    }
   };
 
   const coordsStr = (lat, lng) => {
@@ -142,6 +207,17 @@ export const PickupLocations = () => {
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
           Manage food donor locations
         </p>
+
+        {successMessage && (
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+            <p>{successMessage}</p>
+          </div>
+        )}
+        {pageError && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+            <p>{pageError}</p>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
           <SearchBar
@@ -328,39 +404,47 @@ export const PickupLocations = () => {
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {paginated.map((loc) => (
-          <TileCard
-            key={loc.id}
-            title={loc.name || 'Unnamed Location'}
-            fields={[
-              { label: 'Address', value: loc.address },
-              { label: 'City', value: loc.city },
-              { label: 'Donor', value: loc.donorName },
-              { label: 'Contact Name', value: loc.contactName },
-              {
-                label: 'Contact Number',
-                value: loc.contactNumber || loc.contact
-              },
-              {
-                label: 'Coordinates',
-                value: coordsStr(loc.lat, loc.lng)
-              }
-            ]}
-            onEdit={() => openEdit(loc)}
-            onDelete={() => setDeleteConfirm({ open: true, id: loc.id })}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center p-16">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {paginated.map((loc) => (
+              <TileCard
+                key={loc.id}
+                title={loc.name || 'Unnamed Location'}
+                fields={[
+                  { label: 'Address', value: loc.address },
+                  { label: 'City', value: loc.city },
+                  { label: 'Donor', value: loc.donorName },
+                  { label: 'Contact Name', value: loc.contactName },
+                  {
+                    label: 'Contact Number',
+                    value: loc.contactNumber,
+                  },
+                  {
+                    label: 'Coordinates',
+                    value: coordsStr(loc.lat, loc.lng),
+                  },
+                ]}
+                onEdit={() => openEdit(loc)}
+                onDelete={() => setDeleteConfirm({ open: true, id: loc.id })}
+              />
+            ))}
+          </div>
 
-      <div className="mt-6">
-        <Pagination
-          totalItems={sorted.length}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          itemsPerPage={ITEMS_PER_PAGE}
-        />
-      </div>
+          <div className="mt-6">
+            <Pagination
+              totalItems={sorted.length}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };
