@@ -29,6 +29,21 @@ import { TaskDetail } from './pages/driver/TaskDetail';
 import { Verification } from './pages/verification/Verification';
 import { VerificationDetail } from './pages/verification/VerificationDetail';
 import { Profile } from './pages/profile/Profile';
+import { useAuth } from './auth/AuthContext';
+
+function DashboardRedirect() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!user?.role) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={`/${user.role}/dashboard`} replace />;
+}
 
 function App() {
   return (
@@ -76,6 +91,8 @@ function App() {
             <Route index element={<Profile />} />
             <Route path="edit" element={<Profile />} />
           </Route>
+
+          <Route path="/dashboard" element={<DashboardRedirect />} />
 
           <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>

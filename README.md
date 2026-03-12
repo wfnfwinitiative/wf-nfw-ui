@@ -22,6 +22,10 @@ Internal logistics platform for NGO food rescue operations.
 
 ## Quick Start
 
+### Requirements
+
+- Node.js 20.19.0 or newer
+
 ```bash
 # Install dependencies
 npm install
@@ -33,7 +37,7 @@ npm run dev
 npm run build
 
 # Preview production build
-npm preview
+npm run preview
 ```
 
 ## Demo Credentials
