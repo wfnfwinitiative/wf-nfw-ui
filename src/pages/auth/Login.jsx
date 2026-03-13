@@ -7,7 +7,7 @@ import { Phone, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export const Login = () => {
-  const [phone, setPhone] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,9 +21,9 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      const user = await login(phone, password);
+      await login(mobileNumber, password);
       setSidebarOpen(true);
-      navigate(`/${user.role}/dashboard`);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -71,15 +71,15 @@ export const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-ngo-dark mb-2">
-                  Phone Number
+                  Mobile Number
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ngo-gray" />
                   <input
                     type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Enter 10-digit phone number"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+                    placeholder="Enter mobile number"
                     className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none transition-all"
                     required
                   />
