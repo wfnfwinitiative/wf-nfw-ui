@@ -3,10 +3,6 @@ import { StatusBadge, Button } from '../../components/common';
 
 export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
   const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
-
-  // Assigned(2)  → show "Fill Pickup Details" (opens modal to submit items → InPicked)
-  // InPicked(3)   → show "Confirm Delivery" (opens modal to upload delivery photo → Delivered)
-  // Delivered(5)  → show "Awaiting Verification" text
   const canOpenDetails     = status === 'assigned';
   const canConfirmDelivery = status === 'inpicked';
   const isCompleted = ['delivered', 'verified', 'completed'].includes(status);
@@ -15,31 +11,29 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
     <div
       onClick={onClick}
       className={`
-        bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden
-        hover:shadow-md transition-all cursor-pointer
-        ${isCompleted ? 'opacity-75' : ''}
+        bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden
+        hover:shadow-lg transition-all duration-200 cursor-pointer
+        ${isCompleted ? 'opacity-70' : ''}
       `}
     >
       {/* Header */}
-      <div className="px-4 py-3 bg-linear-to-r from-primary-50 to-white border-b border-gray-100">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="font-semibold text-gray-900 line-clamp-1">
-              {pickup.organizationName}
-            </h3>
-            {pickup.contactPerson && (
-              <p className="text-sm text-gray-500">{pickup.contactPerson}</p>
-            )}
-          </div>
-          <StatusBadge status={status} />
+      <div className="px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-gray-900 line-clamp-1">
+            {pickup.organizationName}
+          </h3>
+          {pickup.contactPerson && (
+            <p className="text-sm text-gray-500">{pickup.contactPerson}</p>
+          )}
         </div>
+        <StatusBadge status={status} />
       </div>
 
       {/* Body */}
       <div className="p-4 space-y-4">
         {/* Pickup Details */}
         <div>
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
             Pickup From
           </p>
           <div className="space-y-2">
@@ -90,7 +84,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
 
         {/* Delivery Details */}
         <div>
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
             Deliver To
           </p>
           <div className="flex items-start gap-2">
@@ -108,9 +102,9 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
 
         {/* Vehicle & Feeding Info */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
             <Truck className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-700">
               Vehicle {vehicle.number}{vehicle.type ? ` (${vehicle.type})` : ''}
             </span>
           </div>
@@ -146,7 +140,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
         {canOpenDetails && (
           <Button
             onClick={onClick}
