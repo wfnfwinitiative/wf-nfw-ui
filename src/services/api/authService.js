@@ -1,4 +1,4 @@
-import ApiClient from './apiClient';
+import { serviceApi } from './apiClient';
 import config from '../../config';
 
 // API client for backend auth services

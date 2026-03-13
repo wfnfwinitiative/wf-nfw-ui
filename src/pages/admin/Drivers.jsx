@@ -1,32 +1,55 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
-import { mockApi } from '../../services/mockApi';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
 import { validatePassword, validatePhone } from '../../utils/validation';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Loader2 } from 'lucide-react';
+import { UserApi } from '../../services/api/userService';
 
-const emptyForm = { name: '', phone: '', password: '' };
+const emptyForm = { name: '', phone: '', email: '', password: '', role: 'DRIVER' };
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const Drivers = () => {
+  const [pageError, setPageError] = useState('');
   const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
-  const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', password: '' });
+  const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', email: '', password: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    loadData();
+    loadDrivers();
   }, []);
 
-  const loadData = async () => {
-    const data = await mockApi.getDrivers();
-    setDrivers(data);
+  const loadDrivers = async () => {
+    setLoading(true);
+    try {
+      const users = await UserApi.getUserByRole('DRIVER');
+      const driversData = users
+        .filter((u) => u.roles && u.roles.includes('DRIVER'))
+        .map((u) => ({
+          id: u.user_id,
+          name: u.name,
+          phone: u.mobile_number,
+          email: u.email || '',
+          status: u.is_active ? 'active' : 'inactive',
+        }));
+      setDrivers(driversData);
+    } catch (error) {
+      console.error('Failed to load drivers:', error);
+      setDrivers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -34,15 +57,15 @@ export const Drivers = () => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return list;
     return list.filter(
-      (d) =>
-        (d.name || '').toLowerCase().includes(q) ||
-        (d.phone || '').toString().includes(q) ||
-        (d.status || '').toLowerCase().includes(q)
+      (c) =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.phone || '').toString().includes(q) ||
+        (c.email || '').toLowerCase().includes(q)
     );
   }, [drivers, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (d) => d.name || '', (d) => d.id || 0),
+    () => sortList(filtered, sortBy, (c) => c.name || '', (c) => c.id || 0),
     [filtered, sortBy]
   );
 
@@ -58,7 +81,8 @@ export const Drivers = () => {
   const openAdd = () => {
     setEditingId(null);
     setFormData(emptyForm);
-    setFieldErrors({ name: '', phone: '', password: '' });
+    setFormError('');
+    setFieldErrors({ name: '', phone: '', email: '', password: '' });
     setShowForm(true);
   };
 
@@ -67,10 +91,18 @@ export const Drivers = () => {
     setFormData({
       name: row.name ?? '',
       phone: row.phone ?? '',
-      password: ''
+      email: row.email ?? '',
+      password: '',
+      role: 'DRIVER'
     });
-    setFieldErrors({ name: '', phone: '', password: '' });
+    setFormError('');
+    setFieldErrors({ name: '', phone: '', email: '', password: '' });
     setShowForm(true);
+  };
+
+  const validateEmail = (email) => {
+    if (!email || !email.trim()) return true;
+    return EMAIL_REGEX.test(email.trim());
   };
 
   const getSubmitDisabled = () => {
@@ -84,14 +116,19 @@ export const Drivers = () => {
       const pwdResult = validatePassword(formData.password);
       if (!pwdResult.valid) return true;
     }
+    if (formData.email.trim() && !validateEmail(formData.email)) return true;
     return false;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errors = { name: '', phone: '', password: '' };
+    setFormError('');
+    const errors = { name: '', phone: '', email: '', password: '' };
     const phoneResult = validatePhone(formData.phone, true);
     if (!phoneResult.valid) errors.phone = phoneResult.message;
+    if (formData.email.trim() && !validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address.';
+    }
     if (!editingId) {
       const pwdResult = validatePassword(formData.password);
       if (!pwdResult.valid) errors.password = pwdResult.message;
@@ -101,24 +138,67 @@ export const Drivers = () => {
     }
     setFieldErrors(errors);
     if (Object.values(errors).some(Boolean)) return;
-    const payload = { name: formData.name, phone: formData.phone };
-    if (formData.password) payload.password = formData.password;
-    if (editingId) {
-      await mockApi.updateDriver(editingId, payload);
-    } else {
-      await mockApi.addDriver({ ...payload, password: formData.password });
+
+    try {
+      if (editingId) {
+        const payload = {
+          name: formData.name,
+          mobile_number: formData.phone,
+        };
+        if (formData.email) {
+          payload.email = formData.email;
+        }
+        if (formData.password) {
+          payload.password = formData.password;
+        }
+        const response = await UserApi.updateDriver(editingId, payload);
+        setSuccessMessage(typeof response === 'string' ? response : 'Driver updated successfully.');
+        setTimeout(() => setSuccessMessage(''), 5000);
+      } else {
+        const payload = {
+          name: formData.name,
+          mobile_number: formData.phone,
+          password: formData.password,
+          role_name: 'DRIVER',
+        };
+        await UserApi.createDriver(payload);
+        setSuccessMessage('Driver created successfully.');
+        setTimeout(() => setSuccessMessage(''), 5000);
+      }
+      setFormData(emptyForm);
+      setEditingId(null);
+      setShowForm(false);
+      loadDrivers();
+    } catch (error) {
+      console.error('Failed to save driver:', error);
+      const errorMessage =
+        (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while saving.';
+      setFormError(errorMessage);
     }
-    setFormData(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-    loadData();
   };
+
+  const handleDeleteClick = (id) => setDeleteConfirm({ open: true, id });
 
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
-    await mockApi.deleteDriver(deleteConfirm.id);
-    setDeleteConfirm({ open: false, id: null });
-    loadData();
+    try {
+      const response = await UserApi.deleteDriver(deleteConfirm.id);
+      setSuccessMessage(typeof response === 'string' ? response : 'Driver deleted successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+      loadDrivers();
+    } catch (error) {
+      console.error('Failed to delete driver:', error);
+      const errorMessage =
+        (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while deleting.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+    }
   };
 
   return (
@@ -128,8 +208,19 @@ export const Drivers = () => {
           Drivers
         </h1>
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
-          Manage driver accounts and assignments
+          Manage driver accounts
         </p>
+
+        {successMessage && (
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+            <p>{successMessage}</p>
+          </div>
+        )}
+        {pageError && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+            <p>{pageError}</p>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
           <SearchBar
@@ -158,7 +249,8 @@ export const Drivers = () => {
                   setShowForm(false);
                   setEditingId(null);
                   setFormData(emptyForm);
-                  setFieldErrors({ name: '', phone: '', password: '' });
+                  setFormError('');
+                  setFieldErrors({ name: '', phone: '', email: '', password: '' });
                 }}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200"
                 aria-label="Close"
@@ -166,7 +258,13 @@ export const Drivers = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {formError}
+                </p>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Full Name
@@ -198,6 +296,23 @@ export const Drivers = () => {
                 {fieldErrors.phone && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
                     {fieldErrors.phone}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Email <span className="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="e.g. driver@example.com"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.email ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                />
+                {fieldErrors.email && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {fieldErrors.email}
                   </p>
                 )}
               </div>
@@ -240,29 +355,36 @@ export const Drivers = () => {
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {paginated.map((driver) => (
-          <TileCard
-            key={driver.id}
-            title={driver.name || 'Unnamed Driver'}
-            status={driver.status}
-            fields={[
-              { label: 'Phone', value: driver.phone, mono: true }
-            ]}
-            onEdit={() => openEdit(driver)}
-            onDelete={() => setDeleteConfirm({ open: true, id: driver.id })}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center p-16">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {paginated.map(driver => (
+              <TileCard
+                key={driver.id}
+                title={driver.name}
+                subtitle={driver.phone}
+                status={driver.status}
+                fields={[{ label: 'Email', value: driver.email || 'N/A' }]}
+                onEdit={() => openEdit(driver)}
+                onDelete={() => handleDeleteClick(driver.id)}
+              />
+            ))}
+          </div>
 
-      <div className="mt-6">
-        <Pagination
-          totalItems={sorted.length}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          itemsPerPage={ITEMS_PER_PAGE}
-        />
-      </div>
+          <div className="mt-6">
+            <Pagination
+              totalItems={sorted.length}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };

@@ -1,32 +1,57 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
-import { mockApi } from '../../services/mockApi';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
 import { validateVehicleNumber } from '../../utils/validation';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Loader2 } from 'lucide-react';
+import { VehicleApi } from '../../services/api/vehicleService';
 
 const emptyForm = { number: '', type: 'Van', capacity: '' };
 
 export const Vehicles = () => {
   const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [formError, setFormError] = useState('');
+  const [pageError, setPageError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ number: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadVehicles();
   }, []);
 
   const loadVehicles = async () => {
-    const data = await mockApi.getVehicles();
-    setVehicles(data);
+    setLoading(true);
+    setPageError('');
+    try {
+      const data = await VehicleApi.getVehicles();
+      const vehiclesData = data.map((v) => ({
+        id: v.vehicle_id,
+        number: v.vehicle_no,
+        type: v.type || 'Van',
+        capacity: v.notes || '',
+        status: v.is_active ? 'active' : 'inactive',
+      }));
+      setVehicles(vehiclesData);
+    } catch (error) {
+      console.error('Failed to load vehicles:', error);
+      const errorMessage =
+        (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'Failed to load vehicles.';
+      setPageError(errorMessage);
+      setVehicles([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -59,6 +84,7 @@ export const Vehicles = () => {
   const openAdd = () => {
     setEditingId(null);
     setFormData(emptyForm);
+    setFormError('');
     setFieldErrors({ number: '' });
     setShowForm(true);
   };
@@ -70,6 +96,7 @@ export const Vehicles = () => {
       type: row.type ?? 'Van',
       capacity: row.capacity ?? ''
     });
+    setFormError('');
     setFieldErrors({ number: '' });
     setShowForm(true);
   };
@@ -83,27 +110,60 @@ export const Vehicles = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
     const errors = { number: '' };
     const numberResult = validateVehicleNumber(formData.number);
     if (!numberResult.valid) errors.number = numberResult.message;
     setFieldErrors(errors);
-    if (errors.number) return;
-    if (editingId) {
-      await mockApi.updateVehicle(editingId, formData);
-    } else {
-      await mockApi.addVehicle(formData);
+    if (Object.values(errors).some(Boolean)) return;
+    const payload = {
+      vehicle_no: formData.number,
+      notes: formData.capacity,
+      type: formData.type,
+    };
+
+    try {
+      if (editingId) {
+        await VehicleApi.updateVehicle(editingId, payload);
+        setSuccessMessage('Vehicle updated successfully.');
+      } else {
+        await VehicleApi.createVehicle(payload);
+        setSuccessMessage('Vehicle created successfully.');
+      }
+      setTimeout(() => setSuccessMessage(''), 5000);
+
+      setFormData(emptyForm);
+      setEditingId(null);
+      setShowForm(false);
+      loadVehicles();
+    } catch (error) {
+      console.error('Failed to save vehicle:', error);
+      const errorMessage =
+        (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while saving.';
+      setFormError(errorMessage);
     }
-    setFormData(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-    loadVehicles();
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
-    await mockApi.deleteVehicle(deleteConfirm.id);
-    setDeleteConfirm({ open: false, id: null });
-    loadVehicles();
+    try {
+      await VehicleApi.deleteVehicle(deleteConfirm.id);
+      setSuccessMessage('Vehicle deleted successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+      loadVehicles();
+    } catch (error) {
+      console.error('Failed to delete vehicle:', error);
+      const errorMessage =
+        (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while deleting.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+      setDeleteConfirm({ open: false, id: null });
+    }
   };
 
   return (
@@ -115,6 +175,17 @@ export const Vehicles = () => {
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
           Manage delivery vehicle fleet
         </p>
+
+        {successMessage && (
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+            <p>{successMessage}</p>
+          </div>
+        )}
+        {pageError && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+            <p>{pageError}</p>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
           <SearchBar
@@ -143,6 +214,7 @@ export const Vehicles = () => {
                   setShowForm(false);
                   setEditingId(null);
                   setFormData(emptyForm);
+                  setFormError('');
                   setFieldErrors({ number: '' });
                 }}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200"
@@ -153,6 +225,11 @@ export const Vehicles = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {formError}
+                </p>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Vehicle Number
@@ -229,28 +306,36 @@ export const Vehicles = () => {
         variant="danger"
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {paginated.map((vehicle) => (
-          <TileCard
-            key={vehicle.id}
-            title={vehicle.number}
-            subtitle={vehicle.type}
-            status={vehicle.status}
-            fields={[{ label: 'Capacity', value: vehicle.capacity }]}
-            onEdit={() => openEdit(vehicle)}
-            onDelete={() => setDeleteConfirm({ open: true, id: vehicle.id })}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center p-16">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {paginated.map((vehicle) => (
+              <TileCard
+                key={vehicle.id}
+                title={vehicle.number}
+                subtitle={vehicle.type}
+                status={vehicle.status}
+                fields={[{ label: 'Capacity', value: vehicle.capacity }]}
+                onEdit={() => openEdit(vehicle)}
+                onDelete={() => setDeleteConfirm({ open: true, id: vehicle.id })}
+              />
+            ))}
+          </div>
 
-      <div className="mt-6">
-        <Pagination
-          totalItems={sorted.length}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          itemsPerPage={ITEMS_PER_PAGE}
-        />
-      </div>
+          <div className="mt-6">
+            <Pagination
+              totalItems={sorted.length}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };
