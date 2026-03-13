@@ -1,4 +1,4 @@
-import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { List, Volume2, Mic } from 'lucide-react';
 import { FoodItemsGrid } from './FoodItemsGrid';
 import { VoiceRecordView } from './VoiceRecordView';
@@ -16,9 +16,20 @@ export const VoiceInputPanel = forwardRef(function VoiceInputPanel(
   { disabled = false, driverName = 'Driver', opportunityId = '', uploadType = 'pickup' },
   ref
 ) {
-  const { isVoiceEnabled } = useFeatureFlags();
-  const [view, setView] = useState(isVoiceEnabled ? 'voice' : 'list');
+  const { isVoiceEnabled, loading: flagsLoading } = useFeatureFlags();
+  // Always start on 'list' — voice tab only activates after DB confirms the flag
+  const [view, setView] = useState('list');
   const imagesSectionRef = useRef(null);
+
+  useEffect(() => {
+    if (flagsLoading) return;
+    if (isVoiceEnabled) {
+      setView('voice');
+    } else {
+      // Flag disabled or turned off at runtime — ensure user is on list
+      setView('list');
+    }
+  }, [flagsLoading, isVoiceEnabled]);
 
   const {
     foodItems,

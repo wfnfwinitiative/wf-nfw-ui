@@ -31,10 +31,13 @@ export function FeatureFlagsProvider({ children }) {
     } catch (err) {
       console.error('Failed to fetch feature flags:', err);
       setError(err.message || 'Failed to load feature flags');
-      // Set default values on error
-      setFlags({
-        [FEATURE_FLAGS.VOICE_SUPPORT]: { enabled: true, name: FEATURE_FLAGS.VOICE_SUPPORT },
-      });
+      // Set safe defaults for all known flags on error (fail-open for voice, fail-closed for uploads)
+      setFlags(
+        Object.values(FEATURE_FLAGS).reduce((acc, name) => {
+          acc[name] = { enabled: true, name };
+          return acc;
+        }, {})
+      );
     } finally {
       setLoading(false);
     }
@@ -53,13 +56,12 @@ export function FeatureFlagsProvider({ children }) {
 
   // Update a feature flag (Admin only)
   const updateFlag = useCallback(async (flagName, enabled) => {
-    const flag = flags[flagName];
-    if (!flag) {
+    if (!(flagName in flags)) {
       throw new Error(`Flag ${flagName} not found`);
     }
 
     try {
-      const updatedFlag = await featureFlagsService.updateFlag(flag, enabled);
+      const updatedFlag = await featureFlagsService.updateFlag(flagName, enabled);
       setFlags(prev => ({
         ...prev,
         [flagName]: {
@@ -92,8 +94,9 @@ export function FeatureFlagsProvider({ children }) {
     }
   }, []);
 
-  // Check if voice support is enabled (convenience method)
-  const isVoiceEnabled = isFeatureEnabled(FEATURE_FLAGS.VOICE_SUPPORT);
+  // While flags are still loading, treat all as disabled to avoid flicker
+  const isVoiceEnabled = !loading && isFeatureEnabled(FEATURE_FLAGS.VOICE_SUPPORT);
+  const isGoogleImageUploadEnabled = !loading && isFeatureEnabled(FEATURE_FLAGS.GOOGLE_IMAGE_UPLOAD);
 
   const value = {
     flags,
@@ -104,6 +107,7 @@ export function FeatureFlagsProvider({ children }) {
     createFlag,
     refreshFlags: fetchFlags,
     isVoiceEnabled,
+    isGoogleImageUploadEnabled,
   };
 
   return (

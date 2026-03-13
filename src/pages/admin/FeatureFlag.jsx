@@ -1,71 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { featureFlagsService, FEATURE_FLAGS } from '../../services/api/featureFlagsService';
+import { FEATURE_FLAGS } from '../../services/api/featureFlagsService';
+import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
 import { showToast } from '../../components/common/Toast';
 import { Loader2 } from 'lucide-react';
 
 export const FeatureFlag = () => {
-  const [enabled, setEnabled] = useState(false);
+  const { flags, loading: flagsLoading, updateFlag, refreshFlags } = useFeatureFlags();
   const [loading, setLoading] = useState(false);
-  const [googleImageUploadEnabled, setGoogleImageUploadEnabled] = useState(false);
   const [googleImageUploadLoading, setGoogleImageUploadLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchFlags = async () => {
-      setPageLoading(true);
-      try {
-        const data = await featureFlagsService.getAllFlags();
-        // Defensively handle cases where the API might not return an array
-        const flags = Array.isArray(data) ? data : [];
-        
-        const voiceSupportFlag = flags.find(f => f.feature_flag_name === FEATURE_FLAGS.VOICE_SUPPORT);
-        setEnabled(voiceSupportFlag ? voiceSupportFlag.enabled : false);
+  // Derive toggle states directly from shared context
+  const enabled = flags[FEATURE_FLAGS.VOICE_SUPPORT]?.enabled ?? false;
+  const googleImageUploadEnabled = flags[FEATURE_FLAGS.GOOGLE_IMAGE_UPLOAD]?.enabled ?? false;
 
-        const googleImageUploadFlag = flags.find(f => f.feature_flag_name === FEATURE_FLAGS.GOOGLE_IMAGE_UPLOAD);
-        setGoogleImageUploadEnabled(googleImageUploadFlag ? googleImageUploadFlag.enabled : false);
-
-      } catch (error) {
-        console.error("Failed to load feature flags", error);
-        showToast('Failed to load feature flags', 'error');
-        // Keep them off on error
-        setEnabled(false);
-        setGoogleImageUploadEnabled(false);
-      } finally {
-        setPageLoading(false);
-      }
-    };
-    fetchFlags();
-  }, []);
+  const pageLoading = flagsLoading;
 
   const handleToggle = async () => {
-    const previousState = enabled;
-    const nextState = !previousState;
-    setEnabled(nextState); // Optimistic update
     setLoading(true);
     try {
-      await featureFlagsService.updateFlag(FEATURE_FLAGS.VOICE_SUPPORT, nextState);
+      await updateFlag(FEATURE_FLAGS.VOICE_SUPPORT, !enabled);
       showToast('Feature flag updated successfully', 'success');
     } catch (error) {
       console.error('Failed to update feature flag:', error);
       showToast('Failed to update feature flag', 'error');
-      setEnabled(previousState); // Revert on failure
+      await refreshFlags(); // re-sync context with DB on failure
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleImageUploadToggle = async () => {
-    const previousState = googleImageUploadEnabled;
-    const nextState = !previousState;
-    setGoogleImageUploadEnabled(nextState); // Optimistic update
     setGoogleImageUploadLoading(true);
     try {
-      await featureFlagsService.updateFlag(FEATURE_FLAGS.GOOGLE_IMAGE_UPLOAD, nextState);
+      await updateFlag(FEATURE_FLAGS.GOOGLE_IMAGE_UPLOAD, !googleImageUploadEnabled);
       showToast('Feature flag updated successfully', 'success');
     } catch (error) {
       console.error('Failed to update feature flag:', error);
       showToast('Failed to update feature flag', 'error');
-      setGoogleImageUploadEnabled(previousState); // Revert on failure
+      await refreshFlags(); // re-sync context with DB on failure
     } finally {
       setGoogleImageUploadLoading(false);
     }
