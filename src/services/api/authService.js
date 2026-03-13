@@ -1,8 +1,4 @@
 import { serviceApi } from './apiClient';
-import config from '../../config';
-
-// API client for backend auth services
-const serviceApi = new ApiClient(config.serviceUrl);
 
 /**
  * Auth Service
