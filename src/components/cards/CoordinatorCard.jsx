@@ -1,8 +1,9 @@
 import React from 'react';
 import { Button } from '../../components/ui/Button';
+import { ShieldCheck } from 'lucide-react';
 
-export const CoordinatorCard = ({ coordinator, onEdit, onDelete }) => {
-  const { name, phone, email, role = 'coordinator' } = coordinator || {};
+export const CoordinatorCard = ({ coordinator, onEdit, onDelete, onAddRole }) => {
+  const { name, phone, email, roles } = coordinator || {};
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-800 p-4 md:p-5 flex flex-col justify-between h-full">
@@ -13,7 +14,7 @@ export const CoordinatorCard = ({ coordinator, onEdit, onDelete }) => {
               {name || 'Unnamed Coordinator'}
             </h3>
             <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-ngo-orange">
-              {role || 'Coordinator'}
+              {roles?.join(', ') || 'COORDINATOR'}
             </p>
           </div>
           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
@@ -43,6 +44,16 @@ export const CoordinatorCard = ({ coordinator, onEdit, onDelete }) => {
         >
           Edit
         </Button>
+        {onAddRole && (
+          <Button
+            variant="secondary"
+            className="flex-1 justify-center"
+            onClick={onAddRole}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            Add Role
+          </Button>
+        )}
         <Button
           variant="danger"
           className="flex-1 justify-center"

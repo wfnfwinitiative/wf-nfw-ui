@@ -2,20 +2,19 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
-import { CoordinatorCard } from '../../components/cards/CoordinatorCard';
 import { validatePassword, validatePhone } from '../../utils/validation';
 import { Plus, X, Loader2, ShieldCheck } from 'lucide-react';
 import { UserApi } from '../../services/api/userService';
 
-const emptyForm = { name: '', phone: '', email: '', password: '', role: 'COORDINATOR' };
+const emptyForm = { name: '', phone: '', email: '', password: '' };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const ADDABLE_ROLES = ['ADMIN'];
+const ADDABLE_ROLES = ['COORDINATOR'];
 
-export const Coordinators = () => {
+export const Admins = () => {
   const [pageError, setPageError] = useState('');
-  const [coordinators, setCoordinators] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -35,16 +34,16 @@ export const Coordinators = () => {
   const [addRoleLoading, setAddRoleLoading] = useState(false);
 
   useEffect(() => {
-    loadCoordinators();
+    loadAdmins();
     loadRoles();
   }, []);
 
-  const loadCoordinators = async () => {
+  const loadAdmins = async () => {
     setLoading(true);
     try {
-      const users = await UserApi.getUserByRole('COORDINATOR');
-      const coordinatorsData = users
-        .filter((u) => u.roles && u.roles.includes('COORDINATOR'))
+      const users = await UserApi.getUserByRole('ADMIN');
+      const adminsData = users
+        .filter((u) => u.roles && u.roles.includes('ADMIN'))
         .map((u) => ({
           id: u.user_id,
           name: u.name,
@@ -52,29 +51,37 @@ export const Coordinators = () => {
           email: u.email || '',
           roles: u.roles || [],
         }));
-      setCoordinators(coordinatorsData);
+      setAdmins(adminsData);
     } catch (error) {
-      console.error('Failed to load coordinators:', error);
-      setCoordinators([]);
+      console.error('Failed to load admins:', error);
+      setAdmins([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadRoles = async () => {
+    try {
+      const roles = await UserApi.getRoles();
+      setAllRoles(roles);
+    } catch (error) {
+      console.error('Failed to load roles:', error);
+    }
+  };
+
   const filtered = useMemo(() => {
-    const list = [...coordinators];
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
-      (c) =>
-        (c.name || '').toLowerCase().includes(q) ||
-        (c.phone || '').toString().includes(q) ||
-        (c.email || '').toLowerCase().includes(q)
+    if (!q) return [...admins];
+    return admins.filter(
+      (a) =>
+        (a.name || '').toLowerCase().includes(q) ||
+        (a.phone || '').toString().includes(q) ||
+        (a.email || '').toLowerCase().includes(q)
     );
-  }, [coordinators, searchQuery]);
+  }, [admins, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (c) => c.name || '', (c) => c.id || 0),
+    () => sortList(filtered, sortBy, (a) => a.name || '', (a) => a.id || 0),
     [filtered, sortBy]
   );
 
@@ -102,7 +109,6 @@ export const Coordinators = () => {
       phone: row.phone ?? '',
       email: row.email ?? '',
       password: '',
-      role: 'COORDINATOR'
     });
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -154,32 +160,29 @@ export const Coordinators = () => {
           name: formData.name,
           mobile_number: formData.phone,
         };
-        if (formData.email) {
-          payload.email = formData.email;
-        }
-        if (formData.password) {
-          payload.password = formData.password;
-        }
-        const response = await UserApi.updateCoordinator(editingId, payload);
-        setSuccessMessage(typeof response === 'string' ? response : 'Coordinator updated successfully.');
+        if (formData.email) payload.email = formData.email;
+        if (formData.password) payload.password = formData.password;
+        const response = await UserApi.updateAdmin(editingId, payload);
+        setSuccessMessage(typeof response === 'string' ? response : 'Admin updated successfully.');
         setTimeout(() => setSuccessMessage(''), 5000);
       } else {
         const payload = {
           name: formData.name,
           mobile_number: formData.phone,
           password: formData.password,
-          role_name: 'COORDINATOR',
+          role_name: 'ADMIN',
         };
-        await UserApi.createCoordinator(payload);
-        setSuccessMessage('Coordinator created successfully.');
+        if (formData.email) payload.email = formData.email;
+        await UserApi.createAdmin(payload);
+        setSuccessMessage('Admin created successfully.');
         setTimeout(() => setSuccessMessage(''), 5000);
       }
       setFormData(emptyForm);
       setEditingId(null);
       setShowForm(false);
-      loadCoordinators();
+      loadAdmins();
     } catch (error) {
-      console.error('Failed to save coordinator:', error);
+      console.error('Failed to save admin:', error);
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
@@ -193,13 +196,13 @@ export const Coordinators = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
     try {
-      const response = await UserApi.deleteCoordinator(deleteConfirm.id);
-      setSuccessMessage(typeof response === 'string' ? response : 'Coordinator deleted successfully.');
+      const response = await UserApi.deleteAdmin(deleteConfirm.id);
+      setSuccessMessage(typeof response === 'string' ? response : 'Admin deleted successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
-      loadCoordinators();
+      loadAdmins();
     } catch (error) {
-      console.error('Failed to delete coordinator:', error);
+      console.error('Failed to delete admin:', error);
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
@@ -210,17 +213,9 @@ export const Coordinators = () => {
     }
   };
 
-  const loadRoles = async () => {
-    try {
-      const roles = await UserApi.getRoles();
-      setAllRoles(roles);
-    } catch (error) {
-      console.error('Failed to load roles:', error);
-    }
-  };
-
-  const openAddRole = (coordinator) => {
-    setAddRoleConfirm({ open: true, user: coordinator });
+  // Add Role handlers
+  const openAddRole = (admin) => {
+    setAddRoleConfirm({ open: true, user: admin });
     setSelectedRole('');
   };
 
@@ -241,7 +236,7 @@ export const Coordinators = () => {
       setSuccessMessage(`Role "${selectedRole}" added successfully.`);
       setTimeout(() => setSuccessMessage(''), 5000);
       setAddRoleConfirm({ open: false, user: null });
-      loadCoordinators();
+      loadAdmins();
     } catch (error) {
       console.error('Failed to add role:', error);
       const errorMessage =
@@ -259,10 +254,10 @@ export const Coordinators = () => {
     <div>
       <div className="mb-4 md:mb-6">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 md:mb-2">
-          Coordinators
+          Admins
         </h1>
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
-          Manage coordinator accounts
+          Manage admin accounts
         </p>
 
         {successMessage && (
@@ -286,17 +281,18 @@ export const Coordinators = () => {
           <SortDropdown value={sortBy} onChange={setSortBy} placeholder="Sort by" />
           <Button onClick={openAdd} variant="primary" className="w-full sm:w-auto shrink-0">
             <Plus className="w-5 h-5" />
-            Add Coordinator
+            Add Admin
           </Button>
         </div>
       </div>
 
+      {/* Create/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 md:p-8 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200">
-                {editingId ? 'Edit Coordinator' : 'Add Coordinator'}
+                {editingId ? 'Edit Admin' : 'Add Admin'}
               </h2>
               <button
                 onClick={() => {
@@ -320,9 +316,7 @@ export const Coordinators = () => {
                 </p>
               )}
               <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Full Name
-                </label>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Full Name</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -332,26 +326,19 @@ export const Coordinators = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Phone Number
-                </label>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Phone Number</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === '' || /^\d+$/.test(val))
-                      setFormData({ ...formData, phone: val });
+                    if (val === '' || /^\d+$/.test(val)) setFormData({ ...formData, phone: val });
                   }}
                   maxLength={10}
                   placeholder="e.g. 9876543210"
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.phone ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
-                {fieldErrors.phone && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {fieldErrors.phone}
-                  </p>
-                )}
+                {fieldErrors.phone && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.phone}</p>}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -361,14 +348,10 @@ export const Coordinators = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="e.g. coordinator@example.com"
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.email ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  placeholder="e.g. admin@example.com"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
-                {fieldErrors.email && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {fieldErrors.email}
-                  </p>
-                )}
+                {fieldErrors.email && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.email}</p>}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -380,30 +363,26 @@ export const Coordinators = () => {
                   value={formData.password}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val.length <= 20 && /^[a-zA-Z0-9]*$/.test(val))
-                      setFormData({ ...formData, password: val });
+                    if (val.length <= 20 && /^[a-zA-Z0-9]*$/.test(val)) setFormData({ ...formData, password: val });
                   }}
                   maxLength={20}
                   placeholder={editingId ? 'Leave blank to keep current' : 'Alphanumeric only, max 20 characters'}
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
-                {fieldErrors.password && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {fieldErrors.password}
-                  </p>
-                )}
+                {fieldErrors.password && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.password}</p>}
               </div>
               <Button type="submit" variant="primary" fullWidth disabled={getSubmitDisabled()}>
-                {editingId ? 'Update Coordinator' : 'Add Coordinator'}
+                {editingId ? 'Update Admin' : 'Add Admin'}
               </Button>
             </form>
           </div>
         </div>
       )}
 
+      {/* Delete Confirmation */}
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to delete this record?"
+        message="Are you sure you want to delete this admin?"
         confirmLabel="Delete"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
@@ -427,7 +406,7 @@ export const Coordinators = () => {
               Adding role for <span className="font-semibold">{addRoleConfirm.user?.name}</span>
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-              Current roles: {addRoleConfirm.user?.roles?.join(', ') || 'COORDINATOR'}
+              Current roles: {addRoleConfirm.user?.roles?.join(', ') || 'ADMIN'}
             </p>
             {getAvailableRoles(addRoleConfirm.user?.roles || []).length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">No additional roles available.</p>
@@ -458,6 +437,7 @@ export const Coordinators = () => {
         </div>
       )}
 
+      {/* List */}
       {loading ? (
         <div className="flex justify-center items-center p-16">
           <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
@@ -465,14 +445,47 @@ export const Coordinators = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {paginated.map((coordinator) => (
-              <CoordinatorCard
-                key={coordinator.id}
-                coordinator={coordinator}
-                onEdit={() => openEdit(coordinator)}
-                onDelete={() => handleDeleteClick(coordinator.id)}
-                onAddRole={() => openAddRole(coordinator)}
-              />
+            {paginated.map((admin) => (
+              <div key={admin.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-800 p-4 md:p-5 flex flex-col justify-between h-full">
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 break-words">
+                        {admin.name || 'Unnamed Admin'}
+                      </h3>
+                      <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-ngo-orange">
+                        {admin.roles?.join(', ') || 'ADMIN'}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                      Active
+                    </span>
+                  </div>
+                  {admin.phone && (
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      <span className="font-medium">Phone:</span>{' '}
+                      <span className="font-mono tracking-wide">{admin.phone}</span>
+                    </p>
+                  )}
+                  {admin.email && (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 break-all">
+                      <span className="font-medium">Email:</span> {admin.email}
+                    </p>
+                  )}
+                </div>
+                <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                  <Button variant="secondary" className="flex-1 justify-center" onClick={() => openEdit(admin)}>
+                    Edit
+                  </Button>
+                  <Button variant="secondary" className="flex-1 justify-center" onClick={() => openAddRole(admin)}>
+                    <ShieldCheck className="w-4 h-4" />
+                    Add Role
+                  </Button>
+                  <Button variant="danger" className="flex-1 justify-center" onClick={() => handleDeleteClick(admin.id)}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
 

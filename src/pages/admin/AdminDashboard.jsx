@@ -15,6 +15,7 @@ import {
 import { TrendingUp, CheckCircle, Clock, Truck, Users, Home, MapPin, Download } from 'lucide-react';
 
 import { HeroBanner } from '../../components/common';
+import { useAuth } from '../../auth/AuthContext';
 import { UserApi } from '../../services/api/userService';
 import { Button } from '../../components/ui/Button';
 import { VehicleApi } from '../../services/api/vehicleService';
@@ -22,6 +23,11 @@ import { DonorApi } from '../../services/api/donorService';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
 
 export const AdminDashboard = () => {
+  const { user } = useAuth();
+  const roles = user?.roles || [];
+  const isAdmin = roles.includes('admin');
+  const isCoordinator = roles.includes('coordinator');
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('30d');
@@ -31,6 +37,15 @@ export const AdminDashboard = () => {
     const loadDashboardData = async () => {
       setLoading(true);
       try {
+        // Fetch admin-specific data only if user has admin role
+        const coordinatorsPromise = isAdmin ? UserApi.getUserByRole('COORDINATOR') : Promise.resolve([]);
+        const driversPromise = isAdmin ? UserApi.getUserByRole('DRIVER') : Promise.resolve([]);
+
+        // Fetch coordinator-specific data only if user has coordinator role
+        const vehiclesPromise = isCoordinator ? VehicleApi.getVehicles() : Promise.resolve([]);
+        const donorsPromise = isCoordinator ? DonorApi.getDonors() : Promise.resolve([]);
+        const hungerSpotsPromise = isCoordinator ? HungerSpotApi.getHungerSpot() : Promise.resolve([]);
+
         const [
           coordinators,
           drivers,
@@ -38,11 +53,11 @@ export const AdminDashboard = () => {
           donors,
           hungerSpots
         ] = await Promise.all([
-          UserApi.getUserByRole('COORDINATOR'),
-          UserApi.getUserByRole('DRIVER'),
-          VehicleApi.getVehicles(),
-          DonorApi.getDonors(),
-          HungerSpotApi.getHungerSpot()
+          coordinatorsPromise,
+          driversPromise,
+          vehiclesPromise,
+          donorsPromise,
+          hungerSpotsPromise
         ]);
 
         const getStartDate = (range) => {
@@ -197,12 +212,22 @@ export const AdminDashboard = () => {
   };
 
   const summaryStats = [
-    { label: 'Coordinators', value: filtered.totalCoordinators, icon: Users },
-    { label: 'Drivers', value: filtered.totalDrivers, icon: Users },
-    { label: 'Vehicles', value: filtered.totalVehicles, icon: Truck },
-    { label: 'Donors', value: filtered.totalDonors, icon: Home },
-    { label: 'HungerSpots', value: filtered.totalHungerSpots, icon: MapPin },
+    ...(isAdmin ? [
+      { label: 'Coordinators', value: filtered.totalCoordinators, icon: Users },
+      { label: 'Drivers', value: filtered.totalDrivers, icon: Users },
+    ] : []),
+    ...(isCoordinator ? [
+      { label: 'Vehicles', value: filtered.totalVehicles, icon: Truck },
+      { label: 'Donors', value: filtered.totalDonors, icon: Home },
+      { label: 'HungerSpots', value: filtered.totalHungerSpots, icon: MapPin },
+    ] : []),
   ];
+
+  const dashboardTitle = isAdmin && isCoordinator
+    ? 'Dashboard'
+    : isCoordinator
+      ? 'Coordinator Dashboard'
+      : 'Admin Dashboard';
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -210,7 +235,7 @@ export const AdminDashboard = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark mb-1 md:mb-2">
-            Admin Dashboard
+            {dashboardTitle}
           </h1>
           <p className="text-sm md:text-base text-ngo-gray">Operational and analytics overview</p>
         </div>
@@ -232,6 +257,7 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
+      {isCoordinator && (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -278,6 +304,7 @@ export const AdminDashboard = () => {
           <p className="text-sm md:text-base font-medium text-ngo-gray">In Progress</p>
         </div>
       </div>
+      )}
 
       <section>
         <h2 className="text-lg md:text-xl font-bold text-ngo-dark mb-4 md:mb-6">
