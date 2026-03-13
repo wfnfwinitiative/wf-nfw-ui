@@ -97,7 +97,7 @@ export function DriverAssignmentsGrid({ statusFilter = null, onCountsChange }) {
     const fetchOpportunities = async () => {
       try {
         setLoading(true);
-        const driverId = 7
+        const driverId = user.id;
         const data = await serviceApi.get(`/api/opportunities/driver/${driverId}`);
         const normalized = data.map(toDriverAssignment);
         setAssignments(normalized);

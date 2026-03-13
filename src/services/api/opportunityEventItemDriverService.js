@@ -8,14 +8,6 @@ const STATUS_IDS = {
   DELIVERED: 5,
 };
 
-async function getEventsByOpportunity(opportunityId) {
-  return await serviceApi.get(`/api/opportunity-events/by-opportunity/${opportunityId}`);
-}
-
-async function updateOpportunityEvent(eventId, payload) {
-  return await serviceApi.put(`/api/opportunity-events/${eventId}`, payload);
-}
-
 /**
  * Parses a free-text quantity string like "5 kg" or "10" into
  * { quantity_value, quantity_unit }.
@@ -77,30 +69,4 @@ export async function submitDelivery(opportunityId, actorId, previousStatusId) {
   });
 }
 
-/**
- * Updates the latest event for an opportunity with new status transition.
- * Falls back to create if no event exists yet.
- */
-export async function updateLatestOpportunityEventStatus(
-  opportunityId,
-  { previousStatusId, newStatusId, creatorId, notes = null }
-) {
-  const events = await getEventsByOpportunity(opportunityId);
-  const latestEvent = Array.isArray(events)
-    ? events.reduce((max, e) => (e.opportunity_event_id > (max?.opportunity_event_id || 0) ? e : max), null)
-    : null;
 
-  const payload = {
-    opportunity_id: opportunityId,
-    previous_status_id: previousStatusId,
-    new_status_id: newStatusId,
-    creator_id: creatorId,
-    notes,
-  };
-
-  if (latestEvent?.opportunity_event_id) {
-    return await updateOpportunityEvent(latestEvent.opportunity_event_id, payload);
-  }
-
-  return await serviceApi.post('/api/opportunity-events/', payload);
-}

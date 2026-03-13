@@ -6,7 +6,7 @@ import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
 import { uploadImageToDrive } from '../../services/api/googleDriveService';
 import {
   submitPickupItems,
-  updateLatestOpportunityEventStatus,
+  submitDelivery,
 } from '../../services/api/opportunityEventItemDriverService';
 import { useAuth } from '../../auth/AuthContext';
 
@@ -52,14 +52,6 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
         assignment.status_id,
         assignment.notes
       );
-
-      // Update latest opportunity event using PUT /api/opportunity-events/{event_id}
-      await updateLatestOpportunityEventStatus(assignment.id, {
-        previousStatusId: assignment.status_id || 2,
-        newStatusId: 3,
-        creatorId: user?.id,
-        notes: assignment.notes || null,
-      });
 
       onStatusUpdate(assignment.id, 'inpicked', {
         submittedDetails: {
@@ -115,13 +107,8 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
           setDeliveryImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error' } : i));
         }
       }
-      // Update latest opportunity event using PUT /api/opportunity-events/{event_id}
-      await updateLatestOpportunityEventStatus(assignment.id, {
-        previousStatusId: assignment.status_id || 3,
-        newStatusId: 5,
-        creatorId: user?.id,
-        notes: assignment.notes || null,
-      });
+      // POST a new event to preserve history: InPicked → Delivered
+      await submitDelivery(assignment.id, user?.id, assignment.status_id || 3);
 
       onStatusUpdate(assignment.id, 'delivered', {
         submittedDetails: {
