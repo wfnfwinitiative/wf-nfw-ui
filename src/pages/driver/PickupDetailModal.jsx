@@ -4,7 +4,10 @@ import { VoiceInputPanel } from './VoiceInputPanel';
 import { MapPin, Building2, Truck, Phone, Camera, X, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
 import { uploadImageToDrive } from '../../services/api/googleDriveService';
-import { submitPickupItems } from '../../services/api/opportunityEventItemDriverService';
+import {
+  submitPickupItems,
+  updateLatestOpportunityEventStatus,
+} from '../../services/api/opportunityEventItemDriverService';
 import { useAuth } from '../../auth/AuthContext';
 
 
@@ -23,8 +26,8 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
   const driverName = user?.name || user?.mobileNumber || `Driver${user?.id || ''}`;
   const opportunityId = String(assignment.id || '');
 
-  const canSubmit = status === 'reached';
-  const canMarkDelivered = status === 'submitted';
+  const canSubmit = status === 'assigned';        // Assigned → fill items → InPicked
+  const canMarkDelivered = status === 'inpicked'; // InPicked → confirm delivery → Delivered
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -50,7 +53,15 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
         assignment.notes
       );
 
-      onStatusUpdate(assignment.id, 'submitted', {
+      // Update latest opportunity event using PUT /api/opportunity-events/{event_id}
+      await updateLatestOpportunityEventStatus(assignment.id, {
+        previousStatusId: assignment.status_id || 2,
+        newStatusId: 3,
+        creatorId: user?.id,
+        notes: assignment.notes || null,
+      });
+
+      onStatusUpdate(assignment.id, 'inpicked', {
         submittedDetails: {
           pickupTime: new Date().toISOString(),
           pickupFolderUrl,
@@ -104,6 +115,14 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
           setDeliveryImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error' } : i));
         }
       }
+      // Update latest opportunity event using PUT /api/opportunity-events/{event_id}
+      await updateLatestOpportunityEventStatus(assignment.id, {
+        previousStatusId: assignment.status_id || 3,
+        newStatusId: 5,
+        creatorId: user?.id,
+        notes: assignment.notes || null,
+      });
+
       onStatusUpdate(assignment.id, 'delivered', {
         submittedDetails: {
           ...assignment.submittedDetails,

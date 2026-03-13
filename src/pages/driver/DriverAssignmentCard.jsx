@@ -4,14 +4,12 @@ import { StatusBadge, Button } from '../../components/common';
 export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
   const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
 
-  const canMarkReached = status === 'assigned';
-  const canOpenDetails = status === 'reached';
-  const isCompleted = ['delivered', 'verified'].includes(status);
-
-  const handleReachedClick = (e) => {
-    e.stopPropagation();
-    onStatusUpdate(assignment.id, 'reached');
-  };
+  // Assigned(2)  → show "Fill Pickup Details" (opens modal to submit items → InPicked)
+  // InPicked(3)   → show "Confirm Delivery" (opens modal to upload delivery photo → Delivered)
+  // Delivered(5)  → show "Awaiting Verification" text
+  const canOpenDetails     = status === 'assigned';
+  const canConfirmDelivery = status === 'inpicked';
+  const isCompleted = ['delivered', 'verified', 'completed'].includes(status);
 
   return (
     <div
@@ -149,15 +147,6 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
 
       {/* Footer */}
       <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-        {canMarkReached && (
-          <Button
-            onClick={handleReachedClick}
-            variant="primary"
-            className="w-full"
-          >
-            Reached Pickup Location
-          </Button>
-        )}
         {canOpenDetails && (
           <Button
             onClick={onClick}
@@ -167,7 +156,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
             Fill Pickup Details
           </Button>
         )}
-        {status === 'submitted' && (
+        {canConfirmDelivery && (
           <Button
             onClick={onClick}
             variant="success"
@@ -178,7 +167,17 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
         )}
         {status === 'delivered' && (
           <div className="text-center text-sm text-green-600 font-medium">
-            Awaiting coordinator verification
+            ✓ Awaiting coordinator verification
+          </div>
+        )}
+        {(status === 'verified' || status === 'completed') && (
+          <div className="text-center text-sm text-primary-600 font-medium">
+            ✓ {status === 'completed' ? 'Completed' : 'Verified'}
+          </div>
+        )}
+        {status === 'rejected' && (
+          <div className="text-center text-sm text-red-500 font-medium">
+            Rejected
           </div>
         )}
       </div>

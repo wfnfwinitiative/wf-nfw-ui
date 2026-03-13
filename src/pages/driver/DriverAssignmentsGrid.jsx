@@ -6,32 +6,62 @@ import { serviceApi } from '../../services/api/apiClient';
 import { useAuth } from '../../auth/AuthContext';
 
 
-// Maps DB status_name to the UI status string used by cards/modals.
-// TODO: tighten these mappings once all DB statuses are properly assigned in production.
-// NOTE: 'initiated' is temporarily overridden to 'reached' so the full pickup flow
-// ("Fill Pickup Details" button → modal) can be tested before proper statuses are set.
+// Maps DB status_name (lowercase) → UI status token.
+// Schema: 1=Created, 2=Assigned, 3=InPicked, 4=Rejected, 5=Delivered, 6=Verified, 7=Completed
+// Created(1) is never shown to drivers — opportunities only appear once Assigned.
 const STATUS_NAME_MAP = {
-  initiated:   'reached',   // TEMP: override to reached for testing full flow
-  underreview: 'assigned',
-  approved:    'assigned',
-  assigned:    'assigned',
-  inpickup:    'reached',
-  intransit:   'submitted',
-  delivered:   'delivered',
-  verified:    'verified',
-  closed:      'closed',
-  rejected:    'rejected',
-  cancelled:   'cancelled',
+  assigned:  'assigned',
+  inpicked:  'inpicked',
+  rejected:  'rejected',
+  delivered: 'delivered',
+  verified:  'verified',
+  completed: 'completed',
 };
+
+const STATUS_ID_TO_UI = {
+  2: 'assigned',
+  3: 'inpicked',
+  4: 'rejected',
+  5: 'delivered',
+  6: 'verified',
+  7: 'completed',
+};
+
+function resolveEffectiveStatus(opp) {
+  // Prefer event-derived status to keep latest state after refresh.
+  const effectiveStatusId = opp.new_status_id ?? opp.previous_status_id ?? opp.status_id;
+
+  if (effectiveStatusId && STATUS_ID_TO_UI[effectiveStatusId]) {
+    return {
+      statusId: effectiveStatusId,
+      statusUi: STATUS_ID_TO_UI[effectiveStatusId],
+      statusName:
+        (opp.new_status_id ? opp.new_status_name : opp.previous_status_name) ||
+        opp.status_name ||
+        null,
+    };
+  }
+
+  return {
+    statusId: opp.status_id,
+    statusUi: STATUS_NAME_MAP[opp.status_name?.toLowerCase()] || 'assigned',
+    statusName: opp.status_name || null,
+  };
+}
 
 // Transforms the detailed API opportunity model (OpportunityDetailedRead) into the
 // shape expected by UI components.
-const normalizeOpportunity = (opp) => ({
+const toDriverAssignment = (opp) => ({
+  ...(() => {
+    const effective = resolveEffectiveStatus(opp);
+    return {
+      status_id: effective.statusId,
+      status: effective.statusUi,
+      status_name: effective.statusName,
+    };
+  })(),
   id: opp.opportunity_id,
   opportunityName: opp.opportunity_name,
-  status_id: opp.status_id,
-  status: STATUS_NAME_MAP[opp.status_name?.toLowerCase()] || 'assigned',
-  status_name: opp.status_name,
   feeding_count: opp.feeding_count,
   notes: opp.notes,
   pickup: {
@@ -55,7 +85,7 @@ const normalizeOpportunity = (opp) => ({
   timeline: [],
 });
 
-export function DriverAssignmentsGrid({ statusFilter = null }) {
+export function DriverAssignmentsGrid({ statusFilter = null, onCountsChange }) {
   const { user } = useAuth();
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -67,8 +97,20 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
     const fetchOpportunities = async () => {
       try {
         setLoading(true);
-        const data = await serviceApi.get(`/api/opportunities/driver/${user.id}`);
-        setAssignments(data.map(normalizeOpportunity));
+        const driverId = 7
+        const data = await serviceApi.get(`/api/opportunities/driver/${driverId}`);
+        const normalized = data.map(toDriverAssignment);
+        setAssignments(normalized);
+
+        // Compute counts for each filter group and notify parent
+        if (onCountsChange) {
+          onCountsChange({
+            all:      normalized.filter(a => !['completed','rejected'].includes(a.status)).length,
+            assigned: normalized.filter(a => a.status === 'assigned').length,
+            inpicked: normalized.filter(a => a.status === 'inpicked').length,
+            delivered: normalized.filter(a => ['delivered','verified','completed'].includes(a.status)).length,
+          });
+        }
       } catch (err) {
         console.error('Failed to fetch opportunities:', err);
         setError('Failed to load opportunities. Please try again.');
@@ -81,8 +123,8 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
   }, [user?.id]);
 
   const handleStatusUpdate = (assignmentId, newStatus, additionalData = {}) => {
-    setAssignments((prev) =>
-      prev.map((assignment) =>
+    setAssignments((prev) => {
+      const updated = prev.map((assignment) =>
         assignment.id === assignmentId
           ? {
               ...assignment,
@@ -98,17 +140,28 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
               ],
             }
           : assignment
-      )
-    );
+      );
+      // Recompute counts so filter cards update instantly after status change
+      if (onCountsChange) {
+        onCountsChange({
+          all:       updated.filter(a => !['completed','rejected'].includes(a.status)).length,
+          assigned:  updated.filter(a => a.status === 'assigned').length,
+          inpicked:  updated.filter(a => a.status === 'inpicked').length,
+          delivered: updated.filter(a => ['delivered','verified','completed'].includes(a.status)).length,
+        });
+      }
+      return updated;
+    });
     setSelectedAssignment(null);
   };
 
   const getStatusNote = (status) => {
     const notes = {
-      reached: 'Driver reached pickup location',
-      submitted: 'Pickup details submitted',
+      assigned: 'Opportunity assigned to driver',
+      inpicked: 'Pickup details submitted',
       delivered: 'Food delivered to hunger spot',
       verified: 'Verified by coordinator',
+      completed: 'Opportunity completed',
     };
     return notes[status] || '';
   };
@@ -133,7 +186,8 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
 
   const activeAssignments = assignments.filter((a) => {
     if (statusFilter) return statusFilter.includes(a.status);
-    return !['verified', 'closed', 'rejected', 'cancelled'].includes(a.status);
+    // By default show all active statuses; hide only fully completed/rejected
+    return !['completed', 'rejected'].includes(a.status);
   });
 
   if (activeAssignments.length === 0) {

@@ -1,12 +1,20 @@
 import { serviceApi } from './apiClient';
 
-// Status IDs matching DB seed order:
-// 1=Initiated, 2=UnderReview, 3=Approved, 4=Assigned,
-// 5=InPickup, 6=InTransit, 7=Delivered, 8=Verified
+// Status IDs — 7-status schema:
+// 1=Created, 2=Assigned, 3=InPicked, 4=Rejected, 5=Delivered, 6=Verified, 7=Completed
 const STATUS_IDS = {
-  ASSIGNED: 4,
-  IN_PICKUP: 5,
+  ASSIGNED:  2,
+  IN_PICKED: 3,
+  DELIVERED: 5,
 };
+
+async function getEventsByOpportunity(opportunityId) {
+  return await serviceApi.get(`/api/opportunity-events/by-opportunity/${opportunityId}`);
+}
+
+async function updateOpportunityEvent(eventId, payload) {
+  return await serviceApi.put(`/api/opportunity-events/${eventId}`, payload);
+}
 
 /**
  * Parses a free-text quantity string like "5 kg" or "10" into
@@ -36,10 +44,9 @@ export async function submitPickupItems(opportunityId, foodItems, actorId, previ
   const payload = {
     event_data: {
       opportunity_id: opportunityId,
-      event_type: 'pickup_confirmed',
       previous_status_id: previousStatusId || STATUS_IDS.ASSIGNED,
-      new_status_id: STATUS_IDS.IN_PICKUP,
-      actor_id: actorId,
+      new_status_id: STATUS_IDS.IN_PICKED,
+      creator_id: actorId,
       notes: notes || null,
     },
     items_data: foodItems.map((item) => {
@@ -55,4 +62,45 @@ export async function submitPickupItems(opportunityId, foodItems, actorId, previ
   };
 
   return await serviceApi.post('/api/opportunity-event-items-driver/', payload);
+}
+
+/**
+ * Submits a delivery-confirmed event to update opportunity status to Delivered.
+ * Uses the generic /opportunity-events/ endpoint (no items needed for delivery).
+ */
+export async function submitDelivery(opportunityId, actorId, previousStatusId) {
+  return await serviceApi.post('/api/opportunity-events/', {
+    opportunity_id: opportunityId,
+    previous_status_id: previousStatusId || STATUS_IDS.IN_PICKED,
+    new_status_id: STATUS_IDS.DELIVERED,
+    creator_id: actorId,
+  });
+}
+
+/**
+ * Updates the latest event for an opportunity with new status transition.
+ * Falls back to create if no event exists yet.
+ */
+export async function updateLatestOpportunityEventStatus(
+  opportunityId,
+  { previousStatusId, newStatusId, creatorId, notes = null }
+) {
+  const events = await getEventsByOpportunity(opportunityId);
+  const latestEvent = Array.isArray(events)
+    ? events.reduce((max, e) => (e.opportunity_event_id > (max?.opportunity_event_id || 0) ? e : max), null)
+    : null;
+
+  const payload = {
+    opportunity_id: opportunityId,
+    previous_status_id: previousStatusId,
+    new_status_id: newStatusId,
+    creator_id: creatorId,
+    notes,
+  };
+
+  if (latestEvent?.opportunity_event_id) {
+    return await updateOpportunityEvent(latestEvent.opportunity_event_id, payload);
+  }
+
+  return await serviceApi.post('/api/opportunity-events/', payload);
 }

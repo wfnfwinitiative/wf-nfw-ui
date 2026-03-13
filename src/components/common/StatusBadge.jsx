@@ -19,10 +19,25 @@ const statusStyles = {
     text: 'text-green-800',
     dot: 'bg-green-500',
   },
+  inpicked: {
+    bg: 'bg-orange-100',
+    text: 'text-orange-800',
+    dot: 'bg-orange-500',
+  },
+  rejected: {
+    bg: 'bg-red-100',
+    text: 'text-red-800',
+    dot: 'bg-red-500',
+  },
   verified: {
     bg: 'bg-primary-100',
     text: 'text-primary-800',
     dot: 'bg-primary-500',
+  },
+  completed: {
+    bg: 'bg-gray-100',
+    text: 'text-gray-800',
+    dot: 'bg-gray-500',
   },
   pending: {
     bg: 'bg-gray-100',
@@ -46,7 +61,10 @@ const statusLabels = {
   reached: 'Reached Pickup',
   submitted: 'Details Submitted',
   delivered: 'Delivered',
-  verified: 'Verified',
+  inpicked:  'In Pickup',
+  rejected:  'Rejected',
+  verified:  'Verified',
+  completed: 'Completed',
   pending: 'Pending',
   active: 'Active',
   inactive: 'Inactive',

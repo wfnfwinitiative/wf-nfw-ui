@@ -21,12 +21,12 @@ const FILTERS = [
     statuses: ['assigned'],
   },
   {
-    key: 'reached',
+    key: 'inpicked',
     label: 'In Progress',
     icon: Clock,
-    color: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-    statuses: ['reached', 'submitted'],
+    color: 'bg-orange-100',
+    iconColor: 'text-orange-600',
+    statuses: ['inpicked'],
   },
   {
     key: 'delivered',
@@ -34,12 +34,13 @@ const FILTERS = [
     icon: Check,
     color: 'bg-green-100',
     iconColor: 'text-green-600',
-    statuses: ['delivered', 'verified'],
+    statuses: ['delivered', 'verified', 'completed'],
   },
 ];
 
 export const DriverDashboard = () => {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [counts, setCounts] = useState({ all: 0, assigned: 0, inpicked: 0, delivered: 0 });
 
   return (
     <div className="space-y-6">
@@ -64,11 +65,9 @@ export const DriverDashboard = () => {
                 <div className={`w-10 h-10 md:w-12 md:h-12 ${filter.color} rounded-xl flex items-center justify-center`}>
                   <Icon className={`w-5 h-5 md:w-6 md:h-6 ${filter.iconColor}`} />
                 </div>
-                {isActive && (
-                  <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
-                    Active
-                  </span>
-                )}
+                <span className="text-xl md:text-2xl font-bold text-gray-800">
+                  {counts[filter.key] ?? 0}
+                </span>
               </div>
               <p className="text-sm md:text-base font-medium text-gray-600">{filter.label}</p>
             </button>
@@ -81,7 +80,10 @@ export const DriverDashboard = () => {
         <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
           {FILTERS.find((f) => f.key === activeFilter)?.label ?? 'Your Assignments'}
         </h2>
-        <DriverAssignmentsGrid statusFilter={FILTERS.find((f) => f.key === activeFilter)?.statuses} />
+        <DriverAssignmentsGrid
+          statusFilter={FILTERS.find((f) => f.key === activeFilter)?.statuses}
+          onCountsChange={setCounts}
+        />
       </div>
     </div>
   );
