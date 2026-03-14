@@ -42,7 +42,6 @@ export function ImageUploadSection({ images, onAdd, onRemove, sectionRef, locked
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         multiple
         onChange={handleFileChange}
         className="hidden"
