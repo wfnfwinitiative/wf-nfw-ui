@@ -30,6 +30,7 @@ export const HungerSpots = () => {
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ contactNumber: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [activateConfirm, setActivateConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,7 +53,8 @@ export const HungerSpots = () => {
         contactNumber: h.mobile_number,
         lat: h.latitude,
         lng: h.longitude,
-        type: 'hungerspot'
+        type: 'hungerspot',
+        isActive: h.is_active !== false
       }));
       setLocations(mappedData);
     } catch (error) {
@@ -79,7 +81,10 @@ export const HungerSpots = () => {
   }, [locations, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (l) => l.name || '', (l) => l.id || 0),
+    () => {
+      const list = sortList(filtered, sortBy, (l) => l.name || '', (l) => l.id || 0);
+      return [...list.filter(l => l.isActive !== false), ...list.filter(l => l.isActive === false)];
+    },
     [filtered, sortBy]
   );
 
@@ -169,7 +174,7 @@ export const HungerSpots = () => {
     if (!deleteConfirm.id) return;
     try {
       await HungerSpotApi.deleteHungerSpot(deleteConfirm.id);
-      setSuccessMessage('Hunger spot deleted successfully.');
+      setSuccessMessage('Hunger spot deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
       loadLocations();
@@ -180,10 +185,29 @@ export const HungerSpots = () => {
           Array.isArray(error.response.data.detail) &&
           error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
-        'An error occurred while deleting.';
+        'An error occurred while deactivating.';
       setPageError(errorMessage);
       setTimeout(() => setPageError(''), 5000);
       setDeleteConfirm({ open: false, id: null });
+    }
+  };
+
+  const handleActivateConfirm = async () => {
+    if (!activateConfirm.id) return;
+    try {
+      const response = await HungerSpotApi.activateHungerSpot(activateConfirm.id);
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Hunger spot activated successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      loadLocations();
+    } catch (error) {
+      console.error('Failed to activate hunger spot:', error);
+      const errorMessage =
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while activating.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+    } finally {
+      setActivateConfirm({ open: false, id: null });
     }
   };
 
@@ -380,10 +404,18 @@ export const HungerSpots = () => {
 
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to delete this record?"
-        confirmLabel="Delete"
+        message="Are you sure you want to deactivate this hunger spot?"
+        confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
+      />
+
+      <ConfirmationModal
+        open={activateConfirm.open}
+        message="Are you sure you want to activate this hunger spot?"
+        confirmLabel="Activate"
+        onConfirm={handleActivateConfirm}
+        onCancel={() => setActivateConfirm({ open: false, id: null })}
       />
 
       {loading ? (
@@ -397,6 +429,7 @@ export const HungerSpots = () => {
               <TileCard
                 key={loc.id}
                 title={loc.name || 'Unnamed HungerSpot'}
+                status={loc.isActive !== false ? 'active' : 'inactive'}
                 fields={[
                   { label: 'Address', value: loc.address },
                   { label: 'City', value: loc.city },
@@ -411,7 +444,9 @@ export const HungerSpots = () => {
                   },
                 ]}
                 onEdit={() => openEdit(loc)}
-                onDelete={() => setDeleteConfirm({ open: true, id: loc.id })}
+                onDelete={loc.isActive !== false ? () => setDeleteConfirm({ open: true, id: loc.id }) : undefined}
+                onActivate={loc.isActive === false ? () => setActivateConfirm({ open: true, id: loc.id }) : undefined}
+                deleteLabel="Deactivate"
               />
             ))}
           </div>

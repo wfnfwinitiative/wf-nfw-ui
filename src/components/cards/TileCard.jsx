@@ -12,6 +12,8 @@ export const TileCard = ({
   fields = [],
   onEdit,
   onDelete,
+  onActivate,
+  deleteLabel = 'Delete',
   children,
   className = ''
 }) => (
@@ -57,7 +59,7 @@ export const TileCard = ({
       )}
     </div>
 
-    {(onEdit || onDelete) && (
+    {(onEdit || onDelete || onActivate) && (
       <div className="mt-4 flex flex-col sm:flex-row gap-2">
         {onEdit && (
           <Button variant="secondary" className="flex-1 justify-center min-h-[44px]" onClick={onEdit}>
@@ -66,7 +68,12 @@ export const TileCard = ({
         )}
         {onDelete && (
           <Button variant="danger" className="flex-1 justify-center min-h-[44px]" onClick={onDelete}>
-            Delete
+            {deleteLabel}
+          </Button>
+        )}
+        {onActivate && (
+          <Button variant="primary" className="flex-1 justify-center min-h-[44px]" onClick={onActivate}>
+            Activate
           </Button>
         )}
       </div>

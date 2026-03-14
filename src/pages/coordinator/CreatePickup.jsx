@@ -53,15 +53,15 @@ export const CreatePickup = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [pickup, hunger, driversData, tranportations] = await Promise.all([
+      const [pickup, hunger, driversData, transportations] = await Promise.all([
         DonorApi.getDonors(),
         HungerSpotApi.getHungerSpot(),
         UserApi.getUserByRole(DRIVER),
         VehicleApi.getVehicles()
       ]);
-      setPickupLocations(pickup || []);
-      setHungerSpots(hunger || []);
-      setVehicles(tranportations);
+      setPickupLocations((pickup || []).filter(d => d.isActive !== false));
+      setHungerSpots((hunger || []).filter(h => h.is_active !== false));
+      setVehicles((transportations || []).filter(v => v.is_active !== false));
       setDrivers((driversData || []).filter(d => d.status === 'active'));
     } catch (err) {
       console.error('Error loading data:', err);

@@ -32,7 +32,8 @@ const initializeMockData = () => {
       { id: '5', name: 'Driver Three', phone: '9876543214', password: 'driver123', role: 'driver', email: 'driver3@nofoodwaste.org' },
       { id: '6', name: 'Chin', phone: '9876543215', password: 'driver123', role: 'driver', email: 'driver4@nofoodwaste.org' },
       { id: '7', name: 'Jin', phone: '9876543216', password: 'driver123', role: 'driver', email: 'driver5@nofoodwaste.org' },
-      { id: '8', name: 'bill', phone: '9876655448', password: 'driver123', role: 'driver', email: 'driver5@nofoodwaste.org' }
+      { id: '8', name: 'bill', phone: '9876655448', password: 'driver123', role: 'driver', email: 'driver5@nofoodwaste.org' },
+      { id: '9', name: 'Support Admin', phone: '9876543220', password: 'support123', role: 'supportadmin', email: 'support@nofoodwaste.org' }
     ];
 
     const drivers = [

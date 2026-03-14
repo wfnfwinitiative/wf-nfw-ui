@@ -67,4 +67,15 @@ export const HungerSpotApi = {
             throw error;
         }
     },
+
+    async activateHungerSpot(hunger_spot_id) {
+        try {
+            const response = await serviceApi.post(`/api/hunger-spots/activate/${hunger_spot_id}`);
+            console.log(`HungerSpot ${hunger_spot_id} activated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error activating HungerSpot ${hunger_spot_id}:`, error);
+            throw error;
+        }
+    },
 }
