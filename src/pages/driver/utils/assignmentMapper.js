@@ -69,12 +69,21 @@ export function toDriverAssignment(opp) {
       organizationName: opp.donor_name,
       contactNumber:    opp.pickup_contact_no,
       scheduledTime:    opp.pickup_eta,
-      location: { address: opp.pickup_location, mapLink: null },
+      location: {
+        address: opp.pickup_location,
+        lat:     opp.pickup_lat ?? null,
+        lng:     opp.pickup_lng ?? null,
+        mapLink: null,
+      },
     },
     delivery: {
       hungerSpotName: opp.drop_location,
       contactNumber:  opp.drop_location_contact_no,
-      location:       { address: opp.drop_location },
+      location:       {
+        address: opp.drop_location,
+        lat:     opp.drop_lat ?? null,
+        lng:     opp.drop_lng ?? null,
+      },
       deliveryBy:     opp.delivery_by,
     },
     vehicle:  { number: opp.vehicle_name || `#${opp.vehicle_id}` },
