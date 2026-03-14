@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar } from '../../components/ui';
 import { validatePassword, validatePhone } from '../../utils/validation';
 import { UserApi } from '../../services/api/userService';
-import { Plus, X, Loader2, UserPlus, KeyRound, Shield } from 'lucide-react';
+import { Plus, X, Loader2, UserPlus, KeyRound, Shield, Eye, EyeOff } from 'lucide-react';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -19,6 +19,7 @@ export const SupportAdminDashboard = () => {
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
 
   // --- Reset Admin ---
   const [resetForm, setResetForm] = useState(emptyResetForm);
@@ -26,6 +27,7 @@ export const SupportAdminDashboard = () => {
   const [resetError, setResetError] = useState('');
   const [resetSuccess, setResetSuccess] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   // --- Admin List ---
   const [admins, setAdmins] = useState([]);
@@ -302,14 +304,24 @@ export const SupportAdminDashboard = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Password <span className="text-red-500">*</span>
               </label>
+              <div className="relative">
               <input
-                type="password"
+                type={showCreatePassword ? 'text' : 'password'}
                 value={createForm.password}
                 onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent"
-                placeholder="Alphanumeric, max 20 chars"
+                className="w-full px-4 py-2.5 pr-12 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent"
+                placeholder="Min 8 chars, max 20"
                 maxLength={20}
               />
+              <button
+                type="button"
+                onClick={() => setShowCreatePassword(!showCreatePassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                tabIndex={-1}
+              >
+                {showCreatePassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+              </div>
               {createFieldErrors.password && <p className="text-red-500 text-xs mt-1">{createFieldErrors.password}</p>}
             </div>
 
@@ -368,14 +380,24 @@ export const SupportAdminDashboard = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 New Password <span className="text-red-500">*</span>
               </label>
+              <div className="relative">
               <input
-                type="password"
+                type={showResetPassword ? 'text' : 'password'}
                 value={resetForm.newPassword}
                 onChange={(e) => setResetForm({ ...resetForm, newPassword: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent"
-                placeholder="Alphanumeric, max 20 chars"
+                className="w-full px-4 py-2.5 pr-12 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent"
+                placeholder="Min 8 chars, max 20"
                 maxLength={20}
               />
+              <button
+                type="button"
+                onClick={() => setShowResetPassword(!showResetPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                tabIndex={-1}
+              >
+                {showResetPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+              </div>
               {resetFieldErrors.newPassword && <p className="text-red-500 text-xs mt-1">{resetFieldErrors.newPassword}</p>}
             </div>
 

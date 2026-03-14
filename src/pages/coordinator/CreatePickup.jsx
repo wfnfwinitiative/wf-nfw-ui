@@ -59,9 +59,9 @@ export const CreatePickup = () => {
         UserApi.getUserByRole(DRIVER),
         VehicleApi.getVehicles()
       ]);
-      setPickupLocations(pickup || []);
-      setHungerSpots(hunger || []);
-      setVehicles(tranportations);
+      setPickupLocations((pickup || []).filter(d => d.isActive !== false));
+      setHungerSpots((hunger || []).filter(h => h.is_active !== false));
+      setVehicles((tranportations || []).filter(v => v.is_active !== false));
       setDrivers((driversData || []).filter(d => d.status === 'active'));
     } catch (err) {
       console.error('Error loading data:', err);
