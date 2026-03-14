@@ -1,7 +1,7 @@
 import { MapPin, Phone, Clock, Truck, Building2, ExternalLink, Users, FileText } from 'lucide-react';
 import { StatusBadge, Button } from '../../components/common';
 
-export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
+export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disabled = false }) {
   const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
   const canOpenDetails     = status === 'assigned';
   const canConfirmDelivery = status === 'inpicked';
@@ -9,10 +9,11 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
 
   return (
     <div
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       className={`
         bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden
-        hover:shadow-lg transition-all duration-200 cursor-pointer
+        transition-all duration-200 flex flex-col
+        ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg cursor-pointer'}
         ${isCompleted ? 'opacity-70' : ''}
       `}
     >
@@ -30,7 +31,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
       </div>
 
       {/* Body */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 flex-1">
         {/* Pickup Details */}
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -143,9 +144,10 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
       <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
         {canOpenDetails && (
           <Button
-            onClick={onClick}
+            onClick={disabled ? undefined : onClick}
             variant="warning"
             className="w-full"
+            disabled={disabled}
           >
             Fill Pickup Details
           </Button>
