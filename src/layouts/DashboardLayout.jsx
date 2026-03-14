@@ -72,8 +72,13 @@ export const DashboardLayout = () => {
         />
       )}
       <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 md:translate-x-0 ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full md:w-0 md:overflow-hidden'} overflow-y-auto`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
-          <Logo />
+        <div className="flex items-center justify-between pt-4 pb-3 px-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <Logo className="h-14 w-auto flex-shrink-0" />
+            <span className="text-sm font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap truncate">
+              No Food Waste
+            </span>
+          </div>
           {/* Show close button only on mobile */}
           <button
             onClick={() => setSidebarOpen(false)}

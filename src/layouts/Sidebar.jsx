@@ -34,13 +34,13 @@ export function Sidebar({ isOpen, onClose }) {
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-6">
           <button
             onClick={() => window.location.href = '/dashboard'}
             className="flex items-center gap-2 hover:opacity-75 transition-opacity"
             title="Go to Dashboard"
           >
-            <img src={logo} alt="NoFoodWaste" className="w-8 h-8" />
+            <img src={logo} alt="NoFoodWaste" className="w-11 h-16" />
             <span className="text-lg font-bold text-gray-900">NoFoodWaste</span>
           </button>
           <button

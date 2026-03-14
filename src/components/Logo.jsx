@@ -7,8 +7,8 @@ import logo from '../assets/NoFoodWaste_Logo_Orange.png';
  * @param {string} [className] - Optional extra classes (e.g. "mb-4")
  */
 export const Logo = ({ className = '' }) => {
-  const responsiveClass = 'h-20 md:h-24 lg:h-32 w-auto object-contain';
-  const combined = className ? `${responsiveClass} ${className}` : responsiveClass;
+  const defaultClass = 'w-auto object-contain';
+  const combined = className ? `${defaultClass} ${className}` : `h-12 md:h-14 ${defaultClass}`;
 
   return (
     <img

@@ -26,6 +26,7 @@ import { CreatePickup } from './pages/coordinator/CreatePickup';
 import { CoordinatorDrivers } from './pages/coordinator/CoordinatorDrivers';
 
 import { DriverDashboard } from './pages/driver/DriverDashboard';
+import { DriverTasksPage } from './pages/driver/DriverTasksPage';
 import { TaskDetail } from './pages/driver/TaskDetail';
 
 import { ReviewOpportunities } from './pages/reviewOpportunities/ReviewOpportunities';
@@ -88,7 +89,7 @@ function App() {
 
           <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DashboardLayout /></RoleGuard>}>
             <Route path="dashboard" element={<DriverDashboard />} />
-            <Route path="tasks" element={<DriverDashboard />} />
+            <Route path="tasks" element={<DriverTasksPage />} />
             <Route path="task/:id" element={<TaskDetail />} />
           </Route>
 
