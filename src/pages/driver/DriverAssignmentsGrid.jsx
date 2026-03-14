@@ -4,58 +4,21 @@ import { PickupDetailModal } from './PickupDetailModal';
 import { LoadingCard } from '../../components/common';
 import { serviceApi } from '../../services/api/apiClient';
 import { useAuth } from '../../auth/AuthContext';
+import { toDriverAssignment, getStatusNote } from './utils/assignmentMapper';
+import { isToday, sortAssignments } from './utils/taskFilters';
 
+// Computes the count summary object used by parent filter cards.
+function computeCounts(list, todayOnly) {
+  const base = todayOnly ? list.filter(a => isToday(a.pickup?.scheduledTime)) : list;
+  return {
+    all:       base.filter(a => !['completed', 'rejected'].includes(a.status)).length,
+    assigned:  base.filter(a => a.status === 'assigned').length,
+    inpicked:  base.filter(a => a.status === 'inpicked').length,
+    delivered: base.filter(a => ['delivered', 'verified', 'completed'].includes(a.status)).length,
+  };
+}
 
-// Maps DB status_name to the UI status string used by cards/modals.
-// TODO: tighten these mappings once all DB statuses are properly assigned in production.
-// NOTE: 'initiated' is temporarily overridden to 'reached' so the full pickup flow
-// ("Fill Pickup Details" button → modal) can be tested before proper statuses are set.
-const STATUS_NAME_MAP = {
-  initiated:   'reached',   // TEMP: override to reached for testing full flow
-  underreview: 'assigned',
-  approved:    'assigned',
-  assigned:    'assigned',
-  inpickup:    'reached',
-  intransit:   'submitted',
-  delivered:   'delivered',
-  verified:    'verified',
-  closed:      'closed',
-  rejected:    'rejected',
-  cancelled:   'cancelled',
-};
-
-// Transforms the detailed API opportunity model (OpportunityDetailedRead) into the
-// shape expected by UI components.
-const normalizeOpportunity = (opp) => ({
-  id: opp.opportunity_id,
-  opportunityName: opp.opportunity_name,
-  status_id: opp.status_id,
-  status: STATUS_NAME_MAP[opp.status_name?.toLowerCase()] || 'assigned',
-  status_name: opp.status_name,
-  feeding_count: opp.feeding_count,
-  notes: opp.notes,
-  pickup: {
-    organizationName: opp.donor_name,
-    contactNumber: opp.pickup_contact_no,
-    scheduledTime: opp.pickup_eta,
-    location: { address: opp.pickup_location, mapLink: null },
-  },
-  delivery: {
-    hungerSpotName: opp.drop_location,
-    contactNumber: opp.drop_location_contact_no,
-    location: { address: opp.drop_location },
-    deliveryBy: opp.delivery_by,
-  },
-  vehicle: {
-    number: opp.vehicle_name || `#${opp.vehicle_id}`,
-  },
-  driver: {
-    name: opp.driver_name,
-  },
-  timeline: [],
-});
-
-export function DriverAssignmentsGrid({ statusFilter = null }) {
+export function DriverAssignmentsGrid({ statusFilter = null, todayOnly = false, onCountsChange }) {
   const { user } = useAuth();
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -68,7 +31,9 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
       try {
         setLoading(true);
         const data = await serviceApi.get(`/api/opportunities/driver/${user.id}`);
-        setAssignments(data.map(normalizeOpportunity));
+        const normalized = data.map(toDriverAssignment);
+        setAssignments(normalized);
+        if (onCountsChange) onCountsChange(computeCounts(normalized, todayOnly));
       } catch (err) {
         console.error('Failed to fetch opportunities:', err);
         setError('Failed to load opportunities. Please try again.');
@@ -81,8 +46,8 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
   }, [user?.id]);
 
   const handleStatusUpdate = (assignmentId, newStatus, additionalData = {}) => {
-    setAssignments((prev) =>
-      prev.map((assignment) =>
+    setAssignments((prev) => {
+      const updated = prev.map((assignment) =>
         assignment.id === assignmentId
           ? {
               ...assignment,
@@ -98,17 +63,20 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
               ],
             }
           : assignment
-      )
-    );
+      );
+      if (onCountsChange) onCountsChange(computeCounts(updated, todayOnly));
+      return updated;
+    });
     setSelectedAssignment(null);
   };
 
   const getStatusNote = (status) => {
     const notes = {
-      reached: 'Driver reached pickup location',
-      submitted: 'Pickup details submitted',
+      assigned: 'Opportunity assigned to driver',
+      inpicked: 'Pickup details submitted',
       delivered: 'Food delivered to hunger spot',
       verified: 'Verified by coordinator',
+      completed: 'Opportunity completed',
     };
     return notes[status] || '';
   };
@@ -131,15 +99,20 @@ export function DriverAssignmentsGrid({ statusFilter = null }) {
     );
   }
 
-  const activeAssignments = assignments.filter((a) => {
-    if (statusFilter) return statusFilter.includes(a.status);
-    return !['verified', 'closed', 'rejected', 'cancelled'].includes(a.status);
-  });
+  const activeAssignments = sortAssignments(
+    assignments.filter((a) => {
+      if (todayOnly && !isToday(a.pickup?.scheduledTime)) return false;
+      if (statusFilter) return statusFilter.includes(a.status);
+      return !['completed', 'rejected'].includes(a.status);
+    })
+  );
 
   if (activeAssignments.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-        <p className="text-gray-500">No active assignments at the moment.</p>
+        <p className="text-gray-500">
+          {todayOnly ? "No active tasks scheduled for today." : "No active assignments at the moment."}
+        </p>
       </div>
     );
   }

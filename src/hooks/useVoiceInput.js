@@ -47,10 +47,10 @@ export function useVoiceInput() {
   const processRecording = async () => {
     if (!audioBlob) return;
 
-    // Guard: recording was auto-cancelled at 60s limit — skip LLM call
+    // Note: if auto-stopped at 60s, the blob already contains exactly 60s — process it normally.
+    // Just surface a soft notice so the user knows the audio was trimmed.
     if (autoStopped) {
-      setApiError('Recording stopped: exceeded 60-second limit. Please record a shorter message.');
-      return;
+      setApiError('Recording trimmed to 60 seconds — processing what was captured.');
     }
 
     // Guard: blob too small — silence, accidental tap, or mic issue

@@ -25,6 +25,7 @@ import { CreatePickup } from './pages/coordinator/CreatePickup';
 import { CoordinatorDrivers } from './pages/coordinator/CoordinatorDrivers';
 
 import { DriverDashboard } from './pages/driver/DriverDashboard';
+import { DriverTasksPage } from './pages/driver/DriverTasksPage';
 import { TaskDetail } from './pages/driver/TaskDetail';
 
 import { ReviewOpportunities } from './pages/reviewOpportunities/ReviewOpportunities';
@@ -32,6 +33,21 @@ import { ReviewOpportunityDetail } from './pages/reviewOpportunities/ReviewOppor
 import { Verification } from './pages/verification/Verification';
 import { VerificationDetail } from './pages/verification/VerificationDetail';
 import { Profile } from './pages/profile/Profile';
+import { useAuth } from './auth/AuthContext';
+
+function DashboardRedirect() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!user?.role) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={`/${user.role}/dashboard`} replace />;
+}
 
 function App() {
   return (
@@ -67,7 +83,7 @@ function App() {
 
           <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DashboardLayout /></RoleGuard>}>
             <Route path="dashboard" element={<DriverDashboard />} />
-            <Route path="tasks" element={<DriverDashboard />} />
+            <Route path="tasks" element={<DriverTasksPage />} />
             <Route path="task/:id" element={<TaskDetail />} />
           </Route>
 
@@ -80,6 +96,8 @@ function App() {
             <Route index element={<Profile />} />
             <Route path="edit" element={<Profile />} />
           </Route>
+
+          <Route path="/dashboard" element={<DashboardRedirect />} />
 
           <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
