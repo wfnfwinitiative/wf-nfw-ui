@@ -47,7 +47,10 @@ function DashboardRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to={`/${user.role}/dashboard`} replace />;
+  const roles = user.roles || [user.role];
+  const preferredRole = roles.includes('admin') ? 'admin' : user.role;
+
+  return <Navigate to={`/${preferredRole}/dashboard`} replace />;
 }
 
 function App() {

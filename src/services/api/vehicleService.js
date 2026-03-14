@@ -65,4 +65,15 @@ export const VehicleApi = {
             throw error;
         }
     },
+
+    async activateVehicle(vehicleid) {
+        try {
+            const response = await serviceApi.post(`/api/vehicles/activate/${vehicleid}`);
+            console.log(`Vehicle ${vehicleid} activated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error activating Vehicle ${vehicleid}:`, error);
+            throw error;
+        }
+    },
 }

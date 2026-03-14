@@ -19,6 +19,7 @@ export const Vehicles = () => {
   const [pageError, setPageError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ number: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [activateConfirm, setActivateConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,7 +69,10 @@ export const Vehicles = () => {
   }, [vehicles, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (v) => v.number || '', (v) => v.id || 0),
+    () => {
+      const list = sortList(filtered, sortBy, (v) => v.number || '', (v) => v.id || 0);
+      return [...list.filter(v => v.status === 'active'), ...list.filter(v => v.status !== 'active')];
+    },
     [filtered, sortBy]
   );
 
@@ -150,19 +154,38 @@ export const Vehicles = () => {
     if (!deleteConfirm.id) return;
     try {
       await VehicleApi.deleteVehicle(deleteConfirm.id);
-      setSuccessMessage('Vehicle deleted successfully.');
+      setSuccessMessage('Vehicle deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
       loadVehicles();
     } catch (error) {
-      console.error('Failed to delete vehicle:', error);
+      console.error('Failed to deactivate vehicle:', error);
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
-        'An error occurred while deleting.';
+        'An error occurred while deactivating.';
       setPageError(errorMessage);
       setTimeout(() => setPageError(''), 5000);
       setDeleteConfirm({ open: false, id: null });
+    }
+  };
+
+  const handleActivateConfirm = async () => {
+    if (!activateConfirm.id) return;
+    try {
+      const response = await VehicleApi.activateVehicle(activateConfirm.id);
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Vehicle activated successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      loadVehicles();
+    } catch (error) {
+      console.error('Failed to activate vehicle:', error);
+      const errorMessage =
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while activating.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+    } finally {
+      setActivateConfirm({ open: false, id: null });
     }
   };
 
@@ -239,10 +262,10 @@ export const Vehicles = () => {
                   value={formData.number}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (/^[a-zA-Z0-9]*$/.test(val) && val.length <= 8)
+                    if (/^[a-zA-Z0-9]*$/.test(val) && val.length <= 12)
                       setFormData({ ...formData, number: val });
                   }}
-                  maxLength={8}
+                  maxLength={12}
                   placeholder="e.g. AB12CD34"
                   className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.number ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
@@ -298,12 +321,18 @@ export const Vehicles = () => {
 
       <ConfirmationModal
         open={deleteConfirm.open}
-        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+        message="Are you sure you want to deactivate this vehicle?"
+        confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
-        title="Delete Vehicle"
-        message="Are you sure you want to delete this vehicle? This action cannot be undone."
-        confirmLabel="Delete"
-        variant="danger"
+        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+      />
+
+      <ConfirmationModal
+        open={activateConfirm.open}
+        message="Are you sure you want to activate this vehicle?"
+        confirmLabel="Activate"
+        onConfirm={handleActivateConfirm}
+        onCancel={() => setActivateConfirm({ open: false, id: null })}
       />
 
       {loading ? (
@@ -321,7 +350,9 @@ export const Vehicles = () => {
                 status={vehicle.status}
                 fields={[{ label: 'Capacity', value: vehicle.capacity }]}
                 onEdit={() => openEdit(vehicle)}
-                onDelete={() => setDeleteConfirm({ open: true, id: vehicle.id })}
+                onDelete={vehicle.status === 'active' ? () => setDeleteConfirm({ open: true, id: vehicle.id }) : undefined}
+                onActivate={vehicle.status === 'inactive' ? () => setActivateConfirm({ open: true, id: vehicle.id }) : undefined}
+                deleteLabel="Deactivate"
               />
             ))}
           </div>

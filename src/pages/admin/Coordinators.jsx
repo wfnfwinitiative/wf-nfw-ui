@@ -4,7 +4,7 @@ import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { CoordinatorCard } from '../../components/cards/CoordinatorCard';
 import { validatePassword, validatePhone } from '../../utils/validation';
-import { Plus, X, Loader2, ShieldCheck } from 'lucide-react';
+import { Plus, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import { UserApi } from '../../services/api/userService';
 
 const emptyForm = { name: '', phone: '', email: '', password: '', role: 'COORDINATOR' };
@@ -19,18 +19,21 @@ export const Coordinators = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingIsActive, setEditingIsActive] = useState(true);
   const [formData, setFormData] = useState(emptyForm);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', email: '', password: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [activateConfirm, setActivateConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Add-role state
   const [allRoles, setAllRoles] = useState([]);
-  const [addRoleConfirm, setAddRoleConfirm] = useState({ open: false, user: null });
+  const [editingRoles, setEditingRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState('');
   const [addRoleLoading, setAddRoleLoading] = useState(false);
 
@@ -51,6 +54,7 @@ export const Coordinators = () => {
           phone: u.mobile_number,
           email: u.email || '',
           roles: u.roles || [],
+          isActive: u.is_active !== false,
         }));
       setCoordinators(coordinatorsData);
     } catch (error) {
@@ -74,7 +78,10 @@ export const Coordinators = () => {
   }, [coordinators, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (c) => c.name || '', (c) => c.id || 0),
+    () => {
+      const list = sortList(filtered, sortBy, (c) => c.name || '', (c) => c.id || 0);
+      return [...list.filter(c => c.isActive !== false), ...list.filter(c => c.isActive === false)];
+    },
     [filtered, sortBy]
   );
 
@@ -89,6 +96,7 @@ export const Coordinators = () => {
 
   const openAdd = () => {
     setEditingId(null);
+    setEditingIsActive(true);
     setFormData(emptyForm);
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -97,13 +105,16 @@ export const Coordinators = () => {
 
   const openEdit = (row) => {
     setEditingId(row.id);
+    setEditingIsActive(row.isActive !== false);
     setFormData({
       name: row.name ?? '',
       phone: row.phone ?? '',
       email: row.email ?? '',
       password: '',
-      role: 'COORDINATOR'
+      role: 'COORDINATOR',
     });
+    setEditingRoles(row.roles || []);
+    setSelectedRole('');
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
     setShowForm(true);
@@ -194,7 +205,7 @@ export const Coordinators = () => {
     if (!deleteConfirm.id) return;
     try {
       const response = await UserApi.deleteCoordinator(deleteConfirm.id);
-      setSuccessMessage(typeof response === 'string' ? response : 'Coordinator deleted successfully.');
+      setSuccessMessage(typeof response === 'string' ? response : 'Coordinator deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
       loadCoordinators();
@@ -203,10 +214,29 @@ export const Coordinators = () => {
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
-        'An error occurred while deleting.';
+        'An error occurred while deactivating.';
       setPageError(errorMessage);
       setTimeout(() => setPageError(''), 5000);
       setDeleteConfirm({ open: false, id: null });
+    }
+  };
+
+  const handleActivateConfirm = async () => {
+    if (!activateConfirm.id) return;
+    try {
+      const response = await UserApi.activateUser(activateConfirm.id);
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Coordinator activated successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      loadCoordinators();
+    } catch (error) {
+      console.error('Failed to activate coordinator:', error);
+      const errorMessage =
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while activating.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+    } finally {
+      setActivateConfirm({ open: false, id: null });
     }
   };
 
@@ -219,11 +249,6 @@ export const Coordinators = () => {
     }
   };
 
-  const openAddRole = (coordinator) => {
-    setAddRoleConfirm({ open: true, user: coordinator });
-    setSelectedRole('');
-  };
-
   const getAvailableRoles = (userRoles) => {
     return allRoles.filter(
       (r) => ADDABLE_ROLES.includes(r.role_name) && !userRoles.includes(r.role_name)
@@ -231,25 +256,24 @@ export const Coordinators = () => {
   };
 
   const handleAddRole = async () => {
-    if (!selectedRole || !addRoleConfirm.user) return;
+    if (!selectedRole || !editingId) return;
     const roleObj = allRoles.find((r) => r.role_name === selectedRole);
     if (!roleObj) return;
 
     setAddRoleLoading(true);
     try {
-      await UserApi.assignRole(addRoleConfirm.user.id, roleObj.role_id);
+      await UserApi.assignRole(editingId, roleObj.role_id);
+      setEditingRoles((prev) => [...prev, selectedRole]);
+      setSelectedRole('');
       setSuccessMessage(`Role "${selectedRole}" added successfully.`);
       setTimeout(() => setSuccessMessage(''), 5000);
-      setAddRoleConfirm({ open: false, user: null });
       loadCoordinators();
     } catch (error) {
       console.error('Failed to add role:', error);
       const errorMessage =
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
         'Failed to add role.';
-      setPageError(errorMessage);
-      setTimeout(() => setPageError(''), 5000);
-      setAddRoleConfirm({ open: false, user: null });
+      setFormError(errorMessage);
     } finally {
       setAddRoleLoading(false);
     }
@@ -375,18 +399,28 @@ export const Coordinators = () => {
                   Password {!editingId && <span className="text-red-500">*</span>}
                   {editingId && <span className="text-gray-500 font-normal">(leave blank to keep current)</span>}
                 </label>
+                <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val.length <= 20 && /^[a-zA-Z0-9]*$/.test(val))
+                    if (val.length <= 20)
                       setFormData({ ...formData, password: val });
                   }}
                   maxLength={20}
-                  placeholder={editingId ? 'Leave blank to keep current' : 'Alphanumeric only, max 20 characters'}
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+                </div>
                 {fieldErrors.password && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
                     {fieldErrors.password}
@@ -397,66 +431,59 @@ export const Coordinators = () => {
                 {editingId ? 'Update Coordinator' : 'Add Coordinator'}
               </Button>
             </form>
+
+            {editingId && (
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Roles</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {editingRoles.map((r) => (
+                    <span key={r} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      {r}
+                    </span>
+                  ))}
+                </div>
+                {getAvailableRoles(editingRoles).length > 0 && (
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none text-sm"
+                    >
+                      <option value="">Add a role…</option>
+                      {getAvailableRoles(editingRoles).map((r) => (
+                        <option key={r.role_id} value={r.role_name}>{r.role_name}</option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="primary"
+                      disabled={!selectedRole || addRoleLoading}
+                      onClick={handleAddRole}
+                    >
+                      {addRoleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to delete this record?"
-        confirmLabel="Delete"
+        message="Are you sure you want to deactivate this coordinator?"
+        confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
       />
 
-      {/* Add Role Modal */}
-      {addRoleConfirm.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Add Role</h2>
-              <button
-                onClick={() => setAddRoleConfirm({ open: false, user: null })}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Adding role for <span className="font-semibold">{addRoleConfirm.user?.name}</span>
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-              Current roles: {addRoleConfirm.user?.roles?.join(', ') || 'COORDINATOR'}
-            </p>
-            {getAvailableRoles(addRoleConfirm.user?.roles || []).length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No additional roles available.</p>
-            ) : (
-              <>
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none mb-4"
-                >
-                  <option value="">Select a role…</option>
-                  {getAvailableRoles(addRoleConfirm.user?.roles || []).map((r) => (
-                    <option key={r.role_id} value={r.role_name}>{r.role_name}</option>
-                  ))}
-                </select>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  disabled={!selectedRole || addRoleLoading}
-                  onClick={handleAddRole}
-                >
-                  {addRoleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                  {addRoleLoading ? 'Adding…' : 'Add Role'}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        open={activateConfirm.open}
+        message="Are you sure you want to activate this coordinator?"
+        confirmLabel="Activate"
+        onConfirm={handleActivateConfirm}
+        onCancel={() => setActivateConfirm({ open: false, id: null })}
+      />
 
       {loading ? (
         <div className="flex justify-center items-center p-16">
@@ -470,8 +497,8 @@ export const Coordinators = () => {
                 key={coordinator.id}
                 coordinator={coordinator}
                 onEdit={() => openEdit(coordinator)}
-                onDelete={() => handleDeleteClick(coordinator.id)}
-                onAddRole={() => openAddRole(coordinator)}
+                onDelete={coordinator.isActive !== false ? () => handleDeleteClick(coordinator.id) : undefined}
+                onActivate={coordinator.isActive === false ? () => setActivateConfirm({ open: true, id: coordinator.id }) : undefined}
               />
             ))}
           </div>

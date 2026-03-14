@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
+import { TileCard } from '../../components/cards/TileCard';
 import { validatePassword, validatePhone } from '../../utils/validation';
-import { Plus, X, Loader2, ShieldCheck } from 'lucide-react';
+import { Plus, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import { UserApi } from '../../services/api/userService';
 
 const emptyForm = { name: '', phone: '', email: '', password: '' };
@@ -18,18 +19,21 @@ export const Admins = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingIsActive, setEditingIsActive] = useState(true);
   const [formData, setFormData] = useState(emptyForm);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', email: '', password: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [activateConfirm, setActivateConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Add-role state
   const [allRoles, setAllRoles] = useState([]);
-  const [addRoleConfirm, setAddRoleConfirm] = useState({ open: false, user: null });
+  const [editingRoles, setEditingRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState('');
   const [addRoleLoading, setAddRoleLoading] = useState(false);
 
@@ -50,6 +54,7 @@ export const Admins = () => {
           phone: u.mobile_number,
           email: u.email || '',
           roles: u.roles || [],
+          isActive: u.is_active !== false,
         }));
       setAdmins(adminsData);
     } catch (error) {
@@ -81,7 +86,10 @@ export const Admins = () => {
   }, [admins, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (a) => a.name || '', (a) => a.id || 0),
+    () => {
+      const list = sortList(filtered, sortBy, (a) => a.name || '', (a) => a.id || 0);
+      return [...list.filter(a => a.isActive !== false), ...list.filter(a => a.isActive === false)];
+    },
     [filtered, sortBy]
   );
 
@@ -96,6 +104,7 @@ export const Admins = () => {
 
   const openAdd = () => {
     setEditingId(null);
+    setEditingIsActive(true);
     setFormData(emptyForm);
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -104,12 +113,15 @@ export const Admins = () => {
 
   const openEdit = (row) => {
     setEditingId(row.id);
+    setEditingIsActive(row.isActive !== false);
     setFormData({
       name: row.name ?? '',
       phone: row.phone ?? '',
       email: row.email ?? '',
       password: '',
     });
+    setEditingRoles(row.roles || []);
+    setSelectedRole('');
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
     setShowForm(true);
@@ -179,6 +191,7 @@ export const Admins = () => {
       }
       setFormData(emptyForm);
       setEditingId(null);
+      setEditingIsActive(true);
       setShowForm(false);
       loadAdmins();
     } catch (error) {
@@ -197,7 +210,7 @@ export const Admins = () => {
     if (!deleteConfirm.id) return;
     try {
       const response = await UserApi.deleteAdmin(deleteConfirm.id);
-      setSuccessMessage(typeof response === 'string' ? response : 'Admin deleted successfully.');
+      setSuccessMessage(typeof response === 'string' ? response : 'Admin deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
       loadAdmins();
@@ -206,17 +219,30 @@ export const Admins = () => {
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
-        'An error occurred while deleting.';
+        'An error occurred while deactivating.';
       setPageError(errorMessage);
       setTimeout(() => setPageError(''), 5000);
       setDeleteConfirm({ open: false, id: null });
     }
   };
 
-  // Add Role handlers
-  const openAddRole = (admin) => {
-    setAddRoleConfirm({ open: true, user: admin });
-    setSelectedRole('');
+  const handleActivateConfirm = async () => {
+    if (!activateConfirm.id) return;
+    try {
+      const response = await UserApi.activateUser(activateConfirm.id);
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Admin activated successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      loadAdmins();
+    } catch (error) {
+      console.error('Failed to activate admin:', error);
+      const errorMessage =
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while activating.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+    } finally {
+      setActivateConfirm({ open: false, id: null });
+    }
   };
 
   const getAvailableRoles = (userRoles) => {
@@ -226,25 +252,24 @@ export const Admins = () => {
   };
 
   const handleAddRole = async () => {
-    if (!selectedRole || !addRoleConfirm.user) return;
+    if (!selectedRole || !editingId) return;
     const roleObj = allRoles.find((r) => r.role_name === selectedRole);
     if (!roleObj) return;
 
     setAddRoleLoading(true);
     try {
-      await UserApi.assignRole(addRoleConfirm.user.id, roleObj.role_id);
+      await UserApi.assignRole(editingId, roleObj.role_id);
+      setEditingRoles((prev) => [...prev, selectedRole]);
+      setSelectedRole('');
       setSuccessMessage(`Role "${selectedRole}" added successfully.`);
       setTimeout(() => setSuccessMessage(''), 5000);
-      setAddRoleConfirm({ open: false, user: null });
       loadAdmins();
     } catch (error) {
       console.error('Failed to add role:', error);
       const errorMessage =
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
         'Failed to add role.';
-      setPageError(errorMessage);
-      setTimeout(() => setPageError(''), 5000);
-      setAddRoleConfirm({ open: false, user: null });
+      setFormError(errorMessage);
     } finally {
       setAddRoleLoading(false);
     }
@@ -298,6 +323,7 @@ export const Admins = () => {
                 onClick={() => {
                   setShowForm(false);
                   setEditingId(null);
+                  setEditingIsActive(true);
                   setFormData(emptyForm);
                   setFormError('');
                   setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -358,23 +384,67 @@ export const Admins = () => {
                   Password {!editingId && <span className="text-red-500">*</span>}
                   {editingId && <span className="text-gray-500 font-normal">(leave blank to keep current)</span>}
                 </label>
+                <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val.length <= 20 && /^[a-zA-Z0-9]*$/.test(val)) setFormData({ ...formData, password: val });
+                    if (val.length <= 20) setFormData({ ...formData, password: val });
                   }}
                   maxLength={20}
-                  placeholder={editingId ? 'Leave blank to keep current' : 'Alphanumeric only, max 20 characters'}
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+                </div>
                 {fieldErrors.password && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.password}</p>}
               </div>
               <Button type="submit" variant="primary" fullWidth disabled={getSubmitDisabled()}>
                 {editingId ? 'Update Admin' : 'Add Admin'}
               </Button>
             </form>
+
+            {editingId && (
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Roles</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {editingRoles.map((r) => (
+                    <span key={r} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      {r}
+                    </span>
+                  ))}
+                </div>
+                {getAvailableRoles(editingRoles).length > 0 && (
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none text-sm"
+                    >
+                      <option value="">Add a role…</option>
+                      {getAvailableRoles(editingRoles).map((r) => (
+                        <option key={r.role_id} value={r.role_name}>{r.role_name}</option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="primary"
+                      disabled={!selectedRole || addRoleLoading}
+                      onClick={handleAddRole}
+                    >
+                      {addRoleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -382,60 +452,20 @@ export const Admins = () => {
       {/* Delete Confirmation */}
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to delete this admin?"
-        confirmLabel="Delete"
+        message="Are you sure you want to deactivate this admin?"
+        confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
       />
 
-      {/* Add Role Modal */}
-      {addRoleConfirm.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Add Role</h2>
-              <button
-                onClick={() => setAddRoleConfirm({ open: false, user: null })}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-gray-800 dark:text-gray-200"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Adding role for <span className="font-semibold">{addRoleConfirm.user?.name}</span>
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-              Current roles: {addRoleConfirm.user?.roles?.join(', ') || 'ADMIN'}
-            </p>
-            {getAvailableRoles(addRoleConfirm.user?.roles || []).length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No additional roles available.</p>
-            ) : (
-              <>
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none mb-4"
-                >
-                  <option value="">Select a role…</option>
-                  {getAvailableRoles(addRoleConfirm.user?.roles || []).map((r) => (
-                    <option key={r.role_id} value={r.role_name}>{r.role_name}</option>
-                  ))}
-                </select>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  disabled={!selectedRole || addRoleLoading}
-                  onClick={handleAddRole}
-                >
-                  {addRoleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                  {addRoleLoading ? 'Adding…' : 'Add Role'}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Activate Confirmation */}
+      <ConfirmationModal
+        open={activateConfirm.open}
+        message="Are you sure you want to activate this admin?"
+        confirmLabel="Activate"
+        onConfirm={handleActivateConfirm}
+        onCancel={() => setActivateConfirm({ open: false, id: null })}
+      />
 
       {/* List */}
       {loading ? (
@@ -446,46 +476,20 @@ export const Admins = () => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {paginated.map((admin) => (
-              <div key={admin.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-800 p-4 md:p-5 flex flex-col justify-between h-full">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 break-words">
-                        {admin.name || 'Unnamed Admin'}
-                      </h3>
-                      <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-ngo-orange">
-                        {admin.roles?.join(', ') || 'ADMIN'}
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                      Active
-                    </span>
-                  </div>
-                  {admin.phone && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">Phone:</span>{' '}
-                      <span className="font-mono tracking-wide">{admin.phone}</span>
-                    </p>
-                  )}
-                  {admin.email && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 break-all">
-                      <span className="font-medium">Email:</span> {admin.email}
-                    </p>
-                  )}
-                </div>
-                <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                  <Button variant="secondary" className="flex-1 justify-center" onClick={() => openEdit(admin)}>
-                    Edit
-                  </Button>
-                  <Button variant="secondary" className="flex-1 justify-center" onClick={() => openAddRole(admin)}>
-                    <ShieldCheck className="w-4 h-4" />
-                    Add Role
-                  </Button>
-                  <Button variant="danger" className="flex-1 justify-center" onClick={() => handleDeleteClick(admin.id)}>
-                    Delete
-                  </Button>
-                </div>
-              </div>
+              <TileCard
+                key={admin.id}
+                title={admin.name || 'Unnamed Admin'}
+                subtitle={admin.roles?.join(', ') || 'ADMIN'}
+                status={admin.isActive !== false ? 'active' : 'inactive'}
+                fields={[
+                  { label: 'Phone', value: admin.phone, mono: true },
+                  { label: 'Email', value: admin.email || 'N/A' },
+                ]}
+                onEdit={() => openEdit(admin)}
+                onDelete={admin.isActive !== false ? () => handleDeleteClick(admin.id) : undefined}
+                onActivate={admin.isActive === false ? () => setActivateConfirm({ open: true, id: admin.id }) : undefined}
+                deleteLabel="Deactivate"
+              />
             ))}
           </div>
 

@@ -1,9 +1,8 @@
 import React from 'react';
 import { Button } from '../../components/ui/Button';
-import { ShieldCheck } from 'lucide-react';
 
-export const CoordinatorCard = ({ coordinator, onEdit, onDelete, onAddRole }) => {
-  const { name, phone, email, roles } = coordinator || {};
+export const CoordinatorCard = ({ coordinator, onEdit, onDelete, onActivate }) => {
+  const { name, phone, email, roles, isActive } = coordinator || {};
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-800 p-4 md:p-5 flex flex-col justify-between h-full">
@@ -17,8 +16,8 @@ export const CoordinatorCard = ({ coordinator, onEdit, onDelete, onAddRole }) =>
               {roles?.join(', ') || 'COORDINATOR'}
             </p>
           </div>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-            Active
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${isActive !== false ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`}>
+            {isActive !== false ? 'Active' : 'Inactive'}
           </span>
         </div>
 
@@ -44,23 +43,23 @@ export const CoordinatorCard = ({ coordinator, onEdit, onDelete, onAddRole }) =>
         >
           Edit
         </Button>
-        {onAddRole && (
+        {isActive !== false ? (
           <Button
-            variant="secondary"
+            variant="danger"
             className="flex-1 justify-center"
-            onClick={onAddRole}
+            onClick={onDelete}
           >
-            <ShieldCheck className="w-4 h-4" />
-            Add Role
+            Deactivate
           </Button>
-        )}
-        <Button
-          variant="danger"
-          className="flex-1 justify-center"
-          onClick={onDelete}
-        >
-          Delete
-        </Button>
+        ) : onActivate ? (
+          <Button
+            variant="primary"
+            className="flex-1 justify-center"
+            onClick={onActivate}
+          >
+            Activate
+          </Button>
+        ) : null}
       </div>
     </div>
   );

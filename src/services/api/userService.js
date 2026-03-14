@@ -171,4 +171,15 @@ export const UserApi = {
             throw error;
         }
     },
+
+    async activateUser(userId) {
+        try {
+            const response = await serviceApi.post(`/api/users/activate/${userId}`);
+            console.log(`User ${userId} activated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error activating user ${userId}:`, error);
+            throw error;
+        }
+    },
 }

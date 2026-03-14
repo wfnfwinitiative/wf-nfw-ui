@@ -4,7 +4,7 @@ import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
 import { validatePassword, validatePhone } from '../../utils/validation';
-import { Plus, X, Loader2 } from 'lucide-react';
+import { Plus, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import { UserApi } from '../../services/api/userService';
 
 const emptyForm = { name: '', phone: '', email: '', password: '', role: 'DRIVER' };
@@ -17,14 +17,17 @@ export const Drivers = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingStatus, setEditingStatus] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', email: '', password: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [activateConfirm, setActivateConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadDrivers();
@@ -65,7 +68,10 @@ export const Drivers = () => {
   }, [drivers, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (c) => c.name || '', (c) => c.id || 0),
+    () => {
+      const list = sortList(filtered, sortBy, (c) => c.name || '', (c) => c.id || 0);
+      return [...list.filter(c => c.status === 'active'), ...list.filter(c => c.status !== 'active')];
+    },
     [filtered, sortBy]
   );
 
@@ -80,6 +86,7 @@ export const Drivers = () => {
 
   const openAdd = () => {
     setEditingId(null);
+    setEditingStatus(null);
     setFormData(emptyForm);
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -88,12 +95,13 @@ export const Drivers = () => {
 
   const openEdit = (row) => {
     setEditingId(row.id);
+    setEditingStatus(row.status);
     setFormData({
       name: row.name ?? '',
       phone: row.phone ?? '',
       email: row.email ?? '',
       password: '',
-      role: 'DRIVER'
+      role: 'DRIVER',
     });
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -167,6 +175,7 @@ export const Drivers = () => {
       }
       setFormData(emptyForm);
       setEditingId(null);
+      setEditingStatus(null);
       setShowForm(false);
       loadDrivers();
     } catch (error) {
@@ -185,7 +194,7 @@ export const Drivers = () => {
     if (!deleteConfirm.id) return;
     try {
       const response = await UserApi.deleteDriver(deleteConfirm.id);
-      setSuccessMessage(typeof response === 'string' ? response : 'Driver deleted successfully.');
+      setSuccessMessage(typeof response === 'string' ? response : 'Driver deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
       loadDrivers();
@@ -194,10 +203,29 @@ export const Drivers = () => {
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
-        'An error occurred while deleting.';
+        'An error occurred while deactivating.';
       setPageError(errorMessage);
       setTimeout(() => setPageError(''), 5000);
       setDeleteConfirm({ open: false, id: null });
+    }
+  };
+
+  const handleActivateConfirm = async () => {
+    if (!activateConfirm.id) return;
+    try {
+      const response = await UserApi.activateUser(activateConfirm.id);
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Driver activated successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      loadDrivers();
+    } catch (error) {
+      console.error('Failed to activate driver:', error);
+      const errorMessage =
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while activating.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+    } finally {
+      setActivateConfirm({ open: false, id: null });
     }
   };
 
@@ -248,6 +276,7 @@ export const Drivers = () => {
                 onClick={() => {
                   setShowForm(false);
                   setEditingId(null);
+                  setEditingStatus(null);
                   setFormData(emptyForm);
                   setFormError('');
                   setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -321,18 +350,28 @@ export const Drivers = () => {
                   Password {!editingId && <span className="text-red-500">*</span>}
                   {editingId && <span className="text-gray-500 font-normal">(leave blank to keep current)</span>}
                 </label>
+                <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val.length <= 20 && /^[a-zA-Z0-9]*$/.test(val))
+                    if (val.length <= 20)
                       setFormData({ ...formData, password: val });
                   }}
                   maxLength={20}
-                  placeholder={editingId ? 'Leave blank to keep current' : 'Alphanumeric only, max 20 characters'}
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+                </div>
                 {fieldErrors.password && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
                     {fieldErrors.password}
@@ -349,10 +388,18 @@ export const Drivers = () => {
 
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to delete this record?"
-        confirmLabel="Delete"
+        message="Are you sure you want to deactivate this driver?"
+        confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
+      />
+
+      <ConfirmationModal
+        open={activateConfirm.open}
+        message="Are you sure you want to activate this driver?"
+        confirmLabel="Activate"
+        onConfirm={handleActivateConfirm}
+        onCancel={() => setActivateConfirm({ open: false, id: null })}
       />
 
       {loading ? (
@@ -370,7 +417,9 @@ export const Drivers = () => {
                 status={driver.status}
                 fields={[{ label: 'Email', value: driver.email || 'N/A' }]}
                 onEdit={() => openEdit(driver)}
-                onDelete={() => handleDeleteClick(driver.id)}
+                onDelete={driver.status === 'active' ? () => handleDeleteClick(driver.id) : undefined}
+                onActivate={driver.status === 'inactive' ? () => setActivateConfirm({ open: true, id: driver.id }) : undefined}
+                deleteLabel="Deactivate"
               />
             ))}
           </div>

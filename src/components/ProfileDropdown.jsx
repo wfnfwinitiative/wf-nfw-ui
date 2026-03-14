@@ -38,7 +38,7 @@ export const ProfileDropdown = () => {
       >
         <div className="text-right flex-shrink-0 hidden sm:block">
           <p className="text-sm md:text-base font-semibold text-ngo-dark dark:text-gray-200">{user?.name}</p>
-          <p className="text-xs text-ngo-gray dark:text-gray-400 capitalize">{user?.role}</p>
+          <p className="text-xs text-ngo-gray dark:text-gray-400 capitalize">{(user?.roles || [user?.role]).join(', ')}</p>
         </div>
         <div className="w-10 h-10 bg-ngo-orange rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
           {user?.name?.charAt(0).toUpperCase()}
@@ -49,7 +49,7 @@ export const ProfileDropdown = () => {
         <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">{user?.role}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">{(user?.roles || [user?.role]).join(', ')}</p>
           </div>
 
           <div className="py-1">
