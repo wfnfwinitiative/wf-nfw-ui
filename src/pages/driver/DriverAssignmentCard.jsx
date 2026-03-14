@@ -1,7 +1,8 @@
-import { MapPin, Phone, Clock, Truck, Building2, ExternalLink, Users, FileText } from 'lucide-react';
+import { MapPin, Phone, Clock, Truck, Building2, Navigation, Users, FileText } from 'lucide-react';
 import { StatusBadge, Button } from '../../components/common';
+import { navigateTo } from '../../utils/navigationUtils';
 
-export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
+export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disabled = false }) {
   const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
   const canOpenDetails     = status === 'assigned';
   const canConfirmDelivery = status === 'inpicked';
@@ -9,10 +10,11 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
 
   return (
     <div
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       className={`
         bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden
-        hover:shadow-lg transition-all duration-200 cursor-pointer
+        transition-all duration-200 flex flex-col
+        ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg cursor-pointer'}
         ${isCompleted ? 'opacity-70' : ''}
       `}
     >
@@ -30,7 +32,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
       </div>
 
       {/* Body */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 flex-1">
         {/* Pickup Details */}
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -40,9 +42,19 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
             {pickup.location.address && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                <span className="text-sm text-gray-600 line-clamp-2">
+                <span className="text-sm text-gray-600 line-clamp-2 flex-1">
                   {pickup.location.address}
                 </span>
+                {(pickup.location.lat || pickup.location.address) && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); navigateTo(pickup.location); }}
+                    className="shrink-0 text-blue-500 hover:text-blue-700"
+                    title="Navigate to Pickup"
+                  >
+                    <Navigation className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             )}
             {pickup.contactNumber && (
@@ -89,12 +101,24 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
           </p>
           <div className="flex items-start gap-2">
             <Building2 className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-gray-700">
                 {delivery.hungerSpotName || 'Hunger Spot TBD'}
               </p>
               {delivery.location.address && (
-                <p className="text-xs text-gray-500">{delivery.location.address}</p>
+                <div className="flex items-start gap-1">
+                  <p className="text-xs text-gray-500 flex-1">{delivery.location.address}</p>
+                  {(delivery.location.lat || delivery.location.address) && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navigateTo(delivery.location); }}
+                      className="shrink-0 text-blue-500 hover:text-blue-700"
+                      title="Navigate to Drop"
+                    >
+                      <Navigation className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -124,28 +148,17 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
           </div>
         )}
 
-        {/* Map Link */}
-        {pickup.location.mapLink && (
-          <a
-            href={pickup.location.mapLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Open in Google Maps
-          </a>
-        )}
+
       </div>
 
       {/* Footer */}
       <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
         {canOpenDetails && (
           <Button
-            onClick={onClick}
+            onClick={disabled ? undefined : onClick}
             variant="warning"
             className="w-full"
+            disabled={disabled}
           >
             Fill Pickup Details
           </Button>
