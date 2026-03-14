@@ -6,3 +6,6 @@ export { Input, Textarea, Select } from './Input';
 export { Spinner, LoadingOverlay, LoadingCard } from './Spinner';
 export { Toast, ToastContainer, useToast, showToast } from './Toast'
 export { HeroBanner } from './HeroBanner';
+export { SectionHeader } from './SectionHeader';
+export { EmptySection } from './EmptySection';
+export { DashedSeparator } from './DashedSeparator';

@@ -1,21 +1,34 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Modal, Button, showToast } from '../../components/common';
 import { VoiceInputPanel } from './VoiceInputPanel';
 import { MapPin, Building2, Truck, Phone, Camera, X, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
 import { uploadImageToDrive } from '../../services/api/googleDriveService';
-import { submitPickupItems } from '../../services/api/opportunityEventItemDriverService';
+import {
+  submitPickupItems,
+  submitDelivery,
+} from '../../services/api/opportunityEventItemDriverService';
 import { useAuth } from '../../auth/AuthContext';
 
 
-export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate }) {
+export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate, readOnly = false }) {
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const [deliveryImages, setDeliveryImages] = useState([]); // { id, file, preview, name, status: 'pending'|'uploading'|'done'|'error' }
+  const [deliveryImages, setDeliveryImages] = useState([]);
   const voicePanelRef = useRef(null);
   const deliveryFileInputRef = useRef(null);
   const deliveryFolderUrlRef = useRef(null);
   const { isVoiceEnabled } = useFeatureFlags();
+
+  // Clear all image state whenever the modal opens for a different assignment
+  useEffect(() => {
+    setDeliveryImages((prev) => {
+      prev.forEach((img) => { if (img.preview) URL.revokeObjectURL(img.preview); });
+      return [];
+    });
+    deliveryFolderUrlRef.current = null;
+    if (deliveryFileInputRef.current) deliveryFileInputRef.current.value = '';
+  }, [assignment?.id]);
 
   if (!assignment) return null;
 
@@ -23,8 +36,8 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
   const driverName = user?.name || user?.mobileNumber || `Driver${user?.id || ''}`;
   const opportunityId = String(assignment.id || '');
 
-  const canSubmit = status === 'reached';
-  const canMarkDelivered = status === 'submitted';
+  const canSubmit = status === 'assigned';        // Assigned → fill items → InPicked
+  const canMarkDelivered = status === 'inpicked'; // InPicked → confirm delivery → Delivered
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -50,7 +63,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
         assignment.notes
       );
 
-      onStatusUpdate(assignment.id, 'submitted', {
+      onStatusUpdate(assignment.id, 'inpicked', {
         submittedDetails: {
           pickupTime: new Date().toISOString(),
           pickupFolderUrl,
@@ -104,6 +117,9 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
           setDeliveryImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error' } : i));
         }
       }
+      // POST a new event to preserve history: InPicked → Delivered
+      await submitDelivery(assignment.id, user?.id, assignment.status_id || 3);
+
       onStatusUpdate(assignment.id, 'delivered', {
         submittedDetails: {
           ...assignment.submittedDetails,
@@ -183,9 +199,20 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          {canSubmit ? (
-            <VoiceInputPanel
-              ref={voicePanelRef}
+          {readOnly ? (
+            <div className="p-6">
+              <div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
+                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-blue-500" />
+                </div>
+                <h4 className="font-semibold text-gray-900">Upcoming Assignment</h4>
+                <p className="text-sm text-gray-500 max-w-xs">
+                  This assignment is scheduled for a future date. Pickup details can only be filled on or after the scheduled day.
+                </p>
+              </div>
+            </div>
+          ) : canSubmit ? (
+            <VoiceInputPanel              key={assignment?.id}              ref={voicePanelRef}
               disabled={!canSubmit}
               driverName={driverName}
               opportunityId={opportunityId}
@@ -310,7 +337,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
         <Button variant="secondary" onClick={onClose} className="text-sm sm:text-base">
           Close
         </Button>
-        {canSubmit && (
+        {!readOnly && canSubmit && (
           <Button
             variant="primary"
             onClick={handleSubmit}
@@ -320,7 +347,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate 
             Confirm
           </Button>
         )}
-        {canMarkDelivered && (
+        {!readOnly && canMarkDelivered && (
           <Button
             variant="success"
             onClick={handleMarkDelivered}

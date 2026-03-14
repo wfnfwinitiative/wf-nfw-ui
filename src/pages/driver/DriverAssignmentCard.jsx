@@ -1,56 +1,60 @@
-import { MapPin, Phone, Clock, Truck, Building2, ExternalLink, Users, FileText } from 'lucide-react';
+import { MapPin, Phone, Clock, Truck, Building2, Navigation, Users, FileText } from 'lucide-react';
 import { StatusBadge, Button } from '../../components/common';
+import { navigateTo } from '../../utils/navigationUtils';
 
-export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
+export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disabled = false }) {
   const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
-
-  const canMarkReached = status === 'assigned';
-  const canOpenDetails = status === 'reached';
-  const isCompleted = ['delivered', 'verified'].includes(status);
-
-  const handleReachedClick = (e) => {
-    e.stopPropagation();
-    onStatusUpdate(assignment.id, 'reached');
-  };
+  const canOpenDetails     = status === 'assigned';
+  const canConfirmDelivery = status === 'inpicked';
+  const isCompleted = ['delivered', 'verified', 'completed'].includes(status);
 
   return (
     <div
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       className={`
-        bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden
-        hover:shadow-md transition-all cursor-pointer
-        ${isCompleted ? 'opacity-75' : ''}
+        bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden
+        transition-all duration-200 flex flex-col
+        ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg cursor-pointer'}
+        ${isCompleted ? 'opacity-70' : ''}
       `}
     >
       {/* Header */}
-      <div className="px-4 py-3 bg-linear-to-r from-primary-50 to-white border-b border-gray-100">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="font-semibold text-gray-900 line-clamp-1">
-              {pickup.organizationName}
-            </h3>
-            {pickup.contactPerson && (
-              <p className="text-sm text-gray-500">{pickup.contactPerson}</p>
-            )}
-          </div>
-          <StatusBadge status={status} />
+      <div className="px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-gray-900 line-clamp-1">
+            {pickup.organizationName}
+          </h3>
+          {pickup.contactPerson && (
+            <p className="text-sm text-gray-500">{pickup.contactPerson}</p>
+          )}
         </div>
+        <StatusBadge status={status} />
       </div>
 
       {/* Body */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 flex-1">
         {/* Pickup Details */}
         <div>
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
             Pickup From
           </p>
           <div className="space-y-2">
             {pickup.location.address && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                <span className="text-sm text-gray-600 line-clamp-2">
+                <span className="text-sm text-gray-600 line-clamp-2 flex-1">
                   {pickup.location.address}
                 </span>
+                {(pickup.location.lat || pickup.location.address) && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); navigateTo(pickup.location); }}
+                    className="shrink-0 text-blue-500 hover:text-blue-700"
+                    title="Navigate to Pickup"
+                  >
+                    <Navigation className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             )}
             {pickup.contactNumber && (
@@ -92,17 +96,29 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
 
         {/* Delivery Details */}
         <div>
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
             Deliver To
           </p>
           <div className="flex items-start gap-2">
             <Building2 className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-gray-700">
                 {delivery.hungerSpotName || 'Hunger Spot TBD'}
               </p>
               {delivery.location.address && (
-                <p className="text-xs text-gray-500">{delivery.location.address}</p>
+                <div className="flex items-start gap-1">
+                  <p className="text-xs text-gray-500 flex-1">{delivery.location.address}</p>
+                  {(delivery.location.lat || delivery.location.address) && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navigateTo(delivery.location); }}
+                      className="shrink-0 text-blue-500 hover:text-blue-700"
+                      title="Navigate to Drop"
+                    >
+                      <Navigation className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -110,9 +126,9 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
 
         {/* Vehicle & Feeding Info */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
             <Truck className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-700">
               Vehicle {vehicle.number}{vehicle.type ? ` (${vehicle.type})` : ''}
             </span>
           </div>
@@ -132,42 +148,22 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
           </div>
         )}
 
-        {/* Map Link */}
-        {pickup.location.mapLink && (
-          <a
-            href={pickup.location.mapLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Open in Google Maps
-          </a>
-        )}
+
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-        {canMarkReached && (
-          <Button
-            onClick={handleReachedClick}
-            variant="primary"
-            className="w-full"
-          >
-            Reached Pickup Location
-          </Button>
-        )}
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
         {canOpenDetails && (
           <Button
-            onClick={onClick}
+            onClick={disabled ? undefined : onClick}
             variant="warning"
             className="w-full"
+            disabled={disabled}
           >
             Fill Pickup Details
           </Button>
         )}
-        {status === 'submitted' && (
+        {canConfirmDelivery && (
           <Button
             onClick={onClick}
             variant="success"
@@ -178,7 +174,17 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate }) {
         )}
         {status === 'delivered' && (
           <div className="text-center text-sm text-green-600 font-medium">
-            Awaiting coordinator verification
+            ✓ Awaiting coordinator verification
+          </div>
+        )}
+        {(status === 'verified' || status === 'completed') && (
+          <div className="text-center text-sm text-primary-600 font-medium">
+            ✓ {status === 'completed' ? 'Completed' : 'Verified'}
+          </div>
+        )}
+        {status === 'rejected' && (
+          <div className="text-center text-sm text-red-500 font-medium">
+            Rejected
           </div>
         )}
       </div>
