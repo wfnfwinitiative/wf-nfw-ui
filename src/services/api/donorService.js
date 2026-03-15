@@ -68,4 +68,15 @@ export const DonorApi = {
             throw error;
         }
     },
+
+    async activateDonor(donorid) {
+        try {
+            const response = await serviceApi.post(`/api/donors/activate/${donorid}`);
+            console.log(`Donor ${donorid} activated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error activating donor ${donorid}:`, error);
+            throw error;
+        }
+    },
 }

@@ -100,4 +100,86 @@ export const UserApi = {
             throw error;
         }
     },
+
+    async createAdmin(data) {
+        try {
+            const response = await serviceApi.post('/api/users/', data);
+            console.log('Admin created:', response);
+            return response;
+        } catch (error) {
+            console.error('Error creating Admin:', error);
+            throw error;
+        }
+    },
+
+    async updateAdmin(userid, data) {
+        try {
+            const response = await serviceApi.patch(`/api/users/${userid}`, data);
+            console.log(`Admin ${userid} updated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error updating admin ${userid}:`, error);
+            throw error;
+        }
+    },
+
+    async deleteAdmin(userid) {
+        try {
+            const response = await serviceApi.delete(`/api/users/${userid}`);
+            console.log(`Admin ${userid} deleted:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error deleting admin ${userid}:`, error);
+            throw error;
+        }
+    },
+
+    async resetAdminPassword(data) {
+        try {
+            const response = await serviceApi.post('/api/users/reset-admin-password', data);
+            console.log('Admin password reset:', response);
+            return response;
+        } catch (error) {
+            console.error('Error resetting admin password:', error);
+            throw error;
+        }
+    },
+
+    async getRoles() {
+        try {
+            const response = await serviceApi.get('/api/roles/');
+            let data = [];
+            if (Array.isArray(response)) {
+                data = response;
+            } else if (Array.isArray(response.data)) {
+                data = response.data;
+            }
+            return data;
+        } catch (error) {
+            console.error('Error fetching roles:', error);
+            throw error;
+        }
+    },
+
+    async assignRole(userId, roleId) {
+        try {
+            const response = await serviceApi.post(`/api/user-roles/?user_id=${userId}&role_id=${roleId}`);
+            console.log(`Role ${roleId} assigned to user ${userId}:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error assigning role ${roleId} to user ${userId}:`, error);
+            throw error;
+        }
+    },
+
+    async activateUser(userId) {
+        try {
+            const response = await serviceApi.post(`/api/users/activate/${userId}`);
+            console.log(`User ${userId} activated:`, response);
+            return response;
+        } catch (error) {
+            console.error(`Error activating user ${userId}:`, error);
+            throw error;
+        }
+    },
 }

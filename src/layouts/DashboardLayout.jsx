@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
-import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag  } from 'lucide-react';
+import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag, ShieldCheck  } from 'lucide-react';
 import { ToastContainer, useToast } from '../components/common/Toast';
 
 export const DashboardLayout = () => {
@@ -16,27 +16,51 @@ export const DashboardLayout = () => {
   const menuItems = {
     admin: [
       { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
+      { divider: true },
+      { icon: ShieldCheck, label: 'Admins', path: '/admin/admins' },
       { icon: Users, label: 'Coordinators', path: '/admin/coordinators' },
       { icon: Truck, label: 'Drivers', path: '/admin/drivers' },
-      { icon: Truck, label: 'Vehicles', path: '/admin/vehicles' },
-      { icon: MapPin, label: 'Donors', path: '/admin/pickup-locations' },
-      { icon: MapPin, label: 'HungerSpots', path: '/admin/hungerspots' },
       { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
-      { icon: FileCheck, label: 'Verifications', path: '/verification' }
+      { divider: true }
     ],
     coordinator: [
       { icon: Home, label: 'Dashboard', path: '/coordinator/dashboard' },
+      { divider: true },
+      { icon: Users, label: 'Drivers', path: '/coordinator/drivers' },
+      { icon: Truck, label: 'Vehicles', path: '/coordinator/vehicles' },
+      { icon: MapPin, label: 'Donors', path: '/coordinator/donors' },
+      { icon: MapPin, label: 'HungerSpots', path: '/coordinator/hungerspots' },
+      { divider: true },
       { icon: Truck, label: 'Create Opportunity', path: '/coordinator/create-opportunity' },
-      // { icon: Users, label: 'Driver Status', path: '/coordinator/drivers' },
       { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' }
     ],
     driver: [
       { icon: Home, label: 'Dashboard', path: '/driver/dashboard' },
       { icon: Truck, label: 'My Tasks', path: '/driver/tasks' }
+    ],
+    supportadmin: [
+      { icon: Home, label: 'Dashboard', path: '/supportadmin/dashboard' }
     ]
   };
 
-  const currentMenu = menuItems[user?.role] || [];
+  const currentMenu = (() => {
+    const roles = user?.roles || (user?.role ? [user.role] : []);
+    const seen = new Set();
+    const merged = [];
+    for (const role of roles) {
+      for (const item of menuItems[role] || []) {
+        if (item.divider) {
+          if (merged.length > 0 && !merged[merged.length - 1].divider) {
+            merged.push(item);
+          }
+        } else if (!seen.has(item.label)) {
+          seen.add(item.label);
+          merged.push(item);
+        }
+      }
+    }
+    return merged.length ? merged : (menuItems[user?.role] || []);
+  })();
 
   return (
     <div className="min-h-screen bg-ngo-light dark:bg-gray-900">
@@ -66,6 +90,9 @@ export const DashboardLayout = () => {
         </div>
         <nav className="p-4 space-y-2">
           {currentMenu.map((item, idx) => (
+            item.divider ? (
+              <hr key={idx} className="my-3 border-t-2 border-gray-300 dark:border-gray-600 mx-1" />
+            ) : (
             <button
               key={idx}
               onClick={() => navigate(item.path)}
@@ -74,6 +101,7 @@ export const DashboardLayout = () => {
               <item.icon className="w-5 h-5 text-ngo-orange flex-shrink-0" />
               <span className="font-medium">{item.label}</span>
             </button>
+            )
           ))}
         </nav>
       </aside>

@@ -31,6 +31,7 @@ export const PickupLocations = () => {
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ contactNumber: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [activateConfirm, setActivateConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,7 +57,8 @@ export const PickupLocations = () => {
         contactNumber: d.mobile_number,
         lat: d.latitude,
         lng: d.longitude,
-        type: 'pickup'
+        type: 'pickup',
+        isActive: d.is_active !== false
       }));
       setLocations(mappedData);
     } catch (error) {
@@ -86,7 +88,10 @@ export const PickupLocations = () => {
   }, [locations, searchQuery]);
 
   const sorted = useMemo(
-    () => sortList(filtered, sortBy, (l) => l.name || '', (l) => l.id || 0),
+    () => {
+      const list = sortList(filtered, sortBy, (l) => l.name || '', (l) => l.id || 0);
+      return [...list.filter(l => l.isActive !== false), ...list.filter(l => l.isActive === false)];
+    },
     [filtered, sortBy]
   );
 
@@ -175,7 +180,7 @@ export const PickupLocations = () => {
     if (!deleteConfirm.id) return;
     try {
       await DonorApi.deleteDonor(deleteConfirm.id);
-      setSuccessMessage('Pickup location deleted successfully.');
+      setSuccessMessage('Pickup location deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
       loadLocations();
@@ -186,10 +191,29 @@ export const PickupLocations = () => {
           Array.isArray(error.response.data.detail) &&
           error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
-        'An error occurred while deleting.';
+        'An error occurred while deactivating.';
       setPageError(errorMessage);
       setTimeout(() => setPageError(''), 5000);
       setDeleteConfirm({ open: false, id: null });
+    }
+  };
+
+  const handleActivateConfirm = async () => {
+    if (!activateConfirm.id) return;
+    try {
+      const response = await DonorApi.activateDonor(activateConfirm.id);
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Pickup location activated successfully.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      loadLocations();
+    } catch (error) {
+      console.error('Failed to activate pickup location:', error);
+      const errorMessage =
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'An error occurred while activating.';
+      setPageError(errorMessage);
+      setTimeout(() => setPageError(''), 5000);
+    } finally {
+      setActivateConfirm({ open: false, id: null });
     }
   };
 
@@ -398,10 +422,18 @@ export const PickupLocations = () => {
 
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to delete this record?"
-        confirmLabel="Delete"
+        message="Are you sure you want to deactivate this pickup location?"
+        confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
+      />
+
+      <ConfirmationModal
+        open={activateConfirm.open}
+        message="Are you sure you want to activate this pickup location?"
+        confirmLabel="Activate"
+        onConfirm={handleActivateConfirm}
+        onCancel={() => setActivateConfirm({ open: false, id: null })}
       />
 
       {loading ? (
@@ -415,6 +447,7 @@ export const PickupLocations = () => {
               <TileCard
                 key={loc.id}
                 title={loc.name || 'Unnamed Location'}
+                status={loc.isActive !== false ? 'active' : 'inactive'}
                 fields={[
                   { label: 'Address', value: loc.address },
                   { label: 'City', value: loc.city },
@@ -430,7 +463,9 @@ export const PickupLocations = () => {
                   },
                 ]}
                 onEdit={() => openEdit(loc)}
-                onDelete={() => setDeleteConfirm({ open: true, id: loc.id })}
+                onDelete={loc.isActive !== false ? () => setDeleteConfirm({ open: true, id: loc.id }) : undefined}
+                onActivate={loc.isActive === false ? () => setActivateConfirm({ open: true, id: loc.id }) : undefined}
+                deleteLabel="Deactivate"
               />
             ))}
           </div>

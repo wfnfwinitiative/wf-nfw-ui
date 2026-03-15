@@ -5,21 +5,35 @@ const AuthContext = createContext(null);
 const TOKEN_KEY = 'authToken';
 const USER_KEY = 'nofoodwaste_user';
 
-const normalizeRole = (role) => {
-  if (!role) return 'driver';
-  return String(role).toLowerCase();
+const normalizeRoles = (role) => {
+  if (!role) return ['driver'];
+  if (Array.isArray(role)) {
+    return role.map(r => String(r).toLowerCase());
+  }
+  return [String(role).toLowerCase()];
+};
+
+// Primary role used for routing/redirects — prefer coordinator if user has both
+const ROLE_PRIORITY = ['coordinator', 'admin', 'driver', 'supportadmin'];
+const primaryRole = (roles) => {
+  for (const r of ROLE_PRIORITY) {
+    if (roles.includes(r)) return r;
+  }
+  return roles[0] || 'driver';
 };
 
 const buildUserFromToken = (token, fallbackMobileNumber) => {
   const decoded = decodeToken(token);
   if (!decoded) return null;
 
+  const roles = normalizeRoles(decoded.role);
   return {
     id: decoded.sub || decoded.user_id || decoded.id || fallbackMobileNumber,
     name: decoded.name || decoded.full_name || decoded.username || '',
     phone: decoded.phone || decoded.mobile_number || fallbackMobileNumber || '',
     email: decoded.email || '',
-    role: normalizeRole(decoded.role),
+    role: primaryRole(roles),
+    roles,
   };
 };
 
