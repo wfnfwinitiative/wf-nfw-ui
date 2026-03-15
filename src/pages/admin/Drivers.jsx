@@ -337,6 +337,7 @@ export const Drivers = () => {
                 </label>
                 <input
                   type="email"
+                  name={`driver-email-${Math.random().toString(36).substring(2, 10)}`}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="e.g. driver@example.com"
@@ -356,18 +357,19 @@ export const Drivers = () => {
                   {editingId && <span className="text-gray-500 font-normal">(leave blank to keep current)</span>}
                 </label>
                 <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val.length <= 20)
-                      setFormData({ ...formData, password: val });
-                  }}
-                  maxLength={20}
-                  placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
-                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  autoComplete="new-password"
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name={`driver-password-${Math.random().toString(36).substring(2, 10)}`}
+                    value={formData.password}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val.length <= 20)
+                        setFormData({ ...formData, password: val });
+                    }}
+                    maxLength={20}
+                    placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
+                    className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                    autoComplete="new-password"
                 />
                 <button
                   type="button"

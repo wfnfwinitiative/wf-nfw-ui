@@ -20,17 +20,7 @@ export const Login = () => {
   const { setSidebarOpen } = useSidebar();
   const navigate = useNavigate();
 
-  // Restore saved credentials on mount
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(REMEMBER_KEY) || 'null');
-      if (saved?.mobile && saved?.password) {
-        setMobileNumber(saved.mobile);
-        setPassword(saved.password);
-        setRememberMe(true);
-      }
-    } catch {}
-  }, []);
+  // ...existing code...
 
   const handleSubmit = async (e) => {
     e.preventDefault();
