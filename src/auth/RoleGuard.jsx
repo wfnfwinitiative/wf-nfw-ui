@@ -16,7 +16,8 @@ export const RoleGuard = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  const userRoles = user.roles || [user.role];
+  if (allowedRoles && !allowedRoles.some(r => userRoles.includes(r))) {
     return <Navigate to={`/${user.role}/dashboard`} replace />;
   }
 

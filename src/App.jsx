@@ -19,6 +19,7 @@ import { Vehicles } from './pages/admin/Vehicles';
 import { PickupLocations } from './pages/admin/PickupLocations';
 import { HungerSpots } from './pages/admin/HungerSpots';
 import { FeatureFlag } from './pages/admin/FeatureFlag';
+import { Admins } from './pages/admin/Admins';
 
 import { CoordinatorDashboard } from './pages/coordinator/CoordinatorDashboard';
 import { CreatePickup } from './pages/coordinator/CreatePickup';
@@ -33,6 +34,7 @@ import { ReviewOpportunityDetail } from './pages/reviewOpportunities/ReviewOppor
 import { Verification } from './pages/verification/Verification';
 import { VerificationDetail } from './pages/verification/VerificationDetail';
 import { Profile } from './pages/profile/Profile';
+import { SupportAdminDashboard } from './pages/supportadmin/SupportAdminDashboard';
 import { useAuth } from './auth/AuthContext';
 
 function DashboardRedirect() {
@@ -46,7 +48,10 @@ function DashboardRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to={`/${user.role}/dashboard`} replace />;
+  const roles = user.roles || [user.role];
+  const preferredRole = roles.includes('admin') ? 'admin' : user.role;
+
+  return <Navigate to={`/${preferredRole}/dashboard`} replace />;
 }
 
 function App() {
@@ -64,19 +69,20 @@ function App() {
 
           <Route path="/admin" element={<RoleGuard allowedRoles={['admin']}><DashboardLayout /></RoleGuard>}>
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="admins" element={<Admins />} />
             <Route path="coordinators" element={<Coordinators />} />
             <Route path="drivers" element={<Drivers />} />
-            <Route path="vehicles" element={<Vehicles />} />
-            <Route path="pickup-locations" element={<PickupLocations />} />
-            <Route path="hungerspots" element={<HungerSpots />} />
             <Route path="feature-flag" element={<FeatureFlag />} />
             <Route path="settings" element={<div className="text-center py-12 text-ngo-gray">Settings page coming soon...</div>} />
           </Route>
 
           <Route path="/coordinator" element={<RoleGuard allowedRoles={['coordinator']}><DashboardLayout /></RoleGuard>}>
-            <Route path="dashboard" element={<CoordinatorDashboard />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="create-opportunity" element={<CreatePickup />} />
             <Route path="drivers" element={<CoordinatorDrivers />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="donors" element={<PickupLocations />} />
+            <Route path="hungerspots" element={<HungerSpots />} />
             <Route path="review-opportunities" element={<ReviewOpportunities />} />
             <Route path="review-opportunities/:id" element={<ReviewOpportunityDetail />} />
           </Route>
@@ -87,12 +93,16 @@ function App() {
             <Route path="task/:id" element={<TaskDetail />} />
           </Route>
 
-          <Route path="/verification" element={<RoleGuard allowedRoles={['admin', 'coordinator']}><DashboardLayout /></RoleGuard>}>
+          <Route path="/verification" element={<RoleGuard allowedRoles={['coordinator']}><DashboardLayout /></RoleGuard>}>
             <Route index element={<Verification />} />
             <Route path=":id" element={<VerificationDetail />} />
           </Route>
 
-          <Route path="/profile" element={<RoleGuard allowedRoles={['admin', 'coordinator', 'driver']}><DashboardLayout /></RoleGuard>}>
+          <Route path="/supportadmin" element={<RoleGuard allowedRoles={['supportadmin']}><DashboardLayout /></RoleGuard>}>
+            <Route path="dashboard" element={<SupportAdminDashboard />} />
+          </Route>
+
+          <Route path="/profile" element={<RoleGuard allowedRoles={['admin', 'coordinator', 'driver', 'supportadmin']}><DashboardLayout /></RoleGuard>}>
             <Route index element={<Profile />} />
             <Route path="edit" element={<Profile />} />
           </Route>

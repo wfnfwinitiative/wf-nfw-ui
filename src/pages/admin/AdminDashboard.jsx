@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -12,9 +13,10 @@ import {
   Line,
   LabelList
 } from 'recharts';
-import { TrendingUp, CheckCircle, Clock, Truck, Users, Home, MapPin, Download } from 'lucide-react';
+import { TrendingUp, CheckCircle, Clock, Truck, Users, Home, MapPin, Download, ShieldCheck } from 'lucide-react';
 
 import { HeroBanner } from '../../components/common';
+import { useAuth } from '../../auth/AuthContext';
 import { UserApi } from '../../services/api/userService';
 import { Button } from '../../components/ui/Button';
 import { VehicleApi } from '../../services/api/vehicleService';
@@ -22,6 +24,12 @@ import { DonorApi } from '../../services/api/donorService';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
 
 export const AdminDashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const roles = user?.roles || [];
+  const isAdmin = roles.includes('admin');
+  const isCoordinator = roles.includes('coordinator');
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('30d');
@@ -31,18 +39,30 @@ export const AdminDashboard = () => {
     const loadDashboardData = async () => {
       setLoading(true);
       try {
+        // Fetch admin-specific data only if user has admin role
+        const adminsPromise = isAdmin ? UserApi.getUserByRole('ADMIN') : Promise.resolve([]);
+        const coordinatorsPromise = isAdmin ? UserApi.getUserByRole('COORDINATOR') : Promise.resolve([]);
+        const driversPromise = (isAdmin || isCoordinator) ? UserApi.getUserByRole('DRIVER') : Promise.resolve([]);
+
+        // Fetch coordinator-specific data only if user has coordinator role
+        const vehiclesPromise = isCoordinator ? VehicleApi.getVehicles() : Promise.resolve([]);
+        const donorsPromise = isCoordinator ? DonorApi.getDonors() : Promise.resolve([]);
+        const hungerSpotsPromise = isCoordinator ? HungerSpotApi.getHungerSpot() : Promise.resolve([]);
+
         const [
+          admins,
           coordinators,
           drivers,
           vehicles,
           donors,
           hungerSpots
         ] = await Promise.all([
-          UserApi.getUserByRole('COORDINATOR'),
-          UserApi.getUserByRole('DRIVER'),
-          VehicleApi.getVehicles(),
-          DonorApi.getDonors(),
-          HungerSpotApi.getHungerSpot()
+          adminsPromise,
+          coordinatorsPromise,
+          driversPromise,
+          vehiclesPromise,
+          donorsPromise,
+          hungerSpotsPromise
         ]);
 
         const getStartDate = (range) => {
@@ -92,7 +112,27 @@ export const AdminDashboard = () => {
         }));
 
         if (!isCancelled) {
+          const countActive = (arr, field = 'status', activeVal = 'active') => {
+            const items = arr || [];
+            if (field === 'is_active') {
+              const active = items.filter(i => i.is_active !== false).length;
+              return { active, inactive: items.length - active };
+            }
+            if (field === 'isActive') {
+              const active = items.filter(i => i.isActive !== false).length;
+              return { active, inactive: items.length - active };
+            }
+            const active = items.filter(i => i[field] === activeVal).length;
+            return { active, inactive: items.length - active };
+          };
+
           setData({
+            admins: countActive(admins, 'status'),
+            coordinatorsCount: countActive(coordinators, 'status'),
+            driversCount: countActive(drivers, 'status'),
+            vehiclesCount: countActive(vehicles, 'is_active'),
+            donorsCount: countActive(donors, 'isActive'),
+            hungerSpotsCount: countActive(hungerSpots, 'is_active'),
             totalCoordinators: (coordinators || []).length,
             totalDrivers: (drivers || []).length,
             totalVehicles: (vehicles || []).length,
@@ -110,6 +150,12 @@ export const AdminDashboard = () => {
         console.error("Failed to load dashboard data:", error);
         if (!isCancelled) {
           setData({
+            admins: { active: 0, inactive: 0 },
+            coordinatorsCount: { active: 0, inactive: 0 },
+            driversCount: { active: 0, inactive: 0 },
+            vehiclesCount: { active: 0, inactive: 0 },
+            donorsCount: { active: 0, inactive: 0 },
+            hungerSpotsCount: { active: 0, inactive: 0 },
             totalCoordinators: 0,
             totalDrivers: 0,
             totalVehicles: 0,
@@ -183,6 +229,12 @@ export const AdminDashboard = () => {
   };
 
   const filtered = data || {
+    admins: { active: 0, inactive: 0 },
+    coordinatorsCount: { active: 0, inactive: 0 },
+    driversCount: { active: 0, inactive: 0 },
+    vehiclesCount: { active: 0, inactive: 0 },
+    donorsCount: { active: 0, inactive: 0 },
+    hungerSpotsCount: { active: 0, inactive: 0 },
     totalCoordinators: 0,
     totalDrivers: 0,
     totalVehicles: 0,
@@ -196,13 +248,24 @@ export const AdminDashboard = () => {
     byDriver: []
   };
 
-  const summaryStats = [
-    { label: 'Coordinators', value: filtered.totalCoordinators, icon: Users },
-    { label: 'Drivers', value: filtered.totalDrivers, icon: Users },
-    { label: 'Vehicles', value: filtered.totalVehicles, icon: Truck },
-    { label: 'Donors', value: filtered.totalDonors, icon: Home },
-    { label: 'HungerSpots', value: filtered.totalHungerSpots, icon: MapPin },
+  const userSummaryStats = [
+    { label: 'Admins', counts: filtered.admins, icon: ShieldCheck, path: '/admin/admins' },
+    { label: 'Coordinators', counts: filtered.coordinatorsCount, icon: Users, path: '/admin/coordinators' },
+    { label: 'Drivers', counts: filtered.driversCount, icon: Users, path: '/admin/drivers' },
   ];
+
+  const resourceSummaryStats = [
+    ...(!isAdmin ? [{ label: 'Drivers', counts: filtered.driversCount, icon: Users, path: '/coordinator/drivers' }] : []),
+    { label: 'Vehicles', counts: filtered.vehiclesCount, icon: Truck, path: '/coordinator/vehicles' },
+    { label: 'Donors', counts: filtered.donorsCount, icon: Home, path: '/coordinator/donors' },
+    { label: 'HungerSpots', counts: filtered.hungerSpotsCount, icon: MapPin, path: '/coordinator/hungerspots' },
+  ];
+
+  const dashboardTitle = isAdmin && isCoordinator
+    ? 'Admin & Coordinator Dashboard'
+    : isCoordinator
+      ? 'Coordinator Dashboard'
+      : 'Admin Dashboard';
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -210,7 +273,7 @@ export const AdminDashboard = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark mb-1 md:mb-2">
-            Admin Dashboard
+            {dashboardTitle}
           </h1>
           <p className="text-sm md:text-base text-ngo-gray">Operational and analytics overview</p>
         </div>
@@ -232,6 +295,7 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
+      {isCoordinator && (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -278,25 +342,55 @@ export const AdminDashboard = () => {
           <p className="text-sm md:text-base font-medium text-ngo-gray">In Progress</p>
         </div>
       </div>
+      )}
 
+      {isAdmin && (
       <section>
         <h2 className="text-lg md:text-xl font-bold text-ngo-dark mb-4 md:mb-6">
-          Resource Summary
+          Users Summary
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-          {summaryStats.map(stat => (
-            <div key={stat.label} className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 text-center">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          {userSummaryStats.map(stat => (
+            <div key={stat.label} onClick={() => navigate(stat.path)} className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 text-center cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
               </div>
-              <span className="text-2xl md:text-3xl font-bold text-ngo-dark block">
-                {stat.value}
+              <span className="text-2xl md:text-3xl font-bold block">
+                <span className="text-green-600">{stat.counts.active}</span>
+                <span className="text-gray-400 mx-1">/</span>
+                <span className="text-red-500">{stat.counts.inactive}</span>
               </span>
               <p className="text-sm md:text-base font-medium text-ngo-gray">{stat.label}</p>
+              <p className="text-xs text-gray-400 mt-1">active / inactive</p>
             </div>
           ))}
         </div>
       </section>
+      )}
+
+      {isCoordinator && (
+      <section>
+        <h2 className="text-lg md:text-xl font-bold text-ngo-dark mb-4 md:mb-6">
+          Resource Summary
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          {resourceSummaryStats.map(stat => (
+            <div key={stat.label} onClick={() => navigate(stat.path)} className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 text-center cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+              </div>
+              <span className="text-2xl md:text-3xl font-bold block">
+                <span className="text-green-600">{stat.counts.active}</span>
+                <span className="text-gray-400 mx-1">/</span>
+                <span className="text-red-500">{stat.counts.inactive}</span>
+              </span>
+              <p className="text-sm md:text-base font-medium text-ngo-gray">{stat.label}</p>
+              <p className="text-xs text-gray-400 mt-1">active / inactive</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      )}
 
       <section>
         <h2 className="text-lg md:text-xl font-bold text-ngo-dark mb-4 md:mb-6">

@@ -6,8 +6,8 @@
 
 /**
  * Validates coordinator/driver password.
- * - Alphanumeric only (no special characters)
- * - Maximum length 20 characters
+ * - Minimum 8 characters, maximum 20 characters
+ * - Letters, numbers, and special characters allowed
  * @param {string} value
  * @returns {{ valid: boolean, message?: string }}
  */
@@ -16,11 +16,11 @@ export function validatePassword(value) {
     return { valid: false, message: 'Password is required.' };
   }
   const str = String(value).trim();
+  if (str.length < 8) {
+    return { valid: false, message: 'Password must be at least 8 characters.' };
+  }
   if (str.length > 20) {
     return { valid: false, message: 'Password must not exceed 20 characters.' };
-  }
-  if (!/^[a-zA-Z0-9]+$/.test(str)) {
-    return { valid: false, message: 'Password must be alphanumeric only. No special characters allowed.' };
   }
   return { valid: true };
 }
@@ -64,8 +64,8 @@ export function validateVehicleNumber(value) {
     return { valid: false, message: 'Vehicle number is required.' };
   }
   const str = String(value).trim();
-  if (str.length !== 8) {
-    return { valid: false, message: 'Vehicle number must be exactly 8 characters.' };
+  if (str.length > 12) {
+    return { valid: false, message: 'Vehicle number must be at most 12 characters.' };
   }
   if (!/^[a-zA-Z0-9]+$/.test(str)) {
     return { valid: false, message: 'Only letters and numbers allowed. No special characters.' };
