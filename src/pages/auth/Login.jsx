@@ -59,14 +59,14 @@ export const Login = () => {
       <div className="relative flex lg:w-1/2 min-h-[200px] lg:min-h-screen">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80')`,
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-black/60 to-black/40" />
-        </div>
-        <div className="relative z-10 flex flex-col justify-center px-6 py-6 lg:px-12 lg:py-0 text-white w-full">
-          <a
+           <input
+             type={showPassword ? 'text' : 'password'}
+             value={password}
+             onChange={(e) => setPassword(e.target.value)}
+             placeholder="Enter password"
+             className="w-full pl-11 pr-11 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none transition-all"
+             required
+             autoComplete="new-password"
             href="https://nofoodwastechennai.ngo"
             target="_blank"
             rel="noopener noreferrer"
