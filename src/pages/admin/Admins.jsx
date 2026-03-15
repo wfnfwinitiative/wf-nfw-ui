@@ -338,7 +338,7 @@ export const Admins = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
               {formError && (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {formError}
