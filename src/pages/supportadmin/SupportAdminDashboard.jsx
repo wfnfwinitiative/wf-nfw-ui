@@ -251,7 +251,7 @@ export const SupportAdminDashboard = () => {
             </div>
           )}
 
-          <form onSubmit={handleCreateSubmit} className="space-y-4 max-w-lg">
+          <form onSubmit={handleCreateSubmit} className="space-y-4 max-w-lg" autoComplete="off">
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -358,7 +358,7 @@ export const SupportAdminDashboard = () => {
             </div>
           )}
 
-          <form onSubmit={handleResetSubmit} className="space-y-4 max-w-lg">
+          <form onSubmit={handleResetSubmit} className="space-y-4 max-w-lg" autoComplete="off">
             {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

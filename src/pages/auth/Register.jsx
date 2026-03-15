@@ -63,7 +63,7 @@ export const Register = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <div>
               <label className="block text-sm font-semibold text-ngo-dark mb-2">Full Name</label>
               <div className="relative">
