@@ -338,7 +338,7 @@ export const Admins = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {formError && (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {formError}
@@ -352,7 +352,6 @@ export const Admins = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                   required
-                  autoComplete="new-username"
                 />
               </div>
               <div>
@@ -379,8 +378,7 @@ export const Admins = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="e.g. admin@example.com"
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus-border-transparent outline-none ${fieldErrors.email ? 'border-red-500' : 'border-gray-300 dark-border-gray-600'}`}
-                  autoComplete="new-email"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
                 {fieldErrors.email && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.email}</p>}
               </div>
@@ -399,8 +397,7 @@ export const Admins = () => {
                   }}
                   maxLength={20}
                   placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
-                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus-border-transparent outline-none ${fieldErrors.password ? 'border-red-500' : 'border-gray-300 dark-border-gray-600'}`}
-                  autoComplete="new-password"
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
                 <button
                   type="button"

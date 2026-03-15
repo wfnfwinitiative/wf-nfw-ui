@@ -2,24 +2,22 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
-import { CoordinatorCard } from '../../components/cards/CoordinatorCard';
+import { TileCard } from '../../components/cards/TileCard';
 import { validateName, validatePassword, validatePhone } from '../../utils/validation';
 import { Plus, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import { UserApi } from '../../services/api/userService';
 
-const emptyForm = { name: '', phone: '', email: '', password: '', role: 'COORDINATOR' };
+const emptyForm = { name: '', phone: '', email: '', password: '', role: 'DRIVER' };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const ADDABLE_ROLES = ['ADMIN'];
-
-export const Coordinators = () => {
+export const Drivers = () => {
   const [pageError, setPageError] = useState('');
-  const [coordinators, setCoordinators] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [editingIsActive, setEditingIsActive] = useState(true);
+  const [editingStatus, setEditingStatus] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({ name: '', phone: '', email: '', password: '' });
@@ -31,42 +29,34 @@ export const Coordinators = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Add-role state
-  const [allRoles, setAllRoles] = useState([]);
-  const [editingRoles, setEditingRoles] = useState([]);
-  const [selectedRole, setSelectedRole] = useState('');
-  const [addRoleLoading, setAddRoleLoading] = useState(false);
-
   useEffect(() => {
-    loadCoordinators();
-    loadRoles();
+    loadDrivers();
   }, []);
 
-  const loadCoordinators = async () => {
+  const loadDrivers = async () => {
     setLoading(true);
     try {
-      const users = await UserApi.getUserByRole('COORDINATOR');
-      const coordinatorsData = users
-        .filter((u) => u.roles && u.roles.includes('COORDINATOR'))
+      const users = await UserApi.getUserByRole('DRIVER');
+      const driversData = users
+        .filter((u) => u.roles && u.roles.includes('DRIVER'))
         .map((u) => ({
           id: u.user_id,
           name: u.name,
           phone: u.mobile_number,
           email: u.email || '',
-          roles: u.roles || [],
-          isActive: u.is_active !== false,
+          status: u.is_active ? 'active' : 'inactive',
         }));
-      setCoordinators(coordinatorsData);
+      setDrivers(driversData);
     } catch (error) {
-      console.error('Failed to load coordinators:', error);
-      setCoordinators([]);
+      console.error('Failed to load drivers:', error);
+      setDrivers([]);
     } finally {
       setLoading(false);
     }
   };
 
   const filtered = useMemo(() => {
-    const list = [...coordinators];
+    const list = [...drivers];
     const q = searchQuery.trim().toLowerCase();
     if (!q) return list;
     return list.filter(
@@ -75,12 +65,12 @@ export const Coordinators = () => {
         (c.phone || '').toString().includes(q) ||
         (c.email || '').toLowerCase().includes(q)
     );
-  }, [coordinators, searchQuery]);
+  }, [drivers, searchQuery]);
 
   const sorted = useMemo(
     () => {
       const list = sortList(filtered, sortBy, (c) => c.name || '', (c) => c.id || 0);
-      return [...list.filter(c => c.isActive !== false), ...list.filter(c => c.isActive === false)];
+      return [...list.filter(c => c.status === 'active'), ...list.filter(c => c.status !== 'active')];
     },
     [filtered, sortBy]
   );
@@ -96,7 +86,7 @@ export const Coordinators = () => {
 
   const openAdd = () => {
     setEditingId(null);
-    setEditingIsActive(true);
+    setEditingStatus(null);
     setFormData(emptyForm);
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -105,16 +95,14 @@ export const Coordinators = () => {
 
   const openEdit = (row) => {
     setEditingId(row.id);
-    setEditingIsActive(row.isActive !== false);
+    setEditingStatus(row.status);
     setFormData({
       name: row.name ?? '',
       phone: row.phone ?? '',
       email: row.email ?? '',
       password: '',
-      role: 'COORDINATOR',
+      role: 'DRIVER',
     });
-    setEditingRoles(row.roles || []);
-    setSelectedRole('');
     setFormError('');
     setFieldErrors({ name: '', phone: '', email: '', password: '' });
     setShowForm(true);
@@ -174,26 +162,27 @@ export const Coordinators = () => {
         if (formData.password) {
           payload.password = formData.password;
         }
-        const response = await UserApi.updateCoordinator(editingId, payload);
-        setSuccessMessage(typeof response === 'string' ? response : 'Coordinator updated successfully.');
+        const response = await UserApi.updateDriver(editingId, payload);
+        setSuccessMessage(typeof response === 'string' ? response : 'Driver updated successfully.');
         setTimeout(() => setSuccessMessage(''), 5000);
       } else {
         const payload = {
           name: formData.name,
           mobile_number: formData.phone,
           password: formData.password,
-          role_name: 'COORDINATOR',
+          role_name: 'DRIVER',
         };
-        await UserApi.createCoordinator(payload);
-        setSuccessMessage('Coordinator created successfully.');
+        await UserApi.createDriver(payload);
+        setSuccessMessage('Driver created successfully.');
         setTimeout(() => setSuccessMessage(''), 5000);
       }
       setFormData(emptyForm);
       setEditingId(null);
+      setEditingStatus(null);
       setShowForm(false);
-      loadCoordinators();
+      loadDrivers();
     } catch (error) {
-      console.error('Failed to save coordinator:', error);
+      console.error('Failed to save driver:', error);
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
@@ -207,13 +196,13 @@ export const Coordinators = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm.id) return;
     try {
-      const response = await UserApi.deleteCoordinator(deleteConfirm.id);
-      setSuccessMessage(typeof response === 'string' ? response : 'Coordinator deactivated successfully.');
+      const response = await UserApi.deleteDriver(deleteConfirm.id);
+      setSuccessMessage(typeof response === 'string' ? response : 'Driver deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
-      loadCoordinators();
+      loadDrivers();
     } catch (error) {
-      console.error('Failed to delete coordinator:', error);
+      console.error('Failed to delete driver:', error);
       const errorMessage =
         (error.response?.data?.detail && Array.isArray(error.response.data.detail) && error.response.data.detail[0]?.msg) ||
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
@@ -228,11 +217,11 @@ export const Coordinators = () => {
     if (!activateConfirm.id) return;
     try {
       const response = await UserApi.activateUser(activateConfirm.id);
-      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Coordinator activated successfully.');
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Driver activated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
-      loadCoordinators();
+      loadDrivers();
     } catch (error) {
-      console.error('Failed to activate coordinator:', error);
+      console.error('Failed to activate driver:', error);
       const errorMessage =
         (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
         'An error occurred while activating.';
@@ -243,53 +232,14 @@ export const Coordinators = () => {
     }
   };
 
-  const loadRoles = async () => {
-    try {
-      const roles = await UserApi.getRoles();
-      setAllRoles(roles);
-    } catch (error) {
-      console.error('Failed to load roles:', error);
-    }
-  };
-
-  const getAvailableRoles = (userRoles) => {
-    return allRoles.filter(
-      (r) => ADDABLE_ROLES.includes(r.role_name) && !userRoles.includes(r.role_name)
-    );
-  };
-
-  const handleAddRole = async () => {
-    if (!selectedRole || !editingId) return;
-    const roleObj = allRoles.find((r) => r.role_name === selectedRole);
-    if (!roleObj) return;
-
-    setAddRoleLoading(true);
-    try {
-      await UserApi.assignRole(editingId, roleObj.role_id);
-      setEditingRoles((prev) => [...prev, selectedRole]);
-      setSelectedRole('');
-      setSuccessMessage(`Role "${selectedRole}" added successfully.`);
-      setTimeout(() => setSuccessMessage(''), 5000);
-      loadCoordinators();
-    } catch (error) {
-      console.error('Failed to add role:', error);
-      const errorMessage =
-        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
-        'Failed to add role.';
-      setFormError(errorMessage);
-    } finally {
-      setAddRoleLoading(false);
-    }
-  };
-
   return (
     <div>
       <div className="mb-4 md:mb-6">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 md:mb-2">
-          Coordinators
+          Drivers
         </h1>
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
-          Manage coordinator accounts
+          Manage driver accounts
         </p>
 
         {successMessage && (
@@ -313,7 +263,7 @@ export const Coordinators = () => {
           <SortDropdown value={sortBy} onChange={setSortBy} placeholder="Sort by" />
           <Button onClick={openAdd} variant="primary" className="w-full sm:w-auto shrink-0">
             <Plus className="w-5 h-5" />
-            Add Coordinator
+            Add Driver
           </Button>
         </div>
       </div>
@@ -323,12 +273,13 @@ export const Coordinators = () => {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 md:p-8 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200">
-                {editingId ? 'Edit Coordinator' : 'Add Coordinator'}
+                {editingId ? 'Edit Driver' : 'Add Driver'}
               </h2>
               <button
                 onClick={() => {
                   setShowForm(false);
                   setEditingId(null);
+                  setEditingStatus(null);
                   setFormData(emptyForm);
                   setFormError('');
                   setFieldErrors({ name: '', phone: '', email: '', password: '' });
@@ -340,7 +291,7 @@ export const Coordinators = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {formError && (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {formError}
@@ -356,7 +307,6 @@ export const Coordinators = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                   required
-                  autoComplete="new-username"
                 />
               </div>
               <div>
@@ -389,9 +339,8 @@ export const Coordinators = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="e.g. coordinator@example.com"
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark-bg-gray-800 text-gray-800 dark-text-gray-200 focus-ring-2 focus-ring-ngo-orange focus-border-transparent outline-none ${fieldErrors.email ? 'border-red-500 dark-border-red-500' : 'border-gray-300 dark-border-gray-600'}`}
-                  autoComplete="new-email"
+                  placeholder="e.g. driver@example.com"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.email ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
                 {fieldErrors.email && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
@@ -415,8 +364,7 @@ export const Coordinators = () => {
                   }}
                   maxLength={20}
                   placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
-                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark-bg-gray-800 text-gray-800 dark-text-gray-200 focus-ring-2 focus-ring-ngo-orange focus-border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark-border-red-500' : 'border-gray-300 dark-border-gray-600'}`}
-                  autoComplete="new-password"
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
                 <button
                   type="button"
@@ -434,50 +382,16 @@ export const Coordinators = () => {
                 )}
               </div>
               <Button type="submit" variant="primary" fullWidth disabled={getSubmitDisabled()}>
-                {editingId ? 'Update Coordinator' : 'Add Coordinator'}
+                {editingId ? 'Update Driver' : 'Add Driver'}
               </Button>
             </form>
-
-            {editingId && (
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Roles</label>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {editingRoles.map((r) => (
-                    <span key={r} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                      {r}
-                    </span>
-                  ))}
-                </div>
-                {getAvailableRoles(editingRoles).length > 0 && (
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedRole}
-                      onChange={(e) => setSelectedRole(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none text-sm"
-                    >
-                      <option value="">Add a role…</option>
-                      {getAvailableRoles(editingRoles).map((r) => (
-                        <option key={r.role_id} value={r.role_name}>{r.role_name}</option>
-                      ))}
-                    </select>
-                    <Button
-                      variant="primary"
-                      disabled={!selectedRole || addRoleLoading}
-                      onClick={handleAddRole}
-                    >
-                      {addRoleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       )}
 
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to deactivate this coordinator?"
+        message="Are you sure you want to deactivate this driver?"
         confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
@@ -485,7 +399,7 @@ export const Coordinators = () => {
 
       <ConfirmationModal
         open={activateConfirm.open}
-        message="Are you sure you want to activate this coordinator?"
+        message="Are you sure you want to activate this driver?"
         confirmLabel="Activate"
         onConfirm={handleActivateConfirm}
         onCancel={() => setActivateConfirm({ open: false, id: null })}
@@ -498,13 +412,17 @@ export const Coordinators = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {paginated.map((coordinator) => (
-              <CoordinatorCard
-                key={coordinator.id}
-                coordinator={coordinator}
-                onEdit={() => openEdit(coordinator)}
-                onDelete={coordinator.isActive !== false ? () => handleDeleteClick(coordinator.id) : undefined}
-                onActivate={coordinator.isActive === false ? () => setActivateConfirm({ open: true, id: coordinator.id }) : undefined}
+            {paginated.map(driver => (
+              <TileCard
+                key={driver.id}
+                title={driver.name}
+                subtitle={driver.phone}
+                status={driver.status}
+                fields={[{ label: 'Email', value: driver.email || 'N/A' }]}
+                onEdit={() => openEdit(driver)}
+                onDelete={driver.status === 'active' ? () => handleDeleteClick(driver.id) : undefined}
+                onActivate={driver.status === 'inactive' ? () => setActivateConfirm({ open: true, id: driver.id }) : undefined}
+                deleteLabel="Deactivate"
               />
             ))}
           </div>
