@@ -3,7 +3,7 @@ import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { CoordinatorCard } from '../../components/cards/CoordinatorCard';
-import { validatePassword, validatePhone } from '../../utils/validation';
+import { validateName, validatePassword, validatePhone } from '../../utils/validation';
 import { Plus, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import { UserApi } from '../../services/api/userService';
 
@@ -126,7 +126,8 @@ export const Coordinators = () => {
   };
 
   const getSubmitDisabled = () => {
-    if (!formData.name.trim()) return true;
+    const nameResult = validateName(formData.name);
+    if (!nameResult.valid) return true;
     const phoneResult = validatePhone(formData.phone, true);
     if (!phoneResult.valid) return true;
     if (!editingId) {
@@ -144,6 +145,8 @@ export const Coordinators = () => {
     e.preventDefault();
     setFormError('');
     const errors = { name: '', phone: '', email: '', password: '' };
+    const nameResult = validateName(formData.name);
+    if (!nameResult.valid) errors.name = nameResult.message;
     const phoneResult = validatePhone(formData.phone, true);
     if (!phoneResult.valid) errors.phone = phoneResult.message;
     if (formData.email.trim() && !validateEmail(formData.email)) {
