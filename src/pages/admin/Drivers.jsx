@@ -348,8 +348,7 @@ export const Drivers = () => {
                     {fieldErrors.email}
                   </p>
                 )}
-                <input
-                  autoComplete="new-email"
+                // ...existing code...
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -386,8 +385,7 @@ export const Drivers = () => {
                 )}
               </div>
               <Button type="submit" variant="primary" fullWidth disabled={getSubmitDisabled()}>
-                  <input
-                    autoComplete="new-password"
+                // ...existing code...
                 {editingId ? 'Update Driver' : 'Add Driver'}
               </Button>
             </form>
