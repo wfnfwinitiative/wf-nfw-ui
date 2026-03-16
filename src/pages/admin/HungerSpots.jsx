@@ -278,7 +278,7 @@ export const HungerSpots = () => {
               </button>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-              <form onSubmit={handleSubmit} className="space-y-4 p-4 md:p-6 pt-3">
+              <form className="space-y-4 p-4 md:p-6 pt-3">
               {formError && (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {formError}
@@ -400,7 +400,7 @@ export const HungerSpots = () => {
                   </p>
                 </div>
               </div>
-              <Button type="submit" variant="primary" fullWidth>
+              <Button type="button" variant="primary" fullWidth onClick={handleSubmit}>
                 {editingId ? 'Update HungerSpot' : 'Add HungerSpot'}
               </Button>
               </form>
