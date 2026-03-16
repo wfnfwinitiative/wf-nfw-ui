@@ -131,6 +131,11 @@ export const PickupLocations = () => {
   };
 
   const handleSubmit = async (e) => {
+              // Require either map location or manual address
+        if (!(formData.address && formData.lat && formData.lng) && !formData.address.trim()) {
+          setFormError('Either map location or address is required.');
+          return;
+        }
     e.preventDefault();
     setFormError('');
     const errors = { contactName: '', contactNumber: '' };
@@ -143,24 +148,26 @@ export const PickupLocations = () => {
     setFieldErrors(errors);
     if (Object.values(errors).some(Boolean)) return;
 
+    // Prioritize map-selected location/address if present
+    const hasMapLocation = formData.address && formData.lat && formData.lng;
     const payload = {
-      donor_name: formData.donorName,
-      address: formData.name,
-      location: formData.address,
+      donor_name: formData.name,
+      address: hasMapLocation ? formData.address : formData.address,
+      location: hasMapLocation ? formData.address : formData.address,
       city: formData.city,
       contact_person: formData.contactName,
       mobile_number: formData.contactNumber,
-      latitude: formData.lat ? Number(formData.lat) : undefined,
-      longitude: formData.lng ? Number(formData.lng) : undefined
+      latitude: hasMapLocation ? Number(formData.lat) : undefined,
+      longitude: hasMapLocation ? Number(formData.lng) : undefined,
     };
 
     try {
       if (editingId) {
         await DonorApi.updateDonor(editingId, payload);
-        setSuccessMessage('Pickup location updated successfully.');
+        setSuccessMessage('Donor location updated successfully.');
       } else {
         await DonorApi.createDonor(payload);
-        setSuccessMessage('Pickup location created successfully.');
+        setSuccessMessage('Donor location created successfully.');
       }
       setTimeout(() => setSuccessMessage(''), 5000);
 
@@ -184,7 +191,7 @@ export const PickupLocations = () => {
     if (!deleteConfirm.id) return;
     try {
       await DonorApi.deleteDonor(deleteConfirm.id);
-      setSuccessMessage('Pickup location deactivated successfully.');
+      setSuccessMessage('Donor location deactivated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       setDeleteConfirm({ open: false, id: null });
       loadLocations();
@@ -206,7 +213,7 @@ export const PickupLocations = () => {
     if (!activateConfirm.id) return;
     try {
       const response = await DonorApi.activateDonor(activateConfirm.id);
-      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Pickup location activated successfully.');
+      setSuccessMessage(typeof response?.message === 'string' ? response.message : 'Donor location activated successfully.');
       setTimeout(() => setSuccessMessage(''), 5000);
       loadLocations();
     } catch (error) {
@@ -230,7 +237,7 @@ export const PickupLocations = () => {
     <div>
       <div className="mb-4 md:mb-6">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 md:mb-2">
-          Pickup Locations
+          Donor Locations
         </h1>
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
           Manage food donor locations
@@ -257,7 +264,7 @@ export const PickupLocations = () => {
           <SortDropdown value={sortBy} onChange={setSortBy} placeholder="Sort by" />
           <Button onClick={openAdd} variant="primary" className="w-full sm:w-auto shrink-0">
             <Plus className="w-5 h-5" />
-            Add Location
+            Add Donor
           </Button>
         </div>
       </div>
@@ -267,7 +274,7 @@ export const PickupLocations = () => {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 my-4">
             <div className="flex items-center justify-between p-4 md:p-6 pb-3 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200">
-                {editingId ? 'Edit Pickup Location' : 'Add Pickup Location'}
+                {editingId ? 'Edit Donor' : 'Add Donor'}
               </h2>
               <button
                 onClick={() => {
@@ -285,21 +292,23 @@ export const PickupLocations = () => {
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
               <form className="space-y-4 p-4 md:p-6 pt-3">
-              {formError && (
-                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                  {formError}
-                </p>
-              )}
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Donor Name
                 </label>
-                <input
+                 <input
                   type="text"
                   value={formData.donorName}
-                  onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
-                  placeholder="e.g., Big Bazaar"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Allow only alphabets, numbers, spaces, hyphens
+                    if (/^[a-zA-Z0-9\-\s]*$/.test(val)) {
+                      setFormData({ ...formData, name: val });
+                    }
+                  }}
+                  placeholder="e.g., Rajeev Gandhi Ashram"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
+                  required
                 />
               </div>
               <div>
@@ -418,8 +427,13 @@ export const PickupLocations = () => {
                   </p>
                 </div>
               </div>
+              {formError && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-3 text-center" role="alert">
+                  {formError}
+                </p>
+              )}
               <Button type="button" variant="primary" fullWidth onClick={handleSubmit}>
-                {editingId ? 'Update Location' : 'Add Location'}
+                {editingId ? 'Update Donor' : 'Add Donor'}
               </Button>
               </form>
             </div>
@@ -453,12 +467,11 @@ export const PickupLocations = () => {
             {paginated.map((loc) => (
               <TileCard
                 key={loc.id}
-                title={loc.name || 'Unnamed Location'}
+                title={loc.donorName || 'Unnamed Location'}
                 status={loc.isActive !== false ? 'active' : 'inactive'}
                 fields={[
                   { label: 'Address', value: loc.address },
                   { label: 'City', value: loc.city },
-                  { label: 'Donor', value: loc.donorName },
                   { label: 'Contact Name', value: loc.contactName },
                   {
                     label: 'Contact Number',
