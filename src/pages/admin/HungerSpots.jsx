@@ -123,6 +123,11 @@ export const HungerSpots = () => {
   };
 
   const handleSubmit = async (e) => {
+        // Require either map location or manual address
+        if (!(formData.address && formData.lat && formData.lng) && !formData.address.trim()) {
+          setFormError('Either map location or address is required.');
+          return;
+        }
     e.preventDefault();
     setFormError('');
     const errors = { contactName: '', contactNumber: '' };
@@ -135,15 +140,17 @@ export const HungerSpots = () => {
     setFieldErrors(errors);
     if (Object.values(errors).some(Boolean)) return;
 
+    // Prioritize map-selected location/address if present
+    const hasMapLocation = formData.address && formData.lat && formData.lng;
     const payload = {
       spot_name: formData.name,
-      address: formData.address,
-      location: formData.address,
+      address: hasMapLocation ? formData.address : formData.address,
+      location: hasMapLocation ? formData.address : formData.address,
       city: formData.city,
       contact_person: formData.contactName,
       mobile_number: formData.contactNumber,
-      latitude: formData.lat ? Number(formData.lat) : undefined,
-      longitude: formData.lng ? Number(formData.lng) : undefined,
+      latitude: hasMapLocation ? Number(formData.lat) : undefined,
+      longitude: hasMapLocation ? Number(formData.lng) : undefined,
       pincode: '', // Not in form
       capacity_meals: 0, // Not in form
     };
@@ -278,12 +285,26 @@ export const HungerSpots = () => {
               </button>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-              <form onSubmit={handleSubmit} className="space-y-4 p-4 md:p-6 pt-3">
-              {formError && (
-                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                  {formError}
-                </p>
-              )}
+              <form className="space-y-4 p-4 md:p-6 pt-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Hunger Spot Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Allow only alphabets, numbers, spaces, hyphens
+                    if (/^[a-zA-Z0-9\-\s]*$/.test(val)) {
+                      setFormData({ ...formData, name: val });
+                    }
+                  }}
+                  placeholder="e.g., Rajeev Gandhi Ashram"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
+                  required
+                />
+              </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Contact Name <span className="text-gray-500 font-normal">(optional)</span>
@@ -333,15 +354,15 @@ export const HungerSpots = () => {
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
                 />
               </div>
-               <div>
+              <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Address
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Rajeev Gandhi Ashram"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="e.g., 123 Main Street"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
                   required
                 />
@@ -400,7 +421,12 @@ export const HungerSpots = () => {
                   </p>
                 </div>
               </div>
-              <Button type="submit" variant="primary" fullWidth>
+              {formError && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-3 text-center" role="alert">
+                  {formError}
+                </p>
+              )}
+              <Button type="button" variant="primary" fullWidth onClick={handleSubmit}>
                 {editingId ? 'Update HungerSpot' : 'Add HungerSpot'}
               </Button>
               </form>
