@@ -51,5 +51,52 @@ export const opportunityApi = {
             console.error('Error fetching opportunity by id:', error);
             throw error;
         }
+    },
+
+    async updateOpportunity(id, opportunityData) {
+        try {
+            const response = await serviceApi.patch(`/api/opportunities/${id}`, opportunityData);
+            console.log('Update Opportunity Response:', response);
+            return response.data || response;
+        } catch (error) {
+            console.error('Error updating opportunity:', error);
+            throw error;
+        }
+    },
+
+    async addOpportunityItem(opportunityId, itemData) {
+        try {
+            const response = await serviceApi.post('/api/opportunity-items/', {
+                opportunity_id: opportunityId,
+                ...itemData
+            });
+            console.log('Add Opportunity Item Response:', response);
+            return response.data || response;
+        } catch (error) {
+            console.error('Error adding opportunity item:', error);
+            throw error;
+        }
+    },
+
+    async updateOpportunityItem(itemId, itemData) {
+        try {
+            const response = await serviceApi.put(`/api/opportunity-items/${itemId}`, itemData);
+            console.log('Update Opportunity Item Response:', response);
+            return response.data || response;
+        } catch (error) {
+            console.error('Error updating opportunity item:', error);
+            throw error;
+        }
+    },
+
+    async deleteOpportunityItem(itemId) {
+        try {
+            const response = await serviceApi.delete(`/api/opportunity-items/${itemId}`);
+            console.log('Delete Opportunity Item Response:', response);
+            return response.data || response;
+        } catch (error) {
+            console.error('Error deleting opportunity item:', error);
+            throw error;
+        }
     }
 }

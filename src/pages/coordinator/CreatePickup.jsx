@@ -3,22 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { mockApi } from '../../services/mockApi';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
+import { Card, CardBody, CardHeader, Input, Select, Textarea, Button } from '../../components/common';
 import { DonorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
 import { opportunityApi } from '../../services/api/oppurtunityService';
 import { DRIVER } from '../../constants';
+import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
+import { useAuth } from '../../auth/AuthContext';
 
 export const CreatePickup = () => {
   const navigate = useNavigate();
-  const [pickupLocations, setPickupLocations] = useState([]);
-  const [hungerSpots, setHungerSpots] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
+  const { metadata, updateMetadata } = useReviewOpportunitiesMetadata();
+  const { user } = useAuth();
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Use metadata from context
+  const pickupLocations = (metadata?.pickupLocations || []).filter(d => d.isActive !== false);
+  const hungerSpots = (metadata?.hungerSpots || []).filter(h => h.is_active !== false);
+  const drivers = (metadata?.drivers || []).filter(d => d.status === 'active');
+  const vehicles = (metadata?.vehicles || []).filter(v => v.is_active !== false);
 
   // Initialize with current timestamp
   const now = new Date();
@@ -53,16 +59,29 @@ export const CreatePickup = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [pickup, hunger, driversData, transportations] = await Promise.all([
-        DonorApi.getDonors(),
-        HungerSpotApi.getHungerSpot(),
-        UserApi.getUserByRole(DRIVER),
-        VehicleApi.getVehicles()
-      ]);
-      setPickupLocations((pickup || []).filter(d => d.isActive !== false));
-      setHungerSpots((hunger || []).filter(h => h.is_active !== false));
-      setVehicles((transportations || []).filter(v => v.is_active !== false));
-      setDrivers((driversData || []).filter(d => d.status === 'active'));
+      // Check if we have all required metadata
+      const hasAllMetadata = metadata?.pickupLocations?.length > 0 &&
+                            metadata?.hungerSpots?.length > 0 &&
+                            metadata?.drivers?.length > 0 &&
+                            metadata?.vehicles?.length > 0;
+
+      if (!hasAllMetadata) {
+        // Load metadata only if not available
+        const [pickup, hunger, driversData, transportations] = await Promise.all([
+          DonorApi.getDonors(),
+          HungerSpotApi.getHungerSpot(),
+          UserApi.getUserByRole(DRIVER),
+          VehicleApi.getVehicles()
+        ]);
+
+        // Update context with loaded metadata
+        updateMetadata({
+          pickupLocations: pickup || [],
+          hungerSpots: hunger || [],
+          drivers: (driversData || []).filter((d) => d.status === 'active'),
+          vehicles: transportations || [],
+        });
+      }
     } catch (err) {
       console.error('Error loading data:', err);
       setError(err.message || 'Failed to load data');
@@ -83,12 +102,18 @@ export const CreatePickup = () => {
       delivery_by: new Date(formData.scheduledDateTime).toISOString(),
       notes: formData.notes || '',
       image_link: '',
-      creator_id: 2, // This should ideally come from the logged-in user context
+      creator_id: user?.id, // Get creator_id from logged-in user
     };
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!user?.id) {
+      setError('User not authenticated. Please log in again.');
+      return;
+    }
+    
     const opportunity = transformToOpportunity();
     console.log(opportunity)
 
@@ -128,141 +153,102 @@ export const CreatePickup = () => {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Button onClick={() => navigate('/coordinator/dashboard')} variant="secondary" className="mb-6 text-ngo-gray hover:text-ngo-dark border-0 bg-transparent shadow-none">
-        <ArrowLeft className="w-4 h-4" />
+      <Button onClick={() => navigate('/coordinator/dashboard')} variant="secondary" className="mb-6 text-ngo-gray hover:text-ngo-dark border-0 bg-transparent shadow-none" icon={ArrowLeft}>
         Back to Dashboard
       </Button>
 
-      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <h1 className="text-3xl font-bold text-ngo-dark mb-2">Create New Opportunity</h1>
-        <p className="text-ngo-gray mb-8">Schedule a food rescue operation</p>
+      <Card className="rounded-2xl shadow-xl p-0 border border-gray-100">
+        <CardBody className="p-8">
+          <h1 className="text-3xl font-bold text-ngo-dark mb-2">Create New Opportunity</h1>
+          <p className="text-ngo-gray mb-8">Schedule a food rescue operation</p>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
-            <p className="font-semibold">Error loading data:</p>
-            <p>{error}</p>
-          </div>
-        )}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+              <p className="font-semibold">Error loading data:</p>
+              <p>{error}</p>
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-2">Pickup Location</label>
-              <select
-                value={formData.pickupLocationId}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Select
+                label="Pickup Location"
+                value={String(formData.pickupLocationId)}
                 onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                 required
-              >
-                <option value="">Select Pickup Location</option>
-                {pickupLocations.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
-                ))}
-              </select>
-            </div>
+                options={pickupLocations.map((loc) => ({ value: String(loc.id), label: loc.name }))}
+              />
 
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-2">Delivery Location</label>
-              <select
-                value={formData.hungerSpotId}
+              <Select
+                label="Delivery Location"
+                value={String(formData.hungerSpotId)}
                 onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                 required
-              >
-                <option value="">Select HungerSpot</option>
-                {hungerSpots.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
-                ))}
-              </select>
+                options={hungerSpots.map((loc) => ({ value: String(loc.id), label: loc.name }))}
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-ngo-dark mb-2">Assign Vehicle</label>
-            <select
-              value={formData.vehicleId}
-              onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-              required
-            >
-              <option value="">Select Vehicle</option>
-              {vehicles.map(vehicle => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.number} - {vehicle.notes}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-ngo-dark mb-2">Assign Driver</label>
-            <select
-              value={formData.driverId}
-              onChange={(e) => setFormData({ ...formData, driverId: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-              required
-            >
-              <option value="">Select Driver</option>
-              {drivers.map(driver => (
-                <option key={driver.id} value={driver.id}>
-                  {driver.name} - {driver.phone}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-2">Scheduled Date</label>
-              <input
+              <Select
+                label="Assign Vehicle"
+                value={String(formData.vehicleId)}
+                onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
+                required
+                options={vehicles.map((v) => ({ value: String(v.id), label: `${v.number} - ${v.notes || ''}` }))}
+              />
+            </div>
+
+            <div>
+              <Select
+                label="Assign Driver"
+                value={String(formData.driverId)}
+                onChange={(e) => setFormData({ ...formData, driverId: e.target.value })}
+                required
+                options={drivers.map((d) => ({ value: String(d.id), label: `${d.name} - ${d.phone || ''}` }))}
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Input
+                label="Scheduled Date"
                 type="date"
                 value={formData.scheduledDateTime.split('T')[0]}
                 onChange={(e) => updateScheduledDate(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                 required
               />
-            </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-ngo-dark mb-2">Scheduled Time</label>
-              <input
+              <Input
+                label="Scheduled Time"
                 type="time"
                 value={formData.scheduledDateTime.split('T')[1]}
                 onChange={(e) => updateScheduledTime(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-ngo-dark mb-2">Estimated Quantity</label>
-            <input
+            <Input
+              label="Estimated Quantity"
               type="text"
               value={formData.estimatedQuantity}
               onChange={(e) => setFormData({ ...formData, estimatedQuantity: e.target.value })}
               placeholder="e.g., 50 meals, 20kg"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
               required
             />
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-ngo-dark mb-2">Notes (Optional)</label>
-            <textarea
+            <Textarea
+              label="Notes (Optional)"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
-              rows="3"
+              rows={3}
               placeholder="Any special instructions..."
             />
-          </div>
 
-          <Button type="submit" variant="primary" fullWidth>
-            Create Opportunity & Assign Driver
-          </Button>
-        </form>
-      </div>
+            <Button type="submit" variant="primary" className="w-full">
+              Create Opportunity & Assign Driver
+            </Button>
+          </form>
+        </CardBody>
+      </Card>
     </div>
   );
 };

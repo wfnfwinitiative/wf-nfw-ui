@@ -44,6 +44,21 @@ const statusStyles = {
     text: 'text-red-800',
     dot: 'bg-red-500',
   },
+  inpickup: {
+    bg: 'bg-orange-100',
+    text: 'text-orange-800',
+    dot: 'bg-orange-500',
+  },
+  rejected: {
+    bg: 'bg-red-100',
+    text: 'text-red-800',
+    dot: 'bg-red-500',
+  },
+  completed: {
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-800',
+    dot: 'bg-emerald-500',
+  },
 };
 
 const statusLabels = {
@@ -56,6 +71,9 @@ const statusLabels = {
   created: 'Created',
   active: 'Active',
   inactive: 'Inactive',
+  inpickup: 'In Pickup',
+  rejected: 'Rejected',
+  completed: 'Completed',
 };
 
 export function StatusBadge({ status, showDot = true, className = '' }) {
