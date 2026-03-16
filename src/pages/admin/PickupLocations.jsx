@@ -4,7 +4,7 @@ import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { LocationPicker } from '../../components/location/LocationPicker';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { TileCard } from '../../components/cards/TileCard';
-import { validatePhone } from '../../utils/validation';
+import { validateName, validatePhone } from '../../utils/validation';
 import { Plus, X, Loader2 } from 'lucide-react';
 import { DonorApi } from '../../services/api/donorService';
 
@@ -29,7 +29,7 @@ export const PickupLocations = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [formError, setFormError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({ contactNumber: '' });
+  const [fieldErrors, setFieldErrors] = useState({ contactName: '', contactNumber: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
   const [activateConfirm, setActivateConfirm] = useState({ open: false, id: null });
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,7 +108,7 @@ export const PickupLocations = () => {
     setEditingId(null);
     setFormData(emptyForm);
     setFormError('');
-    setFieldErrors({ contactNumber: '' });
+    setFieldErrors({ contactName: '', contactNumber: '' });
     setShowForm(true);
   };
 
@@ -126,18 +126,22 @@ export const PickupLocations = () => {
       type: 'pickup'
     });
     setFormError('');
-    setFieldErrors({ contactNumber: '' });
+    setFieldErrors({ contactName: '', contactNumber: '' });
     setShowForm(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-    const errors = { contactNumber: '' };
+    const errors = { contactName: '', contactNumber: '' };
+    if (formData.contactName.trim()) {
+      const nameResult = validateName(formData.contactName);
+      if (!nameResult.valid) errors.contactName = nameResult.message;
+    }
     const phoneResult = validatePhone(formData.contactNumber, false);
     if (!phoneResult.valid) errors.contactNumber = phoneResult.message;
     setFieldErrors(errors);
-    if (errors.contactNumber) return;
+    if (Object.values(errors).some(Boolean)) return;
 
     const payload = {
       donor_name: formData.donorName,
@@ -309,6 +313,9 @@ export const PickupLocations = () => {
                   placeholder="e.g., John Doe"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
                 />
+                {fieldErrors.contactName && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.contactName}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">

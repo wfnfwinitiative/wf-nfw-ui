@@ -3,7 +3,7 @@ import { Button, SearchBar, SortDropdown, sortList } from '../../components/ui';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
 import { CoordinatorCard } from '../../components/cards/CoordinatorCard';
-import { validatePassword, validatePhone } from '../../utils/validation';
+import { validateName, validatePassword, validatePhone } from '../../utils/validation';
 import { Plus, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import { UserApi } from '../../services/api/userService';
 
@@ -126,7 +126,8 @@ export const Coordinators = () => {
   };
 
   const getSubmitDisabled = () => {
-    if (!formData.name.trim()) return true;
+    const nameResult = validateName(formData.name);
+    if (!nameResult.valid) return true;
     const phoneResult = validatePhone(formData.phone, true);
     if (!phoneResult.valid) return true;
     if (!editingId) {
@@ -144,6 +145,8 @@ export const Coordinators = () => {
     e.preventDefault();
     setFormError('');
     const errors = { name: '', phone: '', email: '', password: '' };
+    const nameResult = validateName(formData.name);
+    if (!nameResult.valid) errors.name = nameResult.message;
     const phoneResult = validatePhone(formData.phone, true);
     if (!phoneResult.valid) errors.phone = phoneResult.message;
     if (formData.email.trim() && !validateEmail(formData.email)) {
@@ -337,7 +340,7 @@ export const Coordinators = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
               {formError && (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {formError}
@@ -353,6 +356,7 @@ export const Coordinators = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none"
                   required
+                  autoComplete="new-username"
                 />
               </div>
               <div>
@@ -386,7 +390,8 @@ export const Coordinators = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="e.g. coordinator@example.com"
-                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.email ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus-border-transparent outline-none ${fieldErrors.email ? 'border-red-500 dark-border-red-500' : 'border-gray-300 dark-border-gray-600'}`}
+                  autoComplete="new-email"
                 />
                 {fieldErrors.email && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
@@ -410,7 +415,8 @@ export const Coordinators = () => {
                   }}
                   maxLength={20}
                   placeholder={editingId ? 'Leave blank to keep current' : 'Min 8 chars, max 20'}
-                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark-text-gray-200 focus-ring-2 focus-ring-ngo-orange focus-border-transparent outline-none ${fieldErrors.password ? 'border-red-500 dark-border-red-500' : 'border-gray-300 dark-border-gray-600'}`}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"

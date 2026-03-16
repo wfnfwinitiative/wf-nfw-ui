@@ -52,7 +52,7 @@ export const ForgotPassword = () => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             <div>
               <label className="block text-sm font-semibold text-ngo-dark mb-2">
                 Phone Number
