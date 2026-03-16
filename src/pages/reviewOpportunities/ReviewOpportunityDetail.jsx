@@ -337,7 +337,7 @@ export const ReviewOpportunityDetail = () => {
         {/* Action Buttons */}
         <div className="flex gap-4 mt-8">
           <Button onClick={handleSave} variant="primary" disabled={saving} className="flex-1">
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? 'Saving...' : 'Complete Opportunity'}
           </Button>
           <Button onClick={handleClose} variant="secondary" className="flex-1">
             <X className="w-4 h-4 mr-2" />
