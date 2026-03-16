@@ -8,7 +8,7 @@ import { HungerSpotApi } from '../../services/api/hungerSpotService';
 import { DonorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
 import { VehicleApi } from '../../services/api/vehicleService';
-import { StatusApi } from '../../services/api/statusService';
+import { StatusApi } from '../../services/api/statusService.js';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
 import { Edit } from 'lucide-react';
