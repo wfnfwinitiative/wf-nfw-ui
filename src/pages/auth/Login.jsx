@@ -117,7 +117,7 @@ export const Login = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
               <div>
                 <label className="block text-sm font-semibold text-ngo-dark mb-2">
                   Mobile Number

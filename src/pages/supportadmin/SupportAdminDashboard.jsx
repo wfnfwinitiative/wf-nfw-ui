@@ -251,7 +251,7 @@ export const SupportAdminDashboard = () => {
             </div>
           )}
 
-          <form onSubmit={handleCreateSubmit} className="space-y-4 max-w-lg">
+          <form onSubmit={handleCreateSubmit} className="space-y-4 max-w-lg" autoComplete="off">
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -261,9 +261,10 @@ export const SupportAdminDashboard = () => {
                 type="text"
                 value={createForm.name}
                 onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus-border-transparent"
                 placeholder="Enter admin name"
                 maxLength={100}
+                autoComplete="new-username"
               />
               {createFieldErrors.name && <p className="text-red-500 text-xs mt-1">{createFieldErrors.name}</p>}
             </div>
@@ -293,8 +294,9 @@ export const SupportAdminDashboard = () => {
                 type="email"
                 value={createForm.email}
                 onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark-border-gray-600 bg-white dark-bg-gray-700 text-gray-900 dark-text-white focus-ring-2 focus-ring-ngo-orange focus-border-transparent"
                 placeholder="admin@example.com"
+                autoComplete="new-email"
               />
               {createFieldErrors.email && <p className="text-red-500 text-xs mt-1">{createFieldErrors.email}</p>}
             </div>
@@ -309,9 +311,10 @@ export const SupportAdminDashboard = () => {
                 type={showCreatePassword ? 'text' : 'password'}
                 value={createForm.password}
                 onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                className="w-full px-4 py-2.5 pr-12 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent"
+                className="w-full px-4 py-2.5 pr-12 rounded-xl border border-gray-300 dark-border-gray-600 bg-white dark-bg-gray-700 text-gray-900 dark-text-white focus-ring-2 focus-ring-ngo-orange focus-border-transparent"
                 placeholder="Min 8 chars, max 20"
                 maxLength={20}
+                autoComplete="new-password"
               />
               <button
                 type="button"
@@ -358,7 +361,7 @@ export const SupportAdminDashboard = () => {
             </div>
           )}
 
-          <form onSubmit={handleResetSubmit} className="space-y-4 max-w-lg">
+          <form onSubmit={handleResetSubmit} className="space-y-4 max-w-lg" autoComplete="off">
             {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

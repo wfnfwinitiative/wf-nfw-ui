@@ -5,6 +5,24 @@
 
 
 /**
+ * Validates user name.
+ * - Only alphabets and spaces allowed
+ * - Required field
+ * @param {string} value
+ * @returns {{ valid: boolean, message?: string }}
+ */
+export function validateName(value) {
+  if (value == null || String(value).trim() === '') {
+    return { valid: false, message: 'Name is required.' };
+  }
+  const str = String(value).trim();
+  if (!/^[a-zA-Z ]+$/.test(str)) {
+    return { valid: false, message: 'Only alphabets and spaces are allowed.' };
+  }
+  return { valid: true };
+}
+
+/**
  * Validates coordinator/driver password.
  * - Minimum 8 characters, maximum 20 characters
  * - Letters, numbers, and special characters allowed
