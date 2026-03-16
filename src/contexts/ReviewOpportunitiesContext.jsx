@@ -8,13 +8,22 @@ export const ReviewOpportunitiesProvider = ({ children }) => {
     hungerSpots: [],
     drivers: [],
     vehicles: [],
+    statuses: [],
+    statusMap: {},
   });
 
   const updateReviewOpportunitiesMetadata = useCallback((newMetadata) => {
-    setReviewOpportunitiesMetadata((prev) => ({
-      ...prev,
-      ...newMetadata,
-    }));
+    setReviewOpportunitiesMetadata((prev) => {
+      const updated = { ...prev, ...newMetadata };
+      // Compute statusMap if statuses are provided and is an array
+      if (Array.isArray(newMetadata.statuses)) {
+        updated.statusMap = newMetadata.statuses.reduce((map, status) => {
+          map[status.status_id] = status.status_name;
+          return map;
+        }, {});
+      }
+      return updated;
+    });
   }, []);
 
   const value = {
