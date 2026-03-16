@@ -303,7 +303,7 @@ export const PickupLocations = () => {
                     const val = e.target.value;
                     // Allow only alphabets, numbers, spaces, hyphens
                     if (/^[a-zA-Z0-9\-\s]*$/.test(val)) {
-                      setFormData({ ...formData, name: val });
+                      setFormData({ ...formData, donorName: val });
                     }
                   }}
                   placeholder="e.g., Rajeev Gandhi Ashram"
