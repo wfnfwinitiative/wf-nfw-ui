@@ -13,7 +13,6 @@ const emptyForm = {
   name: '',
   address: '',
   city: '',
-  donorName: '',
   contactName: '',
   contactNumber: '',
   lat: '',
@@ -49,10 +48,9 @@ export const PickupLocations = () => {
       const data = await DonorApi.getDonors();
       const mappedData = data.map((d) => ({
         id: d.donor_id,
-        name: d.address,
-        address: d.location,
+        name: d.donor_name,
+        address: d.address,
         city: d.city,
-        donorName: d.donor_name,
         contactName: d.contact_person,
         contactNumber: d.mobile_number,
         lat: d.latitude,
@@ -81,7 +79,6 @@ export const PickupLocations = () => {
         (l.name || '').toLowerCase().includes(q) ||
         (l.address || '').toLowerCase().includes(q) ||
         (l.city || '').toLowerCase().includes(q) ||
-        (l.donorName || '').toLowerCase().includes(q) ||
         (l.contactName || '').toLowerCase().includes(q) ||
         (l.contactNumber || '').toString().includes(q)
     );
@@ -118,7 +115,6 @@ export const PickupLocations = () => {
       name: row.name ?? '',
       address: row.address ?? '',
       city: row.city ?? '',
-      donorName: row.donorName ?? '',
       contactName: row.contactName ?? '',
       contactNumber: row.contactNumber ?? '',
       lat: row.lat != null ? String(row.lat) : '',
@@ -298,12 +294,12 @@ export const PickupLocations = () => {
                 </label>
                  <input
                   type="text"
-                  value={formData.donorName}
+                  value={formData.name}
                   onChange={(e) => {
                     const val = e.target.value;
                     // Allow only alphabets, numbers, spaces, hyphens
                     if (/^[a-zA-Z0-9\-\s]*$/.test(val)) {
-                      setFormData({ ...formData, donorName: val });
+                      setFormData({ ...formData, name: val });
                     }
                   }}
                   placeholder="e.g., Rajeev Gandhi Ashram"
@@ -366,8 +362,8 @@ export const PickupLocations = () => {
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="e.g., Big Bazaar - Lajpat Nagar"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
                   required
@@ -467,7 +463,7 @@ export const PickupLocations = () => {
             {paginated.map((loc) => (
               <TileCard
                 key={loc.id}
-                title={loc.donorName || 'Unnamed Location'}
+                title={loc.name || 'Unnamed Location'}
                 status={loc.isActive !== false ? 'active' : 'inactive'}
                 fields={[
                   { label: 'Address', value: loc.address },
