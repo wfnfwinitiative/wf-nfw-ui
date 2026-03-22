@@ -118,7 +118,7 @@ export const DashboardLayout = () => {
             </button>
 
             <div className="flex flex-row items-center justify-end gap-3 flex-wrap md:flex-nowrap min-w-0">
-              <ProfileDropdown />
+              <ProfileDropdown hideEditProfile={user?.role === 'supportadmin'} />
             </div>
           </div>
         </header>

@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { User, LayoutDashboard, LogOut } from 'lucide-react';
 
-export const ProfileDropdown = () => {
+export const ProfileDropdown = ({ hideEditProfile = false }) => {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -53,14 +53,16 @@ export const ProfileDropdown = () => {
           </div>
 
           <div className="py-1">
-            <button
-              type="button"
-              onClick={() => { setOpen(false); navigate('/profile/edit'); }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 hover:bg-ngo-light dark:hover:bg-gray-700 text-left"
-            >
-              <User className="w-4 h-4 text-ngo-orange flex-shrink-0" />
-              Edit Profile
-            </button>
+            {!hideEditProfile && (
+              <button
+                type="button"
+                onClick={() => { setOpen(false); navigate('/profile/edit'); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 hover:bg-ngo-light dark:hover:bg-gray-700 text-left"
+              >
+                <User className="w-4 h-4 text-ngo-orange flex-shrink-0" />
+                Edit Profile
+              </button>
+            )}
             <button
               type="button"
               onClick={() => { setOpen(false); navigate(dashboardPath); }}

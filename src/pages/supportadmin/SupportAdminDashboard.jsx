@@ -238,7 +238,7 @@ export const SupportAdminDashboard = () => {
       {/* Create Admin Tab */}
       {activeTab === 'create' && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create First Admin User</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create Admin User</h2>
 
           {createSuccess && (
             <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-xl text-green-700 dark:text-green-300 text-sm">
