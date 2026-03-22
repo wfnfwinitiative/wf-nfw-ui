@@ -36,6 +36,8 @@ import { VerificationDetail } from './pages/verification/VerificationDetail';
 import { Profile } from './pages/profile/Profile';
 import { SupportAdminDashboard } from './pages/supportadmin/SupportAdminDashboard';
 import { useAuth } from './auth/AuthContext';
+import ReportScreen from './pages/admin/ReportScreen';
+
 
 function DashboardRedirect() {
   const { user, loading } = useAuth();
@@ -73,6 +75,7 @@ function App() {
             <Route path="coordinators" element={<Coordinators />} />
             <Route path="drivers" element={<Drivers />} />
             <Route path="feature-flag" element={<FeatureFlag />} />
+             <Route path="report" element={<ReportScreen />} />
             <Route path="settings" element={<div className="text-center py-12 text-ngo-gray">Settings page coming soon...</div>} />
           </Route>
 

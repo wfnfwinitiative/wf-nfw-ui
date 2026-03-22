@@ -8,7 +8,7 @@
   margin-bottom: 20px;
 }
 
-/* KPI cards */
+/* KPI */
 .summary-container {
   display: flex;
   gap: 20px;
@@ -38,7 +38,8 @@
   margin-bottom: 20px;
 }
 
-.filter-bar input {
+.filter-bar input,
+.filter-bar select {
   padding: 6px;
 }
 
@@ -67,4 +68,27 @@ th {
 th, td {
   padding: 8px;
   border: 1px solid #ddd;
+}
+/* Match dropdown style */
+.custom-date-input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db; /* same as dropdown */
+  border-radius: 8px;
+  background-color: white;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  min-width: 150px;
+}
+
+.custom-date-input:focus {
+  border-color: #f97316; 
+  box-shadow: 0 0 0 1px #f97316;
+}
+
+
+.custom-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
 }
