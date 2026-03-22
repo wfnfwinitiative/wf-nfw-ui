@@ -26,6 +26,7 @@ import { DriverDashboard } from './pages/driver/DriverDashboard';
 import { Verification } from './pages/verification/Verification';
 import { VerificationDetail } from './pages/verification/VerificationDetail';
 import { Profile } from './pages/profile/Profile';
+import { ReportScreen } from './pages/admin/ReportScreen';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
             <Route path="pickup-locations" element={<PickupLocations />} />
             <Route path="hungerspots" element={<HungerSpots />} />
             <Route path="settings" element={<div className="text-center py-12 text-ngo-gray">Settings page coming soon...</div>} />
+            <Route path="report" element={<ReportScreen />} />           
           </Route>
 
           <Route path="/coordinator" element={<RoleGuard allowedRoles={['coordinator']}><DashboardLayout /></RoleGuard>}>

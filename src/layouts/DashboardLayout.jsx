@@ -21,6 +21,7 @@ export const DashboardLayout = () => {
       { icon: Users, label: 'Coordinators', path: '/admin/coordinators' },
       { icon: Truck, label: 'Drivers', path: '/admin/drivers' },
       { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
+      { icon: Flag, label: 'Report', path: '/admin/report' },
       { divider: true }
     ],
     coordinator: [
@@ -32,7 +33,8 @@ export const DashboardLayout = () => {
       { icon: MapPin, label: 'HungerSpots', path: '/coordinator/hungerspots' },
       { divider: true },
       { icon: Truck, label: 'Create Opportunity', path: '/coordinator/create-opportunity' },
-      { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' }
+      { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' },
+       { icon: Flag, label: 'Report', path: '/admin/report' }
     ],
     driver: [
       { icon: Home, label: 'Dashboard', path: '/driver/dashboard' },
