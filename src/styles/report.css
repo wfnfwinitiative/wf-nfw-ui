@@ -1,3 +1,4 @@
+/* Container */
 .report-container {
   padding: 20px;
 }
@@ -18,7 +19,7 @@
 .card {
   padding: 15px;
   background: #f3f2f1;
-  border-radius: 6px;
+  border-radius: 8px; /* 🔥 slightly smoother */
   min-width: 200px;
 }
 
@@ -38,11 +39,13 @@
   margin-bottom: 20px;
 }
 
+/* 🔥 Inputs (shared behavior) */
 .filter-bar input,
 .filter-bar select {
   padding: 6px;
 }
 
+/* Button */
 .button {
   padding: 6px 12px;
   background-color: #0078d4;
@@ -61,33 +64,52 @@ table {
   border-collapse: collapse;
 }
 
+/* 🔥 Table header improvements */
 th {
   background-color: #f3f2f1;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
 }
 
+th:hover {
+  background-color: #e5e7eb;
+}
+
+/* Cells */
 th, td {
   padding: 8px;
   border: 1px solid #ddd;
 }
+
+/* ---------------- DATE INPUT ---------------- */
+
 /* Match dropdown style */
 .custom-date-input {
   height: 40px;
   padding: 0 12px;
-  border: 1px solid #d1d5db; /* same as dropdown */
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   background-color: white;
   font-size: 14px;
   color: #111827;
   outline: none;
   min-width: 150px;
+  transition: all 0.2s ease; /* 🔥 smooth */
 }
 
+/* 🔥 Focus EXACT like dropdown */
 .custom-date-input:focus {
-  border-color: #f97316; 
-  box-shadow: 0 0 0 1px #f97316;
+  border: 2px solid #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
 }
 
+/* Hover */
+.custom-date-input:hover {
+  border-color: #f97316;
+}
 
+/* Calendar icon */
 .custom-date-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.6;
