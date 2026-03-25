@@ -20,3 +20,8 @@ export const getHungerSpots = async () => {
   return res.data;
 };
 
+export const getVehicles = async () => {
+  const res = await axios.get(`${BASE_URL}/vehicles`);
+  return res.data;
+};
+

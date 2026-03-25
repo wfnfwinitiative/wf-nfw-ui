@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/report.css";
 import autoTable from "jspdf-autotable";
-import MultiSelectDropdown from  "../../components/ui/MultiSelectDropDown";
+import MultiSelectDropdown from "../../components/ui/MultiSelectDropDown";
 
 import {
   getReport,
   getDrivers,
   getHungerSpots,
+  getVehicles,
 } from "../../services/api/reportService";
 
 import {
@@ -22,12 +23,11 @@ import {
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
-import Select from "react-select";
 import { Button } from "../../components/ui/Button";
-import { Search } from "lucide-react";
+import { Search, Download } from "lucide-react";
+import logo from "../../assets/NoFoodWaste_Logo_Orange.png";
 
 const ReportScreen = () => {
-
   // ---------------- DEFAULT DATE ----------------
   const getDefaultDates = () => {
     const today = new Date();
@@ -47,14 +47,19 @@ const ReportScreen = () => {
     ...getDefaultDates(),
     driver_ids: [],
     hunger_spot_ids: [],
+    vehicle_ids: [],
   });
 
   const [data, setData] = useState([]);
   const [graph, setGraph] = useState([]);
-  const [summary, setSummary] = useState({ total_food: 0, people_count: 0 });
+  const [summary, setSummary] = useState({
+    total_food: 0,
+    people_count: 0,
+  });
 
   const [drivers, setDrivers] = useState([]);
   const [spots, setSpots] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
 
   const [sortConfig, setSortConfig] = useState({
     key: "",
@@ -68,23 +73,30 @@ const ReportScreen = () => {
   }, []);
 
   const loadDropdowns = async () => {
-    const [d, s] = await Promise.all([
+    const [d, s, v] = await Promise.all([
       getDrivers(),
       getHungerSpots(),
+      getVehicles(),
     ]);
     setDrivers(d);
     setSpots(s);
+    setVehicles(v);
   };
 
   // ---------------- OPTIONS ----------------
-  const driverOptions = drivers.map(d => ({
+  const driverOptions = drivers.map((d) => ({
     label: d.name,
     value: d.id,
   }));
 
-  const spotOptions = spots.map(s => ({
+  const spotOptions = spots.map((s) => ({
     label: s.spot_name,
     value: s.hunger_spot_id,
+  }));
+
+  const vehicleOptions = vehicles.map((v) => ({
+    label: v.vehicle_no,
+    value: v.vehicle_id,
   }));
 
   // ---------------- SORT ----------------
@@ -126,9 +138,16 @@ const ReportScreen = () => {
     const payload = {
       ...filters,
       driver_ids: filters.driver_ids.length ? filters.driver_ids : null,
-      hunger_spot_ids: filters.hunger_spot_ids.length ? filters.hunger_spot_ids : null,
-      start_date: filters.start_date ? filters.start_date + "T00:00:00" : null,
-      end_date: filters.end_date ? filters.end_date + "T23:59:59" : null,
+      hunger_spot_ids: filters.hunger_spot_ids.length
+        ? filters.hunger_spot_ids
+        : null,
+      vehicle_ids: filters.vehicle_ids.length ? filters.vehicle_ids : null,
+      start_date: filters.start_date
+        ? filters.start_date + "T00:00:00"
+        : null,
+      end_date: filters.end_date
+        ? filters.end_date + "T23:59:59"
+        : null,
     };
 
     const res = await getReport(payload);
@@ -151,6 +170,120 @@ const ReportScreen = () => {
         })
       : "";
 
+  // ---------------- PDF DOWNLOAD ----------------
+ const downloadPDF = async () => {
+  const pdf = new jsPDF("landscape"); // ✅ FIX WIDTH
+
+  pdf.addImage(logo, "PNG", 10, 10, 35, 15);
+  pdf.setFontSize(16);
+  pdf.text("No Food Waste", 50, 18);
+
+  const today = new Date().toLocaleDateString("en-IN");
+  pdf.setFontSize(10);
+  pdf.text(`Report Date: ${today}`, 10, 30);
+
+  // KPI
+  pdf.setTextColor(0, 0, 0);
+  pdf.text("Picked Food: ", 10, 40);
+
+  pdf.setTextColor(249, 115, 22);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(String(summary.total_food), 45, 40);
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont("helvetica", "normal");
+
+  pdf.text("People Fed: ", 120, 40);
+
+  pdf.setTextColor(249, 115, 22);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(String(summary.people_count), 165, 40);
+
+  // TABLE DATA
+  const tableData = data.map((row) => [
+    row.opportunity_id,
+    row.donor_name,
+    row.hunger_spot_name,
+    row.driver_name,
+    row.status_name,
+    row.feeding_count,
+    formatDateTime(row.pickup_eta),
+    formatDateTime(row.delivery_by),
+    row.vehicle_no,
+  ]);
+
+  // ✅ ONLY ONE TABLE
+  autoTable(pdf, {
+    startY: 50,
+
+    head: [[
+      "ID",
+      "Donor",
+      "Spot",
+      "Driver",
+      "Status",
+      "Feed",
+      "Pickup",
+      "Delivery",
+      "Vehicle",
+    ]],
+
+    body: tableData,
+
+    // 🔥 ORANGE HEADER
+    headStyles: {
+      fillColor: [249, 115, 22],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+
+    alternateRowStyles: {
+      fillColor: [245, 245, 245],
+    },
+
+    // 🔥 STATUS COLORS
+    didDrawCell: (data) => {
+      if (data.column.index === 4 && data.cell.section === "body") {
+        const status = data.cell.raw;
+
+        if (status === "Completed") {
+          data.cell.styles.textColor = [0, 128, 0];
+        }
+
+        if (status === "Created") {
+          data.cell.styles.textColor = [249, 115, 22];
+        }
+      }
+    },
+
+    columnStyles: {
+      0: { cellWidth: 10 },
+      5: { cellWidth: 15 },
+      6: { cellWidth: 30 },
+      7: { cellWidth: 30 },
+    },
+  });
+
+  // GRAPH
+  const chart = document.querySelector(".recharts-wrapper");
+
+  if (chart) {
+    const canvas = await html2canvas(chart);
+    const imgData = canvas.toDataURL("image/png");
+
+    pdf.addPage();
+    pdf.text("Graph", 10, 20);
+    pdf.addImage(imgData, "PNG", 10, 30, 260, 120);
+  }
+
+  const fileDate = new Date().toISOString().split("T")[0];
+  pdf.save(`NoFoodWaste_Report_${fileDate}.pdf`);
+};
   return (
     <div className="report-container">
       <div className="report-title">Operations Summary Report</div>
@@ -165,7 +298,7 @@ const ReportScreen = () => {
         </div>
 
         <div className="card">
-          <div className="card-title">People Count</div>
+          <div className="card-title">People Fed</div>
           <div className="card-value text-[#f97316] font-bold">
             {summary.people_count}
           </div>
@@ -192,28 +325,39 @@ const ReportScreen = () => {
           }
         />
 
-        {/* DRIVER MULTI */}
-       <MultiSelectDropdown
-  value={filters.driver_ids}
-  onChange={(val) =>
-    setFilters({ ...filters, driver_ids: val })
-  }
-  options={driverOptions}
-  placeholder="Driver"
-/>
+        <MultiSelectDropdown
+          value={filters.driver_ids}
+          onChange={(val) =>
+            setFilters({ ...filters, driver_ids: val })
+          }
+          options={driverOptions}
+          placeholder="Driver"
+        />
 
-        {/* SPOT MULTI */}
-       <MultiSelectDropdown
-  value={filters.hunger_spot_ids}
-  onChange={(val) =>
-    setFilters({ ...filters, hunger_spot_ids: val })
-  }
-  options={spotOptions}
-  placeholder="Hunger Spot"
-/>
+        <MultiSelectDropdown
+          value={filters.hunger_spot_ids}
+          onChange={(val) =>
+            setFilters({ ...filters, hunger_spot_ids: val })
+          }
+          options={spotOptions}
+          placeholder="Hunger Spot"
+        />
+
+        <MultiSelectDropdown
+          value={filters.vehicle_ids}
+          onChange={(val) =>
+            setFilters({ ...filters, vehicle_ids: val })
+          }
+          options={vehicleOptions}
+          placeholder="Vehicle"
+        />
 
         <Button onClick={handleSearch} variant="primary">
           <Search className="w-4 h-4" /> Search
+        </Button>
+
+        <Button onClick={downloadPDF}>
+          <Download className="w-4 h-4" /> Download
         </Button>
       </div>
 
@@ -235,7 +379,7 @@ const ReportScreen = () => {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ textAlign: "center", padding: "20px", color: "#999" }}>
+          <div style={{ textAlign: "center", padding: "20px" }}>
             No graph data available
           </div>
         )}
@@ -254,6 +398,7 @@ const ReportScreen = () => {
               <th onClick={() => handleSort("feeding_count")}>Feed</th>
               <th onClick={() => handleSort("pickup_eta")}>Pickup</th>
               <th onClick={() => handleSort("delivery_by")}>Delivery</th>
+              <th>Vehicle</th>
             </tr>
           </thead>
 
@@ -268,6 +413,7 @@ const ReportScreen = () => {
                 <td>{row.feeding_count}</td>
                 <td>{formatDateTime(row.pickup_eta)}</td>
                 <td>{formatDateTime(row.delivery_by)}</td>
+                <td>{row.vehicle_no}</td>
               </tr>
             ))}
           </tbody>
