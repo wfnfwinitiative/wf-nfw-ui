@@ -8,6 +8,8 @@ import {
   getDrivers,
   getHungerSpots,
   getVehicles,
+  getDonors,
+  getStatus,
 } from "../../services/api/reportService";
 
 import {
@@ -60,7 +62,8 @@ const ReportScreen = () => {
   const [drivers, setDrivers] = useState([]);
   const [spots, setSpots] = useState([]);
   const [vehicles, setVehicles] = useState([]);
-
+  const [donors, setDonors] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [sortConfig, setSortConfig] = useState({
     key: "",
     direction: "asc",
@@ -73,14 +76,19 @@ const ReportScreen = () => {
   }, []);
 
   const loadDropdowns = async () => {
-    const [d, s, v] = await Promise.all([
+    const [d, s, v,dn,st] = await Promise.all([
       getDrivers(),
       getHungerSpots(),
       getVehicles(),
+      getDonors(),
+      getStatus(),
     ]);
     setDrivers(d);
     setSpots(s);
     setVehicles(v);
+    setDonors(dn);
+    setStatuses(st);
+
   };
 
   // ---------------- OPTIONS ----------------
@@ -97,6 +105,16 @@ const ReportScreen = () => {
   const vehicleOptions = vehicles.map((v) => ({
     label: v.vehicle_no,
     value: v.vehicle_id,
+  }));
+
+    const donorOptions = donors.map((d) => ({
+    label: d.donor_name,
+    value: d.donor_id,
+  }));
+
+  const statusOptions = statuses.map((s) => ({
+    label: s.status_name,
+    value: s.status_id,
   }));
 
   // ---------------- SORT ----------------
@@ -175,8 +193,7 @@ const ReportScreen = () => {
   const pdf = new jsPDF("landscape"); // ✅ FIX WIDTH
 
   pdf.addImage(logo, "PNG", 10, 10, 35, 15);
-  pdf.setFontSize(16);
-  pdf.text("No Food Waste", 50, 18);
+  
 
   const today = new Date().toLocaleDateString("en-IN");
   pdf.setFontSize(10);
@@ -184,20 +201,31 @@ const ReportScreen = () => {
 
   // KPI
   pdf.setTextColor(0, 0, 0);
-  pdf.text("Picked Food: ", 10, 40);
-
-  pdf.setTextColor(249, 115, 22);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(String(summary.total_food), 45, 40);
-
-  pdf.setTextColor(0, 0, 0);
   pdf.setFont("helvetica", "normal");
 
-  pdf.text("People Fed: ", 120, 40);
+  pdf.text("Opportunity Count: ", 10, 40);
 
   pdf.setTextColor(249, 115, 22);
   pdf.setFont("helvetica", "bold");
-  pdf.text(String(summary.people_count), 165, 40);
+  pdf.text(String(summary.people_count), 55, 40);
+
+  // Picked Food
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont("helvetica", "normal");
+  pdf.text("Picked Food: ", 120, 40);
+
+  pdf.setTextColor(249, 115, 22);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(String(summary.total_food), 160, 40);
+
+  // People Fed (same as people_count or separate if you have)
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont("helvetica", "normal");
+  pdf.text("People Fed: ", 220, 40);
+
+  pdf.setTextColor(249, 115, 22);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(String(summary.people_count), 255, 40);
 
   // TABLE DATA
   const tableData = data.map((row) => [
@@ -230,7 +258,7 @@ const ReportScreen = () => {
 
     body: tableData,
 
-    // 🔥 ORANGE HEADER
+    // ORANGE HEADER
     headStyles: {
       fillColor: [249, 115, 22],
       textColor: 255,
@@ -246,7 +274,7 @@ const ReportScreen = () => {
       fillColor: [245, 245, 245],
     },
 
-    // 🔥 STATUS COLORS
+    //  STATUS COLORS
     didDrawCell: (data) => {
       if (data.column.index === 4 && data.cell.section === "body") {
         const status = data.cell.raw;
@@ -291,18 +319,23 @@ const ReportScreen = () => {
       {/* KPI */}
       <div className="summary-container">
         <div className="card">
+          <div className="card-title">Opportunity Count</div>
+          <div className="card-value text-[#f97316] font-bold">
+            {summary.people_count}
+          </div>
+        </div>
+        <div className="card">
           <div className="card-title">Picked Food</div>
           <div className="card-value text-[#f97316] font-bold">
             {summary.total_food}
           </div>
         </div>
-
         <div className="card">
           <div className="card-title">People Fed</div>
           <div className="card-value text-[#f97316] font-bold">
             {summary.people_count}
           </div>
-        </div>
+        </div>        
       </div>
 
       {/* FILTERS */}
@@ -352,6 +385,23 @@ const ReportScreen = () => {
           placeholder="Vehicle"
         />
 
+        <MultiSelectDropdown
+          value={filters.donor_ids}
+          onChange={(val) =>
+            setFilters({ ...filters, donor_ids: val })
+          }
+          options={donorOptions}
+          placeholder="Donor"
+        />        
+        <MultiSelectDropdown
+          value={filters.status_ids}
+          onChange={(val) =>
+            setFilters({ ...filters, status_ids: val })
+          }
+          options={statusOptions}
+          placeholder="Status"
+        />
+
         <Button onClick={handleSearch} variant="primary">
           <Search className="w-4 h-4" /> Search
         </Button>
@@ -392,10 +442,10 @@ const ReportScreen = () => {
             <tr>
               <th onClick={() => handleSort("opportunity_id")}>ID</th>
               <th onClick={() => handleSort("donor_name")}>Donor</th>
-              <th onClick={() => handleSort("hunger_spot_name")}>Spot</th>
+              <th onClick={() => handleSort("hunger_spot_name")}>Hunger Spot</th>
               <th onClick={() => handleSort("driver_name")}>Driver</th>
               <th onClick={() => handleSort("status_name")}>Status</th>
-              <th onClick={() => handleSort("feeding_count")}>Feed</th>
+              <th onClick={() => handleSort("feeding_count")}>Picked Food</th>
               <th onClick={() => handleSort("pickup_eta")}>Pickup</th>
               <th onClick={() => handleSort("delivery_by")}>Delivery</th>
               <th>Vehicle</th>
