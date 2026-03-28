@@ -56,7 +56,8 @@ const ReportScreen = () => {
   const [graph, setGraph] = useState([]);
   const [summary, setSummary] = useState({
     total_food: 0,
-    people_count: 0,
+  opportunity_count: 0,
+  people_fed: 0,
   });
 
   const [drivers, setDrivers] = useState([]);
@@ -190,43 +191,46 @@ const ReportScreen = () => {
 
   // ---------------- PDF DOWNLOAD ----------------
  const downloadPDF = async () => {
-  const pdf = new jsPDF("landscape"); // ✅ FIX WIDTH
+  const pdf = new jsPDF("landscape");
 
-  pdf.addImage(logo, "PNG", 10, 10, 35, 15);
-  
+// LOGO
+pdf.addImage(logo, "PNG", 10, 10, 35, 15);
 
-  const today = new Date().toLocaleDateString("en-IN");
-  pdf.setFontSize(10);
-  pdf.text(`Report Date: ${today}`, 10, 30);
+// DATE
+const today = new Date().toLocaleDateString("en-IN");
+pdf.setFontSize(10);
+pdf.setTextColor(0, 0, 0);
+pdf.setFont("helvetica", "normal");
+pdf.text(`Report Date: ${today}`, 10, 30);
 
-  // KPI
-  pdf.setTextColor(0, 0, 0);
+// ================= KPI SECTION =================
+
+// Opportunity Count
   pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(0, 0, 0);
+  pdf.text("Opportunity Count:", 10, 40);
 
-  pdf.text("Opportunity Count: ", 10, 40);
-
-  pdf.setTextColor(249, 115, 22);
   pdf.setFont("helvetica", "bold");
-  pdf.text(String(summary.people_count), 55, 40);
+  pdf.setTextColor(249, 115, 22);
+  pdf.text(String(summary.opportunity_count || 0), 55, 40);
 
   // Picked Food
-  pdf.setTextColor(0, 0, 0);
   pdf.setFont("helvetica", "normal");
-  pdf.text("Picked Food: ", 120, 40);
-
-  pdf.setTextColor(249, 115, 22);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(String(summary.total_food), 160, 40);
-
-  // People Fed (same as people_count or separate if you have)
   pdf.setTextColor(0, 0, 0);
-  pdf.setFont("helvetica", "normal");
-  pdf.text("People Fed: ", 220, 40);
+  pdf.text("Picked Food:", 120, 40);
 
-  pdf.setTextColor(249, 115, 22);
   pdf.setFont("helvetica", "bold");
-  pdf.text(String(summary.people_count), 255, 40);
+  pdf.setTextColor(249, 115, 22);
+  pdf.text(String(summary.total_food || 0), 160, 40);
 
+  // People Fed ✅ FIXED
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(0, 0, 0);
+  pdf.text("People Fed:", 220, 40);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(249, 115, 22);
+  pdf.text(String(summary.people_fed || 0), 255, 40);
   // TABLE DATA
   const tableData = data.map((row) => [
     row.opportunity_id,
@@ -321,19 +325,19 @@ const ReportScreen = () => {
         <div className="card">
           <div className="card-title">Opportunity Count</div>
           <div className="card-value text-[#f97316] font-bold">
-            {summary.people_count}
+          {summary.opportunity_count}
           </div>
         </div>
         <div className="card">
           <div className="card-title">Picked Food</div>
           <div className="card-value text-[#f97316] font-bold">
-            {summary.total_food}
+            {summary.total_food} kg
           </div>
         </div>
         <div className="card">
           <div className="card-title">People Fed</div>
           <div className="card-value text-[#f97316] font-bold">
-            {summary.people_count}
+            {summary.people_fed} people
           </div>
         </div>        
       </div>
