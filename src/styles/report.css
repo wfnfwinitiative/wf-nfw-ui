@@ -19,7 +19,7 @@
 .card {
   padding: 15px;
   background: #f3f2f1;
-  border-radius: 8px; /* 🔥 slightly smoother */
+  border-radius: 8px;
   min-width: 200px;
 }
 
@@ -30,6 +30,7 @@
 .card-value {
   font-size: 22px;
   font-weight: bold;
+  color: #f97316; /* 🔥 orange numbers */
 }
 
 /* Filters */
@@ -39,7 +40,6 @@
   margin-bottom: 20px;
 }
 
-/* 🔥 Inputs (shared behavior) */
 .filter-bar input,
 .filter-bar select {
   padding: 6px;
@@ -59,32 +59,49 @@
   margin-top: 20px;
 }
 
-table {
+/* Table base */
+.table-container table {
   width: 100%;
   border-collapse: collapse;
 }
 
-/* 🔥 Table header improvements */
-th {
-  background-color: #f3f2f1;
+/* ORANGE HEADER */
+.table-container th {
+  background-color: #f97316;
+  color: white;
+  text-align: center;
+  font-weight: 600;
   cursor: pointer;
   user-select: none;
   transition: background 0.2s ease;
 }
 
-th:hover {
-  background-color: #e5e7eb;
+.table-container th:hover {
+  background-color: #ea580c;
 }
 
-/* Cells */
-th, td {
-  padding: 8px;
+/* FORCE CENTER ALIGN (IMPORTANT FIX) */
+.table-container th,
+.table-container td {
+  padding: 10px;
   border: 1px solid #ddd;
+  text-align: center !important;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* Zebra rows */
+.table-container tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* Status column styling */
+.table-container td:nth-child(5) {
+  font-weight: 500;
 }
 
 /* ---------------- DATE INPUT ---------------- */
 
-/* Match dropdown style */
 .custom-date-input {
   height: 40px;
   padding: 0 12px;
@@ -95,10 +112,10 @@ th, td {
   color: #111827;
   outline: none;
   min-width: 150px;
-  transition: all 0.2s ease; /* 🔥 smooth */
+  transition: all 0.2s ease;
 }
 
-/* 🔥 Focus EXACT like dropdown */
+/* Focus */
 .custom-date-input:focus {
   border: 2px solid #f97316;
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
