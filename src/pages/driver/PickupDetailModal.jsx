@@ -18,7 +18,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
   const voicePanelRef = useRef(null);
   const deliveryFileInputRef = useRef(null);
   const deliveryFolderUrlRef = useRef(null);
-  const { isVoiceEnabled } = useFeatureFlags();
+  const { isVoiceEnabled, isGoogleImageUploadEnabled } = useFeatureFlags();
 
   // Clear all image state whenever the modal opens for a different assignment
   useEffect(() => {
@@ -229,7 +229,8 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
                 )}
               </div>
 
-              {/* Delivery Image Upload */}
+              {/* Delivery Image Upload — only shown when Google Drive flag is enabled */}
+              {isGoogleImageUploadEnabled && (
               <div className="border border-dashed border-gray-300 rounded-lg p-4">
                 <h4 className="font-semibold text-gray-800 mb-2 text-sm">
                   Delivery Photos
@@ -316,6 +317,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
                   <p className="text-xs text-gray-400 text-center py-2">No delivery photos added yet.</p>
                 )}
               </div>
+              )}
             </div>
           ) : (
             <div className="p-6">
