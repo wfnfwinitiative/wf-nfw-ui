@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
-import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag, ShieldCheck  } from 'lucide-react';
+import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag, ShieldCheck,BarChart   } from 'lucide-react';
 import { ToastContainer, useToast } from '../components/common/Toast';
 
 export const DashboardLayout = () => {
@@ -21,6 +21,7 @@ export const DashboardLayout = () => {
       { icon: Users, label: 'Coordinators', path: '/admin/coordinators' },
       { icon: Truck, label: 'Drivers', path: '/admin/drivers' },
       { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
+      { icon: BarChart, label: 'Report', path: '/admin/report' },
       { divider: true }
     ],
     coordinator: [
@@ -32,7 +33,8 @@ export const DashboardLayout = () => {
       { icon: MapPin, label: 'HungerSpots', path: '/coordinator/hungerspots' },
       { divider: true },
       { icon: Truck, label: 'Create Opportunity', path: '/coordinator/create-opportunity' },
-      { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' }
+      { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' },
+       { icon: Flag, label: 'Report', path: '/admin/report' }
     ],
     driver: [
       { icon: Home, label: 'Dashboard', path: '/driver/dashboard' },
@@ -118,7 +120,7 @@ export const DashboardLayout = () => {
             </button>
 
             <div className="flex flex-row items-center justify-end gap-3 flex-wrap md:flex-nowrap min-w-0">
-              <ProfileDropdown />
+              <ProfileDropdown hideEditProfile={user?.role === 'supportadmin'} />
             </div>
           </div>
         </header>

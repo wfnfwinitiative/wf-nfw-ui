@@ -16,7 +16,7 @@ export const VoiceInputPanel = forwardRef(function VoiceInputPanel(
   { disabled = false, driverName = 'Driver', opportunityId = '', uploadType = 'pickup' },
   ref
 ) {
-  const { isVoiceEnabled, loading: flagsLoading } = useFeatureFlags();
+  const { isVoiceEnabled, isGoogleImageUploadEnabled, loading: flagsLoading } = useFeatureFlags();
   // Always start on 'list' — voice tab only activates after DB confirms the flag
   const [view, setView] = useState('list');
   const imagesSectionRef = useRef(null);
@@ -110,13 +110,15 @@ export const VoiceInputPanel = forwardRef(function VoiceInputPanel(
         ) : (
           <div className="space-y-4">
             <FoodItemsGrid items={foodItems} onItemsChange={setFoodItems} />
-            <ImageUploadSection
-              images={images}
-              onAdd={handleAddImages}
-              onRemove={removeImage}
-              sectionRef={imagesSectionRef}
-              locked={isSubmitting}
-            />
+            {isGoogleImageUploadEnabled && (
+              <ImageUploadSection
+                images={images}
+                onAdd={handleAddImages}
+                onRemove={removeImage}
+                sectionRef={imagesSectionRef}
+                locked={isSubmitting}
+              />
+            )}
           </div>
         )}
       </div>
