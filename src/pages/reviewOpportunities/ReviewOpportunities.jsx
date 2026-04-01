@@ -11,7 +11,7 @@ import { VehicleApi } from '../../services/api/vehicleService';
 import { StatusApi } from '../../services/api/statusService.js';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
-import { Edit } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 
 export const ReviewOpportunities = () => {
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ export const ReviewOpportunities = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
-  const [statusFilter, setStatusFilter] = useState('Delivered');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Use metadata from context instead of local state
@@ -149,9 +149,9 @@ export const ReviewOpportunities = () => {
       list = list.filter((opp) => new Date(opp.createdAt || opp.created_at) <= to);
     }
 
-    // Status filter
-    if (statusFilter) {
-      list = list.filter((opp) => opp.status === statusFilter);
+    // Status filter - case insensitive
+    if (statusFilter && statusFilter !== 'all') {
+      list = list.filter((opp) => opp.status?.toLowerCase() === statusFilter.toLowerCase());
     }
 
     return list;
@@ -166,9 +166,14 @@ export const ReviewOpportunities = () => {
     setCurrentPage(1);
   }, [searchQuery, fromDate, toDate, statusFilter]);
 
+  const handleView = (opportunity) => {
+    // navigate to detail page in view mode
+    navigate(`/coordinator/review-opportunities/${opportunity.opportunity_id}?mode=view`);
+  };
+
   const handleEdit = (opportunity) => {
-    // navigate to detail page (metadata is available via context)
-    navigate(`/coordinator/review-opportunities/${opportunity.opportunity_id}`);
+    // navigate to detail page in edit mode
+    navigate(`/coordinator/review-opportunities/${opportunity.opportunity_id}?mode=edit`);
   };
 
   if (loading) {
@@ -228,7 +233,7 @@ export const ReviewOpportunities = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 options={[
-                  { value: '', label: 'All Status' },
+                  { value: 'all', label: 'All Status' },
                   ...statuses.map((s) => ({ value: s.status_name, label: s.status_name })),
                 ]}
                 className="w-full"
@@ -241,7 +246,7 @@ export const ReviewOpportunities = () => {
                   setSearchQuery('');
                   setFromDate('');
                   setToDate('');
-                  setStatusFilter('');
+                  setStatusFilter('all');
                 }}
                 variant="secondary"
                 className="w-full"
@@ -292,8 +297,18 @@ export const ReviewOpportunities = () => {
                 {new Date(opportunity.created_at).toLocaleDateString()}
               </p>
 
-              <div className="mt-4">
-                <Button variant="secondary" className="w-full" onClick={() => handleEdit(opportunity)}>
+              <div className="mt-4 flex gap-2">
+                <Button variant="secondary" className="flex-1" onClick={() => handleView(opportunity)}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  View
+                </Button>
+                <Button 
+                  variant="primary" 
+                  className="flex-1" 
+                  onClick={() => handleEdit(opportunity)}
+                  disabled={opportunity.status === 'Completed' || opportunity.status === 'completed' || ['inpickup', 'inpicked'].includes(opportunity.status?.toLowerCase())}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
               </div>
