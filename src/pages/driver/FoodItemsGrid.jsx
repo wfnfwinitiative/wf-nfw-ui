@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 
-export function FoodItemsGrid({ items = [], onItemsChange }) {
+export function FoodItemsGrid({ items = [], onItemsChange, readonly = false }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ foodName: '', quantity: '' });
   const [showAddForm, setShowAddForm] = useState(false);
@@ -99,18 +99,22 @@ export function FoodItemsGrid({ items = [], onItemsChange }) {
                     </p>
                   </div>
                   <div className="flex gap-1">
-                    <button
-                      onClick={() => handleEdit(item)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                    >
-                      <Pencil className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    {!readonly && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                        >
+                          <Pencil className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -157,13 +161,15 @@ export function FoodItemsGrid({ items = [], onItemsChange }) {
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary-500 hover:text-primary-600 flex items-center justify-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Add Item Manually
-        </button>
+        !readonly && (
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary-500 hover:text-primary-600 flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Add Item Manually
+          </button>
+        )
       )}
     </div>
   );
