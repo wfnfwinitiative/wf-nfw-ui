@@ -306,7 +306,7 @@ export const AdminDashboard = () => {
               {filtered.totalPickups}
             </span>
           </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Total Pickups</p>
+          <p className="text-sm md:text-base font-medium text-ngo-gray">Total Opportunities</p>
         </div>
         <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-3 md:mb-4">
