@@ -1,4 +1,4 @@
-import { Mic2, HardDrive } from 'lucide-react';
+import { Mic2, HardDrive, MapPin } from 'lucide-react';
 import { FEATURE_FLAGS } from '../services/api/featureFlagsService';
 
 // User Roles
@@ -32,5 +32,17 @@ export const FLAG_META = {
     whenEnabled: 'Camera buttons appear on pickup and delivery confirmation screens.',
     whenDisabled: 'Camera buttons are hidden. No images can be uploaded.',
     requiresSetup: true,
+  },
+  [FEATURE_FLAGS.DRIVER_TRACKING]: {
+    Icon: MapPin,
+    title: 'Live Driver Tracking',
+    description:
+      'Enables real-time GPS tracking of drivers during active pickups and deliveries. Coordinators can monitor driver positions, route progress, and movement paths on Google Maps.',
+    iconColor: 'text-green-500',
+    iconBg: 'bg-green-50',
+    affectedRoles: 'Drivers & Coordinators',
+    whenEnabled: 'Drivers are prompted for GPS permission before starting a task. Coordinators see live map tracking.',
+    whenDisabled: 'No location data is collected or displayed. Tracking map is hidden.',
+    requiresSetup: false,
   },
 };

@@ -47,8 +47,8 @@ export const featureFlagsService = {
 // Feature flag names constants
 export const FEATURE_FLAGS = {
   VOICE_SUPPORT: 'voice_support',
-  GOOGLE_IMAGE_UPLOAD: 'google_image_upload'
-
+  GOOGLE_IMAGE_UPLOAD: 'google_image_upload',
+  DRIVER_TRACKING: 'driver_tracking',
 };
     
 export default featureFlagsService;

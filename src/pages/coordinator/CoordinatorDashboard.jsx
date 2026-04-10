@@ -1,10 +1,14 @@
 import React from 'react';
 import { TileCard } from '../../components/TileCard';
-import { Truck, Users, FileCheck } from 'lucide-react';
+import { Truck, Users, FileCheck, MapPin } from 'lucide-react';
 
 import { HeroBanner } from '../../components/common';
+import { useFeatureFlags, FEATURE_FLAGS } from '../../contexts/FeatureFlagsContext';
 
 export const CoordinatorDashboard = () => {
+  const { isFeatureEnabled } = useFeatureFlags();
+  const trackingEnabled = isFeatureEnabled(FEATURE_FLAGS.DRIVER_TRACKING);
+
   return (
     <div>
       <HeroBanner />
@@ -21,6 +25,16 @@ export const CoordinatorDashboard = () => {
           to="/coordinator/create-opportunity"
           color="orange"
         />
+
+        {trackingEnabled && (
+          <TileCard
+            icon={MapPin}
+            title="Live Driver Tracking"
+            description="Monitor active drivers in real-time on the map"
+            to="/coordinator/live-tracking"
+            color="green"
+          />
+        )}
 
         {/* <TileCard
           icon={Users}

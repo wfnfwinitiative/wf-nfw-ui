@@ -9,3 +9,4 @@ export { HeroBanner } from './HeroBanner';
 export { SectionHeader } from './SectionHeader';
 export { EmptySection } from './EmptySection';
 export { DashedSeparator } from './DashedSeparator';
+export { DriverTrackingMap } from './DriverTrackingMap';
