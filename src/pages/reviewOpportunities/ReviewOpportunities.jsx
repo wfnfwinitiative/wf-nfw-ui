@@ -19,8 +19,13 @@ export const ReviewOpportunities = () => {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const today = new Date().toISOString().slice(0, 10);
+  const oneMonthAgo = (() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
   const [searchQuery, setSearchQuery] = useState('');
-  const [fromDate, setFromDate] = useState(today);
+  const [fromDate, setFromDate] = useState(oneMonthAgo);
   const [toDate, setToDate] = useState(today);
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);

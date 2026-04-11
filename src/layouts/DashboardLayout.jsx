@@ -6,6 +6,7 @@ import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
 import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag, ShieldCheck,BarChart   } from 'lucide-react';
 import { ToastContainer, useToast } from '../components/common/Toast';
+import { Footer } from '../components/Footer';
 
 export const DashboardLayout = () => {
   const { user } = useAuth();
@@ -125,9 +126,10 @@ export const DashboardLayout = () => {
           </div>
         </header>
 
-        <main className="p-4 md:p-6 bg-ngo-light dark:bg-gray-900">
+        <main className="p-4 md:p-6 bg-ngo-light dark:bg-gray-900 min-h-[calc(100vh-57px-64px)]">
           <Outlet />
         </main>
+        <Footer />
       </div>
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
