@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Button, Input, Select, Textarea, DriverTrackingMap } from '../../components/common';
-import { ArrowLeft, X, Navigation } from 'lucide-react';
+import { Button, Input, Select, Textarea, DriverTrackingMap, StatusBadge } from '../../components/common';
+import { ArrowLeft, X, Navigation, Edit } from 'lucide-react';
 import { opportunityApi } from '../../services/api/oppurtunityService';
 import { FoodItemsGrid } from '../../pages/driver/FoodItemsGrid';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
@@ -17,6 +17,7 @@ import { useDriverLocation } from '../../hooks/useDriverLocation';
 export const ReviewOpportunityDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const locationObj = useLocation();
   const { metadata, updateMetadata } = useReviewOpportunitiesMetadata();
   const { user } = useAuth();
   const [opportunity, setOpportunity] = useState(null);
@@ -26,13 +27,15 @@ export const ReviewOpportunityDetail = () => {
   const [items, setItems] = useState([]);
   const [showTracking, setShowTracking] = useState(false);
 
+  // Get mode from URL query parameters
+  const searchParams = new URLSearchParams(locationObj.search);
+  const mode = searchParams.get('mode') || 'edit'; // default to edit for backward compatibility
+
   const pickupLocations = metadata?.pickupLocations || [];
   const hungerSpots = metadata?.hungerSpots || [];
   const drivers = metadata?.drivers || [];
   const vehicles = metadata?.vehicles || [];
   const statusMap = metadata?.statusMap || {};
-  const location = useLocation(); // access state passed via navigate
-
 
   const [formData, setFormData] = useState({
     pickupLocationId: '',
@@ -84,6 +87,20 @@ export const ReviewOpportunityDetail = () => {
   );
 
   useEffect(() => {
+    // Clear previous data when id changes
+    setOpportunity(null);
+    setItems([]);
+    setFormData({
+      pickupLocationId: '',
+      hungerSpotId: '',
+      driverId: '',
+      vehicleId: '',
+      scheduledDateTime: '',
+      estimatedQuantity: '',
+      notes: ''
+    });
+    setError(null);
+    
     loadData();
   }, [id, metadata]);
 
@@ -91,8 +108,6 @@ export const ReviewOpportunityDetail = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Make sure we have metadata; if not, fetch it and update context.
       const hasAllMetadata = pickupLocations.length > 0 && hungerSpots.length > 0 &&
                             drivers.length > 0 && vehicles.length > 0 && Object.keys(statusMap).length > 0;
 
@@ -119,8 +134,11 @@ export const ReviewOpportunityDetail = () => {
       // Load opportunity details
       const opp = await opportunityApi.getOpportunityById(id);
 
-      // Set opportunity data
-      setOpportunity(opp);
+      // Compute status using statusMap
+      const computedStatus = statusMap[opp.new_status_id || opp.status_id] || opp.status || 'Pending';
+
+      // Set opportunity data with computed status
+      setOpportunity({ ...opp, status: computedStatus });
       setItems((opp.opportunity_items || []).map(item => ({
         id: item.opportunity_item_id,
         foodName: item.food_name,
@@ -239,13 +257,15 @@ export const ReviewOpportunityDetail = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Loading opportunity...</div>
-      </div>
-    );
-  }
+  const isDelivered = opportunity?.status === 'Delivered' || opportunity?.status === 'delivered';
+  const isCompleted = opportunity?.status === 'Completed' || opportunity?.status === 'completed';
+  const isViewMode = mode === 'view';
+  const isReadonly = isViewMode || isCompleted;
+  const isLimitedEdit = !isViewMode && isDelivered && !isCompleted;
+  
+  // Hide food items section in edit mode for certain statuses
+  const hideFoodItemsInEdit = !isViewMode && ['created', 'pending', 'inpicked', 'rejected'].includes(opportunity?.status?.toLowerCase());
+  const showFoodItemsSection = !hideFoodItemsInEdit;
 
   if (error && !opportunity) {
     return (
@@ -267,8 +287,32 @@ export const ReviewOpportunityDetail = () => {
       </Button>
 
       <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <h1 className="text-3xl font-bold text-ngo-dark mb-2">Review Opportunity</h1>
-        <p className="text-ngo-gray mb-8">Review and update opportunity details</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-ngo-dark">
+              {isViewMode ? 'View Opportunity' : 'Review Opportunity'}
+            </h1>
+            {opportunity?.status && <StatusBadge status={opportunity.status} className="text-sm px-3 py-1.5" />}
+          </div>
+          {isViewMode && !isCompleted && !['inpickup', 'inpicked'].includes(opportunity?.status?.toLowerCase()) && (
+            <Button 
+              onClick={() => navigate(`/coordinator/review-opportunities/${id}?mode=edit`)} 
+              variant="secondary"
+              className="flex items-center gap-2 self-start sm:self-auto"
+            >
+              <Edit className="w-4 h-4" />
+              Edit
+            </Button>
+          )}
+        </div>
+        <p className="text-ngo-gray mb-8">
+          {isViewMode 
+            ? 'View opportunity details (readonly)' 
+            : isLimitedEdit 
+              ? 'Review and update items, quantity, and comments only'
+              : 'Review and update opportunity details'
+          }
+        </p>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
@@ -285,6 +329,7 @@ export const ReviewOpportunityDetail = () => {
               onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
               options={pickupLocations.map((loc) => ({ value: loc.id, label: loc.name }))}
               placeholder="Select Pickup Location"
+              disabled={isReadonly || isLimitedEdit}
             />
 
             <Select
@@ -293,6 +338,7 @@ export const ReviewOpportunityDetail = () => {
               onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
               options={hungerSpots.map((loc) => ({ value: loc.id, label: loc.name }))}
               placeholder="Select HungerSpot"
+              disabled={isReadonly || isLimitedEdit}
             />
           </div>
 
@@ -305,6 +351,7 @@ export const ReviewOpportunityDetail = () => {
               label: `${vehicle.number} - ${vehicle.notes}`,
             }))}
             placeholder="Select Vehicle"
+            disabled={isReadonly || isLimitedEdit}
           />
 
           <Select
@@ -316,6 +363,7 @@ export const ReviewOpportunityDetail = () => {
               label: `${driver.name} - ${driver.phone}`,
             }))}
             placeholder="Select Driver"
+            disabled={isReadonly || isLimitedEdit}
           />
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -324,6 +372,7 @@ export const ReviewOpportunityDetail = () => {
               type="date"
               value={formData.scheduledDateTime.split('T')[0]}
               onChange={(e) => updateScheduledDate(e.target.value)}
+              disabled={isReadonly || isLimitedEdit}
             />
 
             <Input
@@ -331,6 +380,7 @@ export const ReviewOpportunityDetail = () => {
               type="time"
               value={formData.scheduledDateTime.split('T')[1]}
               onChange={(e) => updateScheduledTime(e.target.value)}
+              disabled={isReadonly || isLimitedEdit}
             />
           </div>
 
@@ -340,19 +390,22 @@ export const ReviewOpportunityDetail = () => {
             value={formData.estimatedQuantity}
             onChange={(e) => setFormData({ ...formData, estimatedQuantity: e.target.value })}
             placeholder="e.g., 50 meals, 20kg"
+            disabled={isReadonly}
           />
         </form>
 
         {/* Food Items Section */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-ngo-dark mb-4">Food Items Breakdown</h2>
-          <FoodItemsGrid
-            items={items}
-            onItemsChange={handleItemsChange}
-          />
-        </div>
+        {showFoodItemsSection && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-ngo-dark mb-4">Food Items Breakdown</h2>
+            <FoodItemsGrid
+              items={items}
+              onItemsChange={handleItemsChange}
+              readonly={isReadonly}
+            />
+          </div>
+        )}
 
-        {/* Notes Section */}
         <div className="mt-8">
           <Textarea
             label="Notes (Optional)"
@@ -360,17 +413,20 @@ export const ReviewOpportunityDetail = () => {
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={3}
             placeholder="Any special instructions..."
+            disabled={isReadonly}
           />
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-4 mt-8">
-          <Button onClick={handleSave} variant="primary" disabled={saving} className="flex-1">
-            {saving ? 'Saving...' : 'Complete Opportunity'}
-          </Button>
-          <Button onClick={handleClose} variant="secondary" className="flex-1">
+          {!isViewMode && !isReadonly && (
+            <Button onClick={handleSave} variant="primary" disabled={saving} className="flex-1">
+              {saving ? 'Saving...' : isDelivered ? 'Complete Opportunity' : 'Update Opportunity'}
+            </Button>
+          )}
+          <Button onClick={handleClose} variant={isViewMode ? "primary" : "secondary"} className="flex-1">
             <X className="w-4 h-4 mr-2" />
-            Close
+            {isViewMode ? 'Close' : 'Cancel'}
           </Button>
         </div>
       </div>
