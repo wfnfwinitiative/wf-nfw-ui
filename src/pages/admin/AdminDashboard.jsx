@@ -22,6 +22,8 @@ import { Button } from '../../components/ui/Button';
 import { VehicleApi } from '../../services/api/vehicleService';
 import { DonorApi } from '../../services/api/donorService';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
+import { opportunityApi } from '../../services/api/oppurtunityService';
+import { StatusApi } from '../../services/api/statusService';
 
 export const AdminDashboard = () => {
   const { user } = useAuth();
@@ -48,6 +50,8 @@ export const AdminDashboard = () => {
         const vehiclesPromise = isCoordinator ? VehicleApi.getVehicles() : Promise.resolve([]);
         const donorsPromise = isCoordinator ? DonorApi.getDonors() : Promise.resolve([]);
         const hungerSpotsPromise = isCoordinator ? HungerSpotApi.getHungerSpot() : Promise.resolve([]);
+        const opportunitiesPromise = isCoordinator ? opportunityApi.getOpportunities() : Promise.resolve([]);
+        const statusesPromise = isCoordinator ? StatusApi.getStatuses() : Promise.resolve([]);
 
         const [
           admins,
@@ -55,14 +59,18 @@ export const AdminDashboard = () => {
           drivers,
           vehicles,
           donors,
-          hungerSpots
+          hungerSpots,
+          opportunitiesData,
+          statusesData,
         ] = await Promise.all([
           adminsPromise,
           coordinatorsPromise,
           driversPromise,
           vehiclesPromise,
           donorsPromise,
-          hungerSpotsPromise
+          hungerSpotsPromise,
+          opportunitiesPromise,
+          statusesPromise,
         ]);
 
         const getStartDate = (range) => {
@@ -126,6 +134,18 @@ export const AdminDashboard = () => {
             return { active, inactive: items.length - active };
           };
 
+          // Count opportunities per status using fixed status IDs from seed script
+          // 1=Created, 2=Assigned, 3=InPickup, 4=Rejected, 5=Delivered, 6=Verified, 7=Completed
+          const opCounts = { assigned: 0, inpickup: 0, rejected: 0, delivered: 0, completed: 0 };
+          (opportunitiesData || []).forEach(o => {
+            const sid = o.new_status_id || o.status_id;
+            if (sid === 2) opCounts.assigned++;
+            else if (sid === 3) opCounts.inpickup++;
+            else if (sid === 4) opCounts.rejected++;
+            else if (sid === 5) opCounts.delivered++;
+            else if (sid === 6 || sid === 7) opCounts.completed++;
+          });
+
           setData({
             admins: countActive(admins, 'status'),
             coordinatorsCount: countActive(coordinators, 'status'),
@@ -139,9 +159,12 @@ export const AdminDashboard = () => {
             totalDonors: (donors || []).length,
             totalHungerSpots: (hungerSpots || []).length,
             totalPickups: (donors || []).length,
-            verified: 0,
-            pending: 0,
-            inProgress: 0,
+            opTotal: (opportunitiesData || []).length,
+            opAssigned: opCounts.assigned,
+            opInpicked: opCounts.inpickup,
+            opDelivered: opCounts.delivered,
+            opRejected: opCounts.rejected,
+            opCompleted: opCounts.completed,
             byMonth: sortedMonthlyPerformance,
             byDriver: driverPerformance,
           });
@@ -162,9 +185,12 @@ export const AdminDashboard = () => {
             totalDonors: 0,
             totalHungerSpots: 0,
             totalPickups: 0,
-            verified: 0,
-            pending: 0,
-            inProgress: 0,
+            opTotal: 0,
+            opAssigned: 0,
+            opInpicked: 0,
+            opDelivered: 0,
+            opRejected: 0,
+            opCompleted: 0,
             byMonth: [],
             byDriver: [],
           });
@@ -200,7 +226,7 @@ export const AdminDashboard = () => {
     csvContent += `Coordinators,${summary.totalCoordinators}\r\n`;
     csvContent += `Drivers,${summary.totalDrivers}\r\n`;
     csvContent += `Vehicles,${summary.totalVehicles}\r\n`;
-    csvContent += `Pickup Locations,${summary.totalDonors}\r\n`;
+    csvContent += `Donor Locations,${summary.totalDonors}\r\n`;
     csvContent += `Hunger Spots,${summary.totalHungerSpots}\r\n`;
     csvContent += "\r\n";
 
@@ -241,9 +267,12 @@ export const AdminDashboard = () => {
     totalDonors: 0,
     totalHungerSpots: 0,
     totalPickups: 0,
-    verified: 0,
-    pending: 0,
-    inProgress: 0,
+    opTotal: 0,
+    opAssigned: 0,
+    opInpicked: 0,
+    opDelivered: 0,
+    opRejected: 0,
+    opCompleted: 0,
     byMonth: [],
     byDriver: []
   };
@@ -296,52 +325,103 @@ export const AdminDashboard = () => {
       </div>
 
       {isCoordinator && (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-        <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100">
+      <section>
+        <h2 className="text-lg md:text-xl font-bold text-ngo-dark mb-4 md:mb-6">
+          Opportunity Summary
+        </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
+        {/* Total */}
+        <div
+          onClick={() => navigate('/coordinator/review-opportunities')}
+          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
+        >
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-xl flex items-center justify-center">
               <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
             </div>
             <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.totalPickups}
+              {filtered.opTotal}
             </span>
           </div>
           <p className="text-sm md:text-base font-medium text-ngo-gray">Total Opportunities</p>
         </div>
-        <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100">
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-ngo-green" />
-            </div>
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.verified}
-            </span>
-          </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Verified</p>
-        </div>
-        <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100">
+        {/* Pending (Assigned) */}
+        <div
+          onClick={() => navigate('/coordinator/review-opportunities?status=assigned')}
+          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
+        >
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-xl flex items-center justify-center">
               <Clock className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
             </div>
             <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.pending}
+              {filtered.opAssigned}
             </span>
           </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Pending</p>
+          <p className="text-sm md:text-base font-medium text-ngo-gray">Assigned</p>
         </div>
-        <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100">
+        {/* In Progress (InPicked) */}
+        <div
+          onClick={() => navigate('/coordinator/review-opportunities?status=InPickup')}
+          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
+        >
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-100 rounded-xl flex items-center justify-center">
               <Truck className="w-5 h-5 md:w-6 md:h-6 text-ngo-orange" />
             </div>
             <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.inProgress}
+              {filtered.opInpicked}
             </span>
           </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">In Progress</p>
+          <p className="text-sm md:text-base font-medium text-ngo-gray">In Pickup</p>
+        </div>
+        {/* Delivered */}
+        <div
+          onClick={() => navigate('/coordinator/review-opportunities?status=delivered')}
+          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
+        >
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <MapPin className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+            </div>
+            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
+              {filtered.opDelivered}
+            </span>
+          </div>
+          <p className="text-sm md:text-base font-medium text-ngo-gray">Delivered</p>
+        </div>
+        {/* Rejected */}
+        <div
+          onClick={() => navigate('/coordinator/review-opportunities?status=rejected')}
+          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-red-300 transition-all"
+        >
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-red-500 rotate-180" />
+            </div>
+            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-red-600">
+              {filtered.opRejected}
+            </span>
+          </div>
+          <p className="text-sm md:text-base font-medium text-ngo-gray">Rejected</p>
+        </div>
+        {/* Completed */}
+        <div
+          onClick={() => navigate('/coordinator/review-opportunities?status=completed')}
+          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
+        >
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-ngo-green" />
+            </div>
+            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
+              {filtered.opCompleted}
+            </span>
+          </div>
+          <p className="text-sm md:text-base font-medium text-ngo-gray">Completed</p>
         </div>
       </div>
+      </section>
       )}
 
       {isAdmin && (
@@ -373,7 +453,7 @@ export const AdminDashboard = () => {
         <h2 className="text-lg md:text-xl font-bold text-ngo-dark mb-4 md:mb-6">
           Resource Summary
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
           {resourceSummaryStats.map(stat => (
             <div key={stat.label} onClick={() => navigate(stat.path)} className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 text-center cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">

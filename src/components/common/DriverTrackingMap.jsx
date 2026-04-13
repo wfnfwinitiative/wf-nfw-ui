@@ -105,11 +105,16 @@ export function DriverTrackingMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [driverPos?.lat, driverPos?.lng]);
 
-    // Auto-fit once after both pickup + drop are available (driver optional)
+    // Auto-fit once — works even without pickup coords.
+    // Skips pickup pin if it's unreasonably far from delivery (bad/wrong DB data).
     useEffect(() => {
         if (!mapRef.current || !isLoaded || fittedRef.current) return;
-        if (!pickupPos || !deliveryPos) return;
-        const pts = [pickupPos, deliveryPos, driverPos].filter(Boolean);
+        if (!deliveryPos) return;  // need at least the drop point
+        const MAX_ROUTE_KM = 500;
+        const pickupValid = pickupPos &&
+            DriverTrackingMapHelper.distanceKm(pickupPos, deliveryPos) < MAX_ROUTE_KM;
+        const pts = [pickupValid ? pickupPos : null, deliveryPos, driverPos].filter(Boolean);
+        if (pts.length === 0) return;
         const bounds = new window.google.maps.LatLngBounds();
         pts.forEach((p) => bounds.extend(p));
         mapRef.current.fitBounds(bounds, 80);
@@ -123,6 +128,11 @@ export function DriverTrackingMap({
 
         async function loadFullRoute() {
             if (!isLoaded || !pickupPos || !deliveryPos) {
+                setFullRoutePath(null);
+                return;
+            }
+            // Skip Directions API call if coords are too far apart (bad DB data)
+            if (DriverTrackingMapHelper.distanceKm(pickupPos, deliveryPos) > 500) {
                 setFullRoutePath(null);
                 return;
             }
@@ -143,8 +153,11 @@ export function DriverTrackingMap({
     useEffect(() => {
         if (!mapRef.current || !isLoaded) return;
 
-        // Blue line — planned road route pickup→drop (straight line fallback if Directions API unavailable)
-        const fullPathToRender = fullRoutePath || (pickupPos && deliveryPos ? [pickupPos, deliveryPos] : null);
+        // Blue line — only draw if pickup/drop are within 500 km (guards against bad DB coords)
+        const MAX_ROUTE_KM = 500;
+        const routeValid = pickupPos && deliveryPos &&
+            DriverTrackingMapHelper.distanceKm(pickupPos, deliveryPos) < MAX_ROUTE_KM;
+        const fullPathToRender = routeValid ? (fullRoutePath || [pickupPos, deliveryPos]) : null;
         // Orange line — actual GPS trail the driver has traveled (accumulated coordinate history)
         const donePathToRender = traveledPath.length >= 2 ? traveledPath : null;
 
@@ -229,7 +242,7 @@ export function DriverTrackingMap({
                         {activeInfo === "pickup" && (
                             <InfoWindowF position={pickupPos} onCloseClick={() => setActiveInfo(null)}>
                                 <div className="p-1 max-w-[180px]">
-                                    <p className="font-semibold text-orange-600 text-sm">Pickup Point</p>
+                                    <p className="font-semibold text-orange-600 text-sm">Donor Location</p>
                                     {pickupLocation?.name    && <p className="text-gray-700 text-sm mt-0.5">{pickupLocation.name}</p>}
                                     {pickupLocation?.address && <p className="text-xs text-gray-500 mt-0.5">{pickupLocation.address}</p>}
                                 </div>
@@ -251,7 +264,7 @@ export function DriverTrackingMap({
                         {activeInfo === "delivery" && (
                             <InfoWindowF position={deliveryPos} onCloseClick={() => setActiveInfo(null)}>
                                 <div className="p-1 max-w-[180px]">
-                                    <p className="font-semibold text-green-600 text-sm">Drop Point</p>
+                                    <p className="font-semibold text-green-600 text-sm">Hunger Spot</p>
                                     {deliveryLocation?.name    && <p className="text-gray-700 text-sm mt-0.5">{deliveryLocation.name}</p>}
                                     {deliveryLocation?.address && <p className="text-xs text-gray-500 mt-0.5">{deliveryLocation.address}</p>}
                                 </div>

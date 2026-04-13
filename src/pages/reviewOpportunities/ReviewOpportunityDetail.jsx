@@ -13,6 +13,7 @@ import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportuniti
 import { useAuth } from '../../auth/AuthContext';
 import { DRIVER } from '../../constants';
 import { useDriverLocation } from '../../hooks/useDriverLocation';
+import { useFeatureFlags, FEATURE_FLAGS } from '../../contexts/FeatureFlagsContext';
 
 export const ReviewOpportunityDetail = () => {
   const { id } = useParams();
@@ -26,6 +27,8 @@ export const ReviewOpportunityDetail = () => {
   const [error, setError] = useState(null);
   const [items, setItems] = useState([]);
   const [showTracking, setShowTracking] = useState(false);
+  const { isFeatureEnabled } = useFeatureFlags();
+  const driverTrackingFeatureEnabled = isFeatureEnabled(FEATURE_FLAGS.DRIVER_TRACKING);
 
   // Get mode from URL query parameters
   const searchParams = new URLSearchParams(locationObj.search);
@@ -78,7 +81,10 @@ export const ReviewOpportunityDetail = () => {
   })();
 
   // --- Live Driver Tracking ---
-  const trackingEnabled = showTracking && !!opportunity?.driver_id;
+  const isInProgress = opportunity?.status?.toLowerCase() === 'inpickup' ||
+                       opportunity?.status?.toLowerCase() === 'inpicked';
+  const canShowTracking = driverTrackingFeatureEnabled && isInProgress && !!opportunity?.driver_id;
+  const trackingEnabled = canShowTracking && showTracking;
   const { location: driverLocation, isMock, effectivePickup, effectiveDelivery } = useDriverLocation(
     opportunity?.opportunity_id,
     trackingEnabled,
@@ -162,10 +168,16 @@ export const ReviewOpportunityDetail = () => {
   };
 
   const transformToOpportunity = () => {
+    // Keep the current effective status; only promote Created → Assigned when a driver is set
+    const effectiveStatusId = opportunity.new_status_id || opportunity.status_id;
+    const assignedStatusId = 2; // DB: 'Assigned'
+    // Promote Created (1) or Rejected (4) → Assigned when a driver is (re)assigned
+    const newStatusId = ([1, 4].includes(effectiveStatusId) && formData.driverId) ? assignedStatusId : effectiveStatusId;
+
     return {
       donor_id: parseInt(formData.pickupLocationId) || opportunity.donor_id,
       hunger_spot_id: parseInt(formData.hungerSpotId) || opportunity.hunger_spot_id,
-      status_id: parseInt(Object.keys(statusMap).find(key => statusMap[key] === 'Completed')) || opportunity.status_id,
+      status_id: newStatusId,
       driver_id: parseInt(formData.driverId) || opportunity.driver_id,
       vehicle_id: parseInt(formData.vehicleId) || opportunity.vehicle_id,
       feeding_count: parseInt(formData.estimatedQuantity) || opportunity.feeding_count,
@@ -286,6 +298,44 @@ export const ReviewOpportunityDetail = () => {
         Back to Review Opportunities
       </Button>
 
+      {/* Live Driver Tracking Panel — shown at top when in-progress */}
+      {canShowTracking && (
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-ngo-dark flex items-center gap-2">
+                <Navigation className="w-5 h-5 text-ngo-orange" />
+                Live Driver Tracking
+                {isMock && (
+                  <span className="text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-0.5 rounded-full">
+                    MOCK
+                  </span>
+                )}
+              </h2>
+              <p className="text-sm text-ngo-gray mt-0.5">
+                {assignedDriverName} · updates every {isMock ? '3 s (simulated)' : '10 s'}
+              </p>
+            </div>
+            <Button
+              variant={showTracking ? 'secondary' : 'primary'}
+              onClick={() => setShowTracking((v) => !v)}
+            >
+              {showTracking ? 'Hide Map' : 'Track Driver'}
+            </Button>
+          </div>
+
+          {showTracking && (
+            <DriverTrackingMap
+              driverLocation={driverLocation}
+              pickupLocation={pickupCoords || effectivePickup}
+              deliveryLocation={deliveryCoords || effectiveDelivery}
+              driverName={assignedDriverName}
+              height="420px"
+            />
+          )}
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -324,16 +374,16 @@ export const ReviewOpportunityDetail = () => {
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <Select
-              label="Pickup Location"
+              label="Donor Location"
               value={formData.pickupLocationId}
               onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
               options={pickupLocations.map((loc) => ({ value: loc.id, label: loc.name }))}
-              placeholder="Select Pickup Location"
+              placeholder="Select Donor Location"
               disabled={isReadonly || isLimitedEdit}
             />
 
             <Select
-              label="Delivery Location"
+              label="Hunger Spot"
               value={formData.hungerSpotId}
               onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
               options={hungerSpots.map((loc) => ({ value: loc.id, label: loc.name }))}
@@ -430,44 +480,6 @@ export const ReviewOpportunityDetail = () => {
           </Button>
         </div>
       </div>
-
-      {/* Live Driver Tracking Panel */}
-      {opportunity?.driver_id && (
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-ngo-dark flex items-center gap-2">
-                <Navigation className="w-5 h-5 text-ngo-orange" />
-                Live Driver Tracking
-                {isMock && (
-                  <span className="text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-0.5 rounded-full">
-                    MOCK
-                  </span>
-                )}
-              </h2>
-              <p className="text-sm text-ngo-gray mt-0.5">
-                {assignedDriverName} · updates every {isMock ? '3 s (simulated)' : '10 s'}
-              </p>
-            </div>
-            <Button
-              variant={showTracking ? 'secondary' : 'primary'}
-              onClick={() => setShowTracking((v) => !v)}
-            >
-              {showTracking ? 'Hide Map' : 'Track Driver'}
-            </Button>
-          </div>
-
-          {showTracking && (
-            <DriverTrackingMap
-              driverLocation={driverLocation}
-              pickupLocation={pickupCoords || effectivePickup}
-              deliveryLocation={deliveryCoords || effectiveDelivery}
-              driverName={assignedDriverName}
-              height="420px"
-            />
-          )}
-        </div>
-      )}
     </div>
   );
 };

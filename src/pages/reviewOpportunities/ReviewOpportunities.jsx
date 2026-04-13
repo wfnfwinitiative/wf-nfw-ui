@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from '../../components/ui';
 import { Button, Input, Select, Card, CardHeader, CardBody, StatusBadge } from '../../components/common';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
@@ -11,10 +11,14 @@ import { VehicleApi } from '../../services/api/vehicleService';
 import { StatusApi } from '../../services/api/statusService.js';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
-import { Edit, Eye } from 'lucide-react';
+import { Edit, Eye, RefreshCw, MapPin, Building2, User, Truck, Calendar, Phone } from 'lucide-react';
 
 export const ReviewOpportunities = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Pre-apply status filter when navigated from dashboard with ?status=xxx
+  const initialStatus = new URLSearchParams(location.search).get('status') || 'all';
   const { metadata, updateMetadata } = useReviewOpportunitiesMetadata();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,19 +31,24 @@ export const ReviewOpportunities = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [fromDate, setFromDate] = useState(oneMonthAgo);
   const [toDate, setToDate] = useState(today);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [currentPage, setCurrentPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use metadata from context instead of local state
   const { pickupLocations, hungerSpots, drivers, vehicles, statuses, statusMap } = metadata;
 
+  // Refetch every time the user navigates to this page (location.key changes on each visit)
+  // Also re-apply any ?status= filter from the URL
   useEffect(() => {
+    const status = new URLSearchParams(location.search).get('status') || 'all';
+    setStatusFilter(status);
     loadOpportunities();
-  }, []);
+  }, [location.key]);
 
-  const loadOpportunities = async () => {
+  const loadOpportunities = async (silent = false) => {
     try {
-      setLoading(true);
+      if (silent) setRefreshing(true); else setLoading(true);
 
       // Check if we need to load metadata
       const needsMetadata = !pickupLocations.length || !hungerSpots.length || !drivers.length || !vehicles.length || !statuses.length;
@@ -125,6 +134,7 @@ export const ReviewOpportunities = () => {
       console.error('Error loading opportunities:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -245,7 +255,7 @@ export const ReviewOpportunities = () => {
               />
             </div>
 
-            <div className="w-full flex items-end">
+            <div className="w-full flex items-end gap-2">
               <Button
                 onClick={() => {
                   setSearchQuery('');
@@ -254,9 +264,18 @@ export const ReviewOpportunities = () => {
                   setStatusFilter('all');
                 }}
                 variant="secondary"
-                className="w-full"
+                className="flex-1"
               >
                 Clear Filters
+              </Button>
+              <Button
+                onClick={() => loadOpportunities(true)}
+                variant="outline"
+                disabled={refreshing}
+                className="shrink-0"
+                title="Refresh status"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
@@ -266,13 +285,14 @@ export const ReviewOpportunities = () => {
       {/* Opportunities Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
         {paginated.map((opportunity) => (
-          <Card key={opportunity.opportunity_id} className="h-full">
+        <Card key={opportunity.opportunity_id} className="h-full">
             <CardHeader className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 break-words">
                   {opportunity.name || 'Unnamed Opportunity'}
                 </h3>
-                <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-ngo-orange">
+                <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-ngo-orange flex items-center gap-1">
+                  <MapPin className="w-3 h-3 shrink-0" />
                   {opportunity.pickupLocationName || opportunity.hungerSpotName || 'No location'}
                 </p>
               </div>
@@ -280,40 +300,55 @@ export const ReviewOpportunities = () => {
             </CardHeader>
 
             <CardBody className="space-y-2">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Description:</span>{' '}
-                {opportunity.description || 'No description'}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Hunger Spot:</span>{' '}
-                {opportunity.hungerSpotName || 'Unknown'}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Driver:</span>{' '}
-                {opportunity.driverName || 'Unassigned'}
-                {opportunity.driverPhone ? ` (${opportunity.driverPhone})` : ''}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Vehicle:</span>{' '}
-                {opportunity.vehicleNumber || 'Unassigned'}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Created:</span>{' '}
-                {new Date(opportunity.created_at).toLocaleDateString()}
-              </p>
+              {opportunity.description && (
+                <p className="text-sm text-gray-600 line-clamp-2 italic">
+                  {opportunity.description}
+                </p>
+              )}
 
-              <div className="mt-4 flex gap-2">
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="font-medium text-gray-500 shrink-0">Drop:</span>
+                  <span className="truncate">{opportunity.hungerSpotName || 'Unknown'}</span>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <User className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="font-medium text-gray-500 shrink-0">Driver:</span>
+                  <span className="truncate">{opportunity.driverName || 'Unassigned'}</span>
+                  {opportunity.driverPhone && (
+                    <span className="text-gray-400 text-xs truncate flex items-center gap-1">
+                      <Phone className="w-3 h-3" />{opportunity.driverPhone}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <Truck className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="font-medium text-gray-500 shrink-0">Vehicle:</span>
+                  <span className="truncate">{opportunity.vehicleNumber || 'Unassigned'}</span>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="font-medium text-gray-500 shrink-0">Created:</span>
+                  <span>{new Date(opportunity.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-2 pt-1">
                 <Button variant="secondary" className="flex-1" onClick={() => handleView(opportunity)}>
-                  <Eye className="w-4 h-4 mr-2" />
+                  <Eye className="w-4 h-4 mr-1" />
                   View
                 </Button>
-                <Button 
-                  variant="primary" 
-                  className="flex-1" 
+                <Button
+                  variant="primary"
+                  className="flex-1"
                   onClick={() => handleEdit(opportunity)}
                   disabled={opportunity.status === 'Completed' || opportunity.status === 'completed' || ['inpickup', 'inpicked'].includes(opportunity.status?.toLowerCase())}
                 >
-                  <Edit className="w-4 h-4 mr-2" />
+                  <Edit className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
               </div>

@@ -5,6 +5,7 @@ import { serviceApi } from './apiClient';
 const STATUS_IDS = {
   ASSIGNED:  2,
   IN_PICKED: 3,
+  REJECTED:  4,
   DELIVERED: 5,
 };
 
@@ -69,4 +70,19 @@ export async function submitDelivery(opportunityId, actorId, previousStatusId) {
   });
 }
 
-
+/**
+ * Submits a rejection event — driver cannot pick up the assigned opportunity.
+ * @param {number} opportunityId
+ * @param {number} actorId - logged-in driver's user ID
+ * @param {number} previousStatusId - should be STATUS_IDS.ASSIGNED (2)
+ * @param {string} [reason] - optional rejection reason
+ */
+export async function submitRejection(opportunityId, actorId, previousStatusId, reason = '') {
+  return await serviceApi.post('/api/opportunity-events/', {
+    opportunity_id: opportunityId,
+    previous_status_id: previousStatusId || STATUS_IDS.ASSIGNED,
+    new_status_id: STATUS_IDS.REJECTED,
+    creator_id: actorId,
+    notes: reason || null,
+  });
+}

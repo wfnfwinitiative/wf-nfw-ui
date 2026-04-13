@@ -9,6 +9,7 @@ import { isToday, sortAssignments } from './utils/taskFilters';
 import { DriverLocationSender } from './DriverLocationSender';
 import { LocationPermissionGate } from '../../components/location/LocationPermissionGate';
 import { useFeatureFlags, FEATURE_FLAGS } from '../../contexts/FeatureFlagsContext';
+import { submitRejection } from '../../services/api/opportunityEventItemDriverService';
 
 // Computes the count summary object used by parent filter cards.
 function computeCounts(list, todayOnly) {
@@ -18,6 +19,7 @@ function computeCounts(list, todayOnly) {
     assigned:  base.filter(a => a.status === 'assigned').length,
     inpicked:  base.filter(a => a.status === 'inpicked').length,
     delivered: base.filter(a => ['delivered', 'verified', 'completed'].includes(a.status)).length,
+    rejected:  base.filter(a => a.status === 'rejected').length,
   };
 }
 
@@ -86,6 +88,15 @@ export function DriverAssignmentsGrid({ statusFilter = null, todayOnly = false, 
     return notes[status] || '';
   };
 
+  const handleReject = async (assignment) => {
+    try {
+      await submitRejection(assignment.id, user?.id, assignment.status_id);
+      handleStatusUpdate(assignment.id, 'rejected', {});
+    } catch (err) {
+      console.error('Failed to reject assignment:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -141,6 +152,7 @@ export function DriverAssignmentsGrid({ statusFilter = null, todayOnly = false, 
             assignment={assignment}
             onClick={() => setSelectedAssignment(assignment)}
             onStatusUpdate={handleStatusUpdate}
+            onReject={handleReject}
           />
         ))}
       </div>

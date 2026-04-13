@@ -17,34 +17,46 @@ export const DashboardLayout = () => {
   const menuItems = {
     admin: [
       { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-      { divider: true },
       { icon: ShieldCheck, label: 'Admins', path: '/admin/admins' },
       { icon: Users, label: 'Coordinators', path: '/admin/coordinators' },
       { icon: Truck, label: 'Drivers', path: '/admin/drivers' },
       { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
       { icon: BarChart, label: 'Report', path: '/admin/report' },
-      { divider: true }
     ],
     coordinator: [
       { icon: Home, label: 'Dashboard', path: '/coordinator/dashboard' },
-      { divider: true },
       { icon: Users, label: 'Drivers', path: '/coordinator/drivers' },
       { icon: Truck, label: 'Vehicles', path: '/coordinator/vehicles' },
       { icon: MapPin, label: 'Donors', path: '/coordinator/donors' },
       { icon: MapPin, label: 'HungerSpots', path: '/coordinator/hungerspots' },
-      { divider: true },
       { icon: Truck, label: 'Create Opportunity', path: '/coordinator/create-opportunity' },
       { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' },
-       { icon: Flag, label: 'Report', path: '/admin/report' }
+      { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
+      { icon: BarChart, label: 'Report', path: '/admin/report' },
     ],
     driver: [
       { icon: Home, label: 'Dashboard', path: '/driver/dashboard' },
-      { icon: Truck, label: 'My Tasks', path: '/driver/tasks' }
+      { icon: Truck, label: 'My Tasks', path: '/driver/tasks' },
     ],
     supportadmin: [
-      { icon: Home, label: 'Dashboard', path: '/supportadmin/dashboard' }
+      { icon: Home, label: 'Dashboard', path: '/supportadmin/dashboard' },
     ]
   };
+
+  const MENU_ORDER = [
+    'Dashboard',
+    'Admins',
+    'Coordinators',
+    'Drivers',
+    'My Tasks',
+    'Vehicles',
+    'Donors',
+    'HungerSpots',
+    'Create Opportunity',
+    'Review Opportunities',
+    'Feature Flag',
+    'Report',
+  ];
 
   const currentMenu = (() => {
     const roles = user?.roles || (user?.role ? [user.role] : []);
@@ -52,17 +64,18 @@ export const DashboardLayout = () => {
     const merged = [];
     for (const role of roles) {
       for (const item of menuItems[role] || []) {
-        if (item.divider) {
-          if (merged.length > 0 && !merged[merged.length - 1].divider) {
-            merged.push(item);
-          }
-        } else if (!seen.has(item.label)) {
+        if (!seen.has(item.label)) {
           seen.add(item.label);
           merged.push(item);
         }
       }
     }
-    return merged.length ? merged : (menuItems[user?.role] || []);
+    const list = merged.length ? merged : (menuItems[user?.role] || []);
+    return [...list].sort((a, b) => {
+      const ai = MENU_ORDER.indexOf(a.label);
+      const bi = MENU_ORDER.indexOf(b.label);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
   })();
 
   return (
@@ -93,9 +106,6 @@ export const DashboardLayout = () => {
         </div>
         <nav className="p-4 space-y-2">
           {currentMenu.map((item, idx) => (
-            item.divider ? (
-              <hr key={idx} className="my-3 border-t-2 border-gray-300 dark:border-gray-600 mx-1" />
-            ) : (
             <button
               key={idx}
               onClick={() => navigate(item.path)}
@@ -104,7 +114,6 @@ export const DashboardLayout = () => {
               <item.icon className="w-5 h-5 text-ngo-orange flex-shrink-0" />
               <span className="font-medium">{item.label}</span>
             </button>
-            )
           ))}
         </nav>
       </aside>

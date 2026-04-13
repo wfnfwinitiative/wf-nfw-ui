@@ -1,7 +1,7 @@
 import { useSendLocation } from '../../hooks/useSendLocation';
 
 // Active statuses where the driver is on the move and should share GPS
-const ACTIVE_STATUSES = new Set(['assigned', 'reached', 'submitted']);
+const ACTIVE_STATUSES = new Set(['assigned', 'inpicked']);
 
 /**
  * Invisible component — mounts one per active assignment.

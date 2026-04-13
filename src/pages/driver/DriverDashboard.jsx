@@ -5,14 +5,14 @@ import { DASHBOARD_FILTERS } from './utils/dashboardConfig';
 
 export const DriverDashboard = () => {
   const [activeFilter, setActiveFilter] = useState('all');
-  const [counts, setCounts] = useState({ all: 0, assigned: 0, inpicked: 0, delivered: 0 });
+  const [counts, setCounts] = useState({ all: 0, assigned: 0, inpicked: 0, delivered: 0, rejected: 0 });
 
   return (
     <div className="space-y-6">
       <HeroBanner />
 
       {/* Filter Cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
         {DASHBOARD_FILTERS.map((filter) => {
           const Icon = filter.icon;
           const isActive = activeFilter === filter.key;

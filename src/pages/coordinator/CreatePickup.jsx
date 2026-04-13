@@ -59,29 +59,19 @@ export const CreatePickup = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Check if we have all required metadata
-      const hasAllMetadata = metadata?.pickupLocations?.length > 0 &&
-                            metadata?.hungerSpots?.length > 0 &&
-                            metadata?.drivers?.length > 0 &&
-                            metadata?.vehicles?.length > 0;
+      const [pickup, hunger, driversData, transportations] = await Promise.all([
+        DonorApi.getDonors(),
+        HungerSpotApi.getHungerSpot(),
+        UserApi.getUserByRole(DRIVER),
+        VehicleApi.getVehicles()
+      ]);
 
-      if (!hasAllMetadata) {
-        // Load metadata only if not available
-        const [pickup, hunger, driversData, transportations] = await Promise.all([
-          DonorApi.getDonors(),
-          HungerSpotApi.getHungerSpot(),
-          UserApi.getUserByRole(DRIVER),
-          VehicleApi.getVehicles()
-        ]);
-
-        // Update context with loaded metadata
-        updateMetadata({
-          pickupLocations: pickup || [],
-          hungerSpots: hunger || [],
-          drivers: (driversData || []).filter((d) => d.status === 'active'),
-          vehicles: transportations || [],
-        });
-      }
+      updateMetadata({
+        pickupLocations: pickup || [],
+        hungerSpots: hunger || [],
+        drivers: (driversData || []).filter((d) => d.status === 'active'),
+        vehicles: transportations || [],
+      });
     } catch (err) {
       console.error('Error loading data:', err);
       setError(err.message || 'Failed to load data');
@@ -91,10 +81,11 @@ export const CreatePickup = () => {
   };
 
   const transformToOpportunity = () => {
+    const hasDriver = !!parseInt(formData.driverId);
     return {
       donor_id: parseInt(formData.pickupLocationId) || 0,
       hunger_spot_id: parseInt(formData.hungerSpotId) || 0,
-      status_id: 1, // Default status for new opportunity
+      status_id: hasDriver ? 2 : 1, // 2=Assigned when driver is set, 1=Created otherwise
       driver_id: parseInt(formData.driverId) || 0,
       vehicle_id: parseInt(formData.vehicleId) || 0,
       feeding_count: parseInt(formData.estimatedQuantity) || 0,
@@ -172,7 +163,7 @@ export const CreatePickup = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <Select
-                label="Pickup Location"
+                label="Donor Location"
                 value={String(formData.pickupLocationId)}
                 onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
                 required
@@ -180,7 +171,7 @@ export const CreatePickup = () => {
               />
 
               <Select
-                label="Delivery Location"
+                label="Hunger Spot"
                 value={String(formData.hungerSpotId)}
                 onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
                 required

@@ -78,6 +78,7 @@ export const STATUS_FILTER_OPTIONS = [
   { value: 'assigned',  label: 'Assigned' },
   { value: 'inpicked',  label: 'In Progress' },
   { value: 'delivered', label: 'Delivered / Verified' },
+  { value: 'rejected',  label: 'Rejected' },
   { value: 'all',       label: 'All' },
 ];
 
@@ -88,6 +89,7 @@ export function applyStatusFilter(assignment, statusFilter) {
   if (statusFilter === 'assigned')  return s === 'assigned';
   if (statusFilter === 'inpicked')  return s === 'inpicked';
   if (statusFilter === 'delivered') return ['delivered', 'verified', 'completed'].includes(s);
+  if (statusFilter === 'rejected')  return s === 'rejected';
   return true; // 'all'
 }
 

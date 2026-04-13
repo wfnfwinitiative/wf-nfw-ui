@@ -54,7 +54,7 @@ export const TaskDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pickup Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Pickup Location</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Donor Location</h2>
           <div className="space-y-4">
             <div className="flex gap-3">
               <Building2 className="w-5 h-5 text-orange-600 shrink-0 mt-1" />
@@ -104,7 +104,7 @@ export const TaskDetail = () => {
 
         {/* Delivery Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Location</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Hunger Spot</h2>
           <div className="space-y-4">
             <div className="flex gap-3">
               <Building2 className="w-5 h-5 text-green-600 shrink-0 mt-1" />

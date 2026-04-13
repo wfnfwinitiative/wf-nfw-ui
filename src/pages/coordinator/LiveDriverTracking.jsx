@@ -81,17 +81,31 @@ export function LiveDriverTracking() {
     loadTasks();
   }, [loadTasks]);
 
+  // Minimum meters the driver must move before adding a new trail point.
+  // Prevents WiFi/laptop GPS noise from drawing false lines.
+  const MIN_MOVEMENT_M = 30;
+
+  const haversineM = (a, b) => {
+    const R = 6371000;
+    const toRad = (v) => (v * Math.PI) / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const h = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+
   const loadDriverLocation = useCallback(async (opportunityId) => {
     setLocationLoading(true);
     setLocationError(null);
     try {
       const loc = await driverLocationApi.getLocation(opportunityId);
-      // Append to traveled trail (deduplicate consecutive identical points)
+      // Only append to trail if driver moved more than MIN_MOVEMENT_M metres
       const newPoint = { lat: loc.latitude, lng: loc.longitude };
       const trail = traveledPathsRef.current[opportunityId] ?? [];
       const last = trail[trail.length - 1];
-      const isDuplicate = last && last.lat === newPoint.lat && last.lng === newPoint.lng;
-      if (!isDuplicate) {
+      const moved = !last || haversineM(last, newPoint) >= MIN_MOVEMENT_M;
+      if (moved) {
         traveledPathsRef.current = {
           ...traveledPathsRef.current,
           [opportunityId]: [...trail, newPoint],
@@ -230,6 +244,13 @@ export function LiveDriverTracking() {
                   <div className="px-5 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600 flex items-center gap-2">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     {locationError}
+                  </div>
+                )}
+
+                {!pickupLocation && (
+                  <div className="px-5 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    Donor location has no coordinates set — edit the donor and pin it on the map to show the pickup marker.
                   </div>
                 )}
 

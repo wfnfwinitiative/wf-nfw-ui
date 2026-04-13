@@ -1,16 +1,45 @@
+import { useState } from 'react';
 import { MapPin, Phone, Clock, Truck, Building2, Navigation, Users, FileText } from 'lucide-react';
 import { StatusBadge, Button } from '../../components/common';
+import { ConfirmDialog } from '../../components/ui';
 import { navigateTo } from '../../utils/navigationUtils';
 
-export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disabled = false }) {
+export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onReject, disabled = false }) {
   const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
   const canOpenDetails     = status === 'assigned';
   const canConfirmDelivery = status === 'inpicked';
   const isCompleted = ['delivered', 'verified', 'completed'].includes(status);
 
+  const [showReject, setShowReject] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+
+  const handleRejectConfirm = async () => {
+    if (!onReject) return;
+    setRejecting(true);
+    try {
+      await onReject(assignment);
+    } finally {
+      setRejecting(false);
+      setShowReject(false);
+    }
+  };
+
   return (
-    <div
-      onClick={disabled ? undefined : onClick}
+    <>
+      <ConfirmDialog
+        isOpen={showReject}
+        title="Reject Assignment"
+        message="Are you sure you want to reject this pickup? This action cannot be undone."
+        confirmLabel="Reject"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        loading={rejecting}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setShowReject(false)}
+      />
+
+      <div
+        onClick={disabled ? undefined : onClick}
       className={`
         bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden
         transition-all duration-200 flex flex-col
@@ -36,7 +65,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disa
         {/* Pickup Details */}
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Pickup From
+            Donor Location
           </p>
           <div className="space-y-2">
             {pickup.location.address && (
@@ -97,7 +126,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disa
         {/* Delivery Details */}
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Deliver To
+            Hunger Spot
           </p>
           <div className="flex items-start gap-2">
             <Building2 className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
@@ -154,14 +183,24 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disa
       {/* Footer */}
       <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
         {canOpenDetails && (
-          <Button
-            onClick={disabled ? undefined : onClick}
-            variant="warning"
-            className="w-full"
-            disabled={disabled}
-          >
-            Fill Pickup Details
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={(e) => { e.stopPropagation(); setShowReject(true); }}
+              variant="secondary"
+              className="flex-1 !border-red-400 !text-red-600 hover:!bg-red-50"
+              disabled={disabled}
+            >
+              Reject
+            </Button>
+            <Button
+              onClick={disabled ? undefined : onClick}
+              variant="primary"
+              className="flex-1"
+              disabled={disabled}
+            >
+              Fill Pickup Details
+            </Button>
+          </div>
         )}
         {canConfirmDelivery && (
           <Button
@@ -189,6 +228,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, disa
         )}
       </div>
     </div>
+    </>
   );
 }
 

@@ -416,9 +416,12 @@ export const Drivers = () => {
               <TileCard
                 key={driver.id}
                 title={driver.name}
-                subtitle={driver.phone}
+                subtitle={driver.roles?.join(', ') || 'DRIVER'}
                 status={driver.status}
-                fields={[{ label: 'Email', value: driver.email || 'N/A' }]}
+                fields={[
+                  { label: 'Phone', value: driver.phone, mono: true },
+                  { label: 'Email', value: driver.email || 'N/A' },
+                ]}
                 onEdit={() => openEdit(driver)}
                 onDelete={driver.status === 'active' ? () => handleDeleteClick(driver.id) : undefined}
                 onActivate={driver.status === 'inactive' ? () => setActivateConfirm({ open: true, id: driver.id }) : undefined}
