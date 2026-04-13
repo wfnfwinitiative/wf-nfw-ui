@@ -25,6 +25,24 @@ import { HungerSpotApi } from '../../services/api/hungerSpotService';
 import { opportunityApi } from '../../services/api/oppurtunityService';
 import { StatusApi } from '../../services/api/statusService';
 
+function OpStatCard({ label, value, Icon, iconBg, iconColor, to, valueColor = 'text-ngo-dark', hoverBorder = 'hover:border-ngo-orange/30', iconRotate }) {
+  const navigate = useNavigate();
+  return (
+    <div
+      onClick={() => navigate(to)}
+      className={`bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg ${hoverBorder} transition-all`}
+    >
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <div className={`w-10 h-10 md:w-12 md:h-12 ${iconBg} rounded-xl flex items-center justify-center`}>
+          <Icon className={`w-5 h-5 md:w-6 md:h-6 ${iconColor}${iconRotate ? ` ${iconRotate}` : ''}`} />
+        </div>
+        <span className={`text-2xl md:text-3xl lg:text-4xl font-bold ${valueColor}`}>{value}</span>
+      </div>
+      <p className="text-sm md:text-base font-medium text-ngo-gray">{label}</p>
+    </div>
+  );
+}
+
 export const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -330,96 +348,16 @@ export const AdminDashboard = () => {
           Opportunity Summary
         </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
-        {/* Total */}
-        <div
-          onClick={() => navigate('/coordinator/review-opportunities')}
-          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
-        >
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
-            </div>
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.opTotal}
-            </span>
-          </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Total Opportunities</p>
-        </div>
-        {/* Pending (Assigned) */}
-        <div
-          onClick={() => navigate('/coordinator/review-opportunities?status=assigned')}
-          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
-        >
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-              <Clock className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
-            </div>
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.opAssigned}
-            </span>
-          </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Assigned</p>
-        </div>
-        {/* In Progress (InPicked) */}
-        <div
-          onClick={() => navigate('/coordinator/review-opportunities?status=InPickup')}
-          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
-        >
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-              <Truck className="w-5 h-5 md:w-6 md:h-6 text-ngo-orange" />
-            </div>
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.opInpicked}
-            </span>
-          </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">In Pickup</p>
-        </div>
-        {/* Delivered */}
-        <div
-          onClick={() => navigate('/coordinator/review-opportunities?status=delivered')}
-          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
-        >
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-              <MapPin className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
-            </div>
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.opDelivered}
-            </span>
-          </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Delivered</p>
-        </div>
-        {/* Rejected */}
-        <div
-          onClick={() => navigate('/coordinator/review-opportunities?status=rejected')}
-          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-red-300 transition-all"
-        >
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-red-500 rotate-180" />
-            </div>
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-red-600">
-              {filtered.opRejected}
-            </span>
-          </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Rejected</p>
-        </div>
-        {/* Completed */}
-        <div
-          onClick={() => navigate('/coordinator/review-opportunities?status=completed')}
-          className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 border border-gray-100 cursor-pointer hover:shadow-lg hover:border-ngo-orange/30 transition-all"
-        >
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-ngo-green" />
-            </div>
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-ngo-dark">
-              {filtered.opCompleted}
-            </span>
-          </div>
-          <p className="text-sm md:text-base font-medium text-ngo-gray">Completed</p>
-        </div>
+        {[
+          { label: 'Total Opportunities', value: filtered.opTotal,    Icon: TrendingUp,  iconBg: 'bg-blue-100',   iconColor: 'text-blue-600',   to: '/coordinator/review-opportunities' },
+          { label: 'Assigned',            value: filtered.opAssigned, Icon: Clock,       iconBg: 'bg-amber-100',  iconColor: 'text-amber-600',  to: '/coordinator/review-opportunities?status=assigned' },
+          { label: 'In Pickup',           value: filtered.opInpicked, Icon: Truck,       iconBg: 'bg-orange-100', iconColor: 'text-ngo-orange', to: '/coordinator/review-opportunities?status=InPickup' },
+          { label: 'Delivered',           value: filtered.opDelivered,Icon: MapPin,      iconBg: 'bg-purple-100', iconColor: 'text-purple-600', to: '/coordinator/review-opportunities?status=delivered' },
+          { label: 'Rejected',            value: filtered.opRejected, Icon: TrendingUp,  iconBg: 'bg-red-100',    iconColor: 'text-red-500',    to: '/coordinator/review-opportunities?status=rejected', valueColor: 'text-red-600', hoverBorder: 'hover:border-red-300', iconRotate: 'rotate-180' },
+          { label: 'Completed',           value: filtered.opCompleted,Icon: CheckCircle, iconBg: 'bg-green-100',  iconColor: 'text-ngo-green',  to: '/coordinator/review-opportunities?status=completed' },
+        ].map(({ Icon, ...props }) => (
+          <OpStatCard key={props.label} Icon={Icon} {...props} />
+        ))}
       </div>
       </section>
       )}

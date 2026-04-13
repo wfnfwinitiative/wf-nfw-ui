@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockApi } from '../../services/mockApi';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Card, CardBody, CardHeader, Input, Select, Textarea, Button } from '../../components/common';
@@ -106,7 +105,6 @@ export const CreatePickup = () => {
     }
     
     const opportunity = transformToOpportunity();
-    console.log(opportunity)
 
     try {
       await opportunityApi.createOpportunity(opportunity);

@@ -28,6 +28,7 @@ import { CoordinatorDrivers } from './pages/coordinator/CoordinatorDrivers';
 import { DriverDashboard } from './pages/driver/DriverDashboard';
 import { DriverTasksPage } from './pages/driver/DriverTasksPage';
 import { TaskDetail } from './pages/driver/TaskDetail';
+import { DriverTasksProvider } from './contexts/DriverTasksContext';
 
 import { ReviewOpportunities } from './pages/reviewOpportunities/ReviewOpportunities';
 import { ReviewOpportunityDetail } from './pages/reviewOpportunities/ReviewOpportunityDetail';
@@ -90,7 +91,7 @@ function App() {
             <Route path="review-opportunities/:id" element={<ReviewOpportunityDetail />} />
           </Route>
 
-          <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DashboardLayout /></RoleGuard>}>
+          <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DriverTasksProvider><DashboardLayout /></DriverTasksProvider></RoleGuard>}>
             <Route path="dashboard" element={<DriverDashboard />} />
             <Route path="tasks" element={<DriverTasksPage />} />
             <Route path="task/:id" element={<TaskDetail />} />
