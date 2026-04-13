@@ -6,9 +6,6 @@ import { serviceApi } from '../../services/api/apiClient';
 import { useAuth } from '../../auth/AuthContext';
 import { toDriverAssignment, getStatusNote } from './utils/assignmentMapper';
 import { isToday, sortAssignments } from './utils/taskFilters';
-import { DriverLocationSender } from './DriverLocationSender';
-import { LocationPermissionGate } from '../../components/location/LocationPermissionGate';
-import { useFeatureFlags, FEATURE_FLAGS } from '../../contexts/FeatureFlagsContext';
 import { submitRejection } from '../../services/api/opportunityEventItemDriverService';
 
 // Computes the count summary object used by parent filter cards.
@@ -25,8 +22,6 @@ function computeCounts(list, todayOnly) {
 
 export function DriverAssignmentsGrid({ statusFilter = null, todayOnly = false, onCountsChange }) {
   const { user } = useAuth();
-  const { isFeatureEnabled } = useFeatureFlags();
-  const trackingEnabled = isFeatureEnabled(FEATURE_FLAGS.DRIVER_TRACKING);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -123,11 +118,6 @@ export function DriverAssignmentsGrid({ statusFilter = null, todayOnly = false, 
     })
   );
 
-  // Assignments that are physically in-flight and need GPS permission
-  const IN_FLIGHT_STATUSES = new Set(['assigned', 'inpicked']);
-  const hasInFlightAssignment = trackingEnabled &&
-    assignments.some((a) => IN_FLIGHT_STATUSES.has(a.status));
-
   if (activeAssignments.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
@@ -140,10 +130,6 @@ export function DriverAssignmentsGrid({ statusFilter = null, todayOnly = false, 
 
   const content = (
     <>
-      {/* Auto-send GPS for every active assignment (only when tracking is on) */}
-      {trackingEnabled && activeAssignments.map((a) => (
-        <DriverLocationSender key={a.id} opportunityId={a.id} status={a.status} />
-      ))}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {activeAssignments.map((assignment) => (
@@ -167,9 +153,7 @@ export function DriverAssignmentsGrid({ statusFilter = null, todayOnly = false, 
     </>
   );
 
-  return hasInFlightAssignment ? (
-    <LocationPermissionGate>{content}</LocationPermissionGate>
-  ) : (
+  return (
     content
   );
 }

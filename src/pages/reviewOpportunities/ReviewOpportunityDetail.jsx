@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Button, Input, Select, Textarea, DriverTrackingMap, StatusBadge } from '../../components/common';
-import { ArrowLeft, X, Navigation, Edit } from 'lucide-react';
+import { Button, Input, Select, Textarea, StatusBadge } from '../../components/common';
+import { ArrowLeft, X, Edit } from 'lucide-react';
 import { opportunityApi } from '../../services/api/oppurtunityService';
 import { FoodItemsGrid } from '../../pages/driver/FoodItemsGrid';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
@@ -12,8 +12,6 @@ import { StatusApi } from '../../services/api/statusService';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { useAuth } from '../../auth/AuthContext';
 import { DRIVER } from '../../constants';
-import { useDriverLocation } from '../../hooks/useDriverLocation';
-import { useFeatureFlags, FEATURE_FLAGS } from '../../contexts/FeatureFlagsContext';
 
 export const ReviewOpportunityDetail = () => {
   const { id } = useParams();
@@ -26,9 +24,6 @@ export const ReviewOpportunityDetail = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [items, setItems] = useState([]);
-  const [showTracking, setShowTracking] = useState(false);
-  const { isFeatureEnabled } = useFeatureFlags();
-  const driverTrackingFeatureEnabled = isFeatureEnabled(FEATURE_FLAGS.DRIVER_TRACKING);
 
   // Get mode from URL query parameters
   const searchParams = new URLSearchParams(locationObj.search);
@@ -61,36 +56,6 @@ export const ReviewOpportunityDetail = () => {
     const [date] = formData.scheduledDateTime.split('T');
     setFormData({ ...formData, scheduledDateTime: `${date || new Date().toISOString().slice(0, 10)}T${newTime}` });
   };
-
-  // --- Derived coords (must be above the tracking hook) ---
-  const pickupCoords = (() => {
-    const donor = pickupLocations.find((p) => p.id === parseInt(formData.pickupLocationId));
-    if (!donor) return null;
-    return { latitude: donor.latitude, longitude: donor.longitude, address: donor.address, name: donor.name };
-  })();
-
-  const deliveryCoords = (() => {
-    const spot = hungerSpots.find((h) => h.id === parseInt(formData.hungerSpotId));
-    if (!spot) return null;
-    return { latitude: spot.latitude, longitude: spot.longitude, address: spot.address, name: spot.name };
-  })();
-
-  const assignedDriverName = (() => {
-    const d = drivers.find((dr) => dr.id === parseInt(formData.driverId));
-    return d?.name || 'Driver';
-  })();
-
-  // --- Live Driver Tracking ---
-  const isInProgress = opportunity?.status?.toLowerCase() === 'inpickup' ||
-                       opportunity?.status?.toLowerCase() === 'inpicked';
-  const canShowTracking = driverTrackingFeatureEnabled && isInProgress && !!opportunity?.driver_id;
-  const trackingEnabled = canShowTracking && showTracking;
-  const { location: driverLocation, isMock, effectivePickup, effectiveDelivery } = useDriverLocation(
-    opportunity?.opportunity_id,
-    trackingEnabled,
-    pickupCoords,
-    deliveryCoords,
-  );
 
   useEffect(() => {
     // Clear previous data when id changes
@@ -297,44 +262,6 @@ export const ReviewOpportunityDetail = () => {
         <ArrowLeft className="w-4 h-4" />
         Back to Review Opportunities
       </Button>
-
-      {/* Live Driver Tracking Panel — shown at top when in-progress */}
-      {canShowTracking && (
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-ngo-dark flex items-center gap-2">
-                <Navigation className="w-5 h-5 text-ngo-orange" />
-                Live Driver Tracking
-                {isMock && (
-                  <span className="text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-0.5 rounded-full">
-                    MOCK
-                  </span>
-                )}
-              </h2>
-              <p className="text-sm text-ngo-gray mt-0.5">
-                {assignedDriverName} · updates every {isMock ? '3 s (simulated)' : '10 s'}
-              </p>
-            </div>
-            <Button
-              variant={showTracking ? 'secondary' : 'primary'}
-              onClick={() => setShowTracking((v) => !v)}
-            >
-              {showTracking ? 'Hide Map' : 'Track Driver'}
-            </Button>
-          </div>
-
-          {showTracking && (
-            <DriverTrackingMap
-              driverLocation={driverLocation}
-              pickupLocation={pickupCoords || effectivePickup}
-              deliveryLocation={deliveryCoords || effectiveDelivery}
-              driverName={assignedDriverName}
-              height="420px"
-            />
-          )}
-        </div>
-      )}
 
       <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">

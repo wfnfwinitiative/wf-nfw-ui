@@ -24,7 +24,6 @@ import { Admins } from './pages/admin/Admins';
 import { CoordinatorDashboard } from './pages/coordinator/CoordinatorDashboard';
 import { CreatePickup } from './pages/coordinator/CreatePickup';
 import { CoordinatorDrivers } from './pages/coordinator/CoordinatorDrivers';
-import { LiveDriverTracking } from './pages/coordinator/LiveDriverTracking';
 
 import { DriverDashboard } from './pages/driver/DriverDashboard';
 import { DriverTasksPage } from './pages/driver/DriverTasksPage';
@@ -84,7 +83,6 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="create-opportunity" element={<CreatePickup />} />
             <Route path="drivers" element={<CoordinatorDrivers />} />
-            <Route path="live-tracking" element={<LiveDriverTracking />} />
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="donors" element={<PickupLocations />} />
             <Route path="hungerspots" element={<HungerSpots />} />

@@ -4,7 +4,6 @@ import { LoadingCard, SectionHeader, EmptySection } from '../../components/commo
 import { SearchBar, FilterDropdown } from '../../components/ui';
 import { CalendarDays } from 'lucide-react';
 import { useDriverTasks } from './hooks/useDriverTasks';
-import { DriverLocationSender } from './DriverLocationSender';
 import { TaskGrid } from './components/TaskGrid';
 import { UpcomingSection } from './components/UpcomingSection';
 import { PreviousSection } from './components/PreviousSection';
@@ -42,10 +41,6 @@ export const DriverTasksPage = () => {
 
   return (
     <div className="space-y-5">
-      {/* GPS location senders — invisible, one per active assignment */}
-      {assignments.map((a) => (
-        <DriverLocationSender key={a.id} opportunityId={a.id} status={a.status} />
-      ))}
       <div>
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark dark:text-gray-200 mb-1">
           My Tasks
