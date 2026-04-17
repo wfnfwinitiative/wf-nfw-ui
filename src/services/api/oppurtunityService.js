@@ -80,7 +80,7 @@ export const opportunityApi = {
 
     async updateOpportunityItem(itemId, itemData) {
         try {
-            const response = await serviceApi.put(`/api/opportunity-items/${itemId}`, itemData);
+            const response = await serviceApi.patch(`/api/opportunity-items/${itemId}`, itemData);
             console.log('Update Opportunity Item Response:', response);
             return response.data || response;
         } catch (error) {

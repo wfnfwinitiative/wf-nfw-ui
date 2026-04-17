@@ -214,10 +214,10 @@ pdf.text(`Report Date: ${today}`, 10, 30);
   pdf.setTextColor(249, 115, 22);
   pdf.text(String(summary.opportunity_count || 0), 55, 40);
 
-  // Picked Food
+  // Food Collected
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(0, 0, 0);
-  pdf.text("Picked Food:", 120, 40);
+  pdf.text("Food Collected:", 120, 40);
 
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(249, 115, 22);
@@ -238,6 +238,7 @@ pdf.text(`Report Date: ${today}`, 10, 30);
     row.hunger_spot_name,
     row.driver_name,
     row.status_name,
+    row.food_collected,
     row.feeding_count,
     formatDateTime(row.pickup_eta),
     formatDateTime(row.delivery_by),
@@ -254,7 +255,8 @@ pdf.text(`Report Date: ${today}`, 10, 30);
       "Spot",
       "Driver",
       "Status",
-      "Feed",
+      "Food Collected",
+      "People Fed",
       "Pickup",
       "Delivery",
       "Vehicle",
@@ -329,7 +331,7 @@ pdf.text(`Report Date: ${today}`, 10, 30);
           </div>
         </div>
         <div className="card">
-          <div className="card-title">Picked Food</div>
+          <div className="card-title">Food Collected</div>
           <div className="card-value text-[#f97316] font-bold">
             {summary.total_food} kg
           </div>
@@ -449,7 +451,8 @@ pdf.text(`Report Date: ${today}`, 10, 30);
               <th onClick={() => handleSort("hunger_spot_name")}>Hunger Spot</th>
               <th onClick={() => handleSort("driver_name")}>Driver</th>
               <th onClick={() => handleSort("status_name")}>Status</th>
-              <th onClick={() => handleSort("feeding_count")}>Picked Food</th>
+              <th onClick={() => handleSort("food_collected")}>Food Collected</th>
+              <th onClick={() => handleSort("feeding_count")}>People Fed</th>
               <th onClick={() => handleSort("pickup_eta")}>Pickup</th>
               <th onClick={() => handleSort("delivery_by")}>Delivery</th>
               <th>Vehicle</th>
@@ -464,6 +467,7 @@ pdf.text(`Report Date: ${today}`, 10, 30);
                 <td>{row.hunger_spot_name}</td>
                 <td>{row.driver_name}</td>
                 <td>{row.status_name}</td>
+                <td>{row.food_collected} kg</td>
                 <td>{row.feeding_count}</td>
                 <td>{formatDateTime(row.pickup_eta)}</td>
                 <td>{formatDateTime(row.delivery_by)}</td>

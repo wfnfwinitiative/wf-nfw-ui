@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { mockApi } from '../../services/mockApi';
-import { StatusBadge } from '../../components/StatusBadge';
-import { Button } from '../../components/ui/Button';
+import { StatusBadge, Button } from '../../components/common';
 import { ArrowLeft, MapPin, Camera, Mic, CheckCircle, XCircle, AlertCircle, User, Clock, Package } from 'lucide-react';
 
 export const VerificationDetail = () => {

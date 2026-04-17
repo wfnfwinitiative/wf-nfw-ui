@@ -11,7 +11,7 @@ import { VehicleApi } from '../../services/api/vehicleService';
 import { StatusApi } from '../../services/api/statusService.js';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
-import { Edit, Eye, RefreshCw, MapPin, Building2, User, Truck, Calendar, Phone } from 'lucide-react';
+import { Edit, Eye, RefreshCw, MapPin, Building2, Truck, Phone, Scale, Users, FileText, User } from 'lucide-react';
 
 export const ReviewOpportunities = () => {
   const navigate = useNavigate();
@@ -283,77 +283,153 @@ export const ReviewOpportunities = () => {
       </div>
 
       {/* Opportunities Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {paginated.map((opportunity) => (
-        <Card key={opportunity.opportunity_id} className="h-full">
-            <CardHeader className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 break-words">
-                  {opportunity.name || 'Unnamed Opportunity'}
+        <div key={opportunity.opportunity_id} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden transition-all duration-200 flex flex-col hover:shadow-lg">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-gray-900 line-clamp-1">
+                  {`${opportunity.donor_name} → ${opportunity.hunger_spot_name}`}
                 </h3>
-                <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-ngo-orange flex items-center gap-1">
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  {opportunity.pickupLocationName || opportunity.hungerSpotName || 'No location'}
-                </p>
-              </div>
-              <StatusBadge status={opportunity.status} />
-            </CardHeader>
-
-            <CardBody className="space-y-2">
-              {opportunity.description && (
-                <p className="text-sm text-gray-600 line-clamp-2 italic">
-                  {opportunity.description}
-                </p>
-              )}
-
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="font-medium text-gray-500 shrink-0">Drop:</span>
-                  <span className="truncate">{opportunity.hungerSpotName || 'Unknown'}</span>
+                <div className="flex 1">
+                  <User className="w-4 h-4 text-orange-500" />
+                  <span className="text-sm text-orange-500">Driver: {opportunity.driver_name}</span>
                 </div>
+                <div className="flex items-center gap-1 flex-1 px-1 py-1   rounded-lg ">
+                      <a href={`tel:${opportunity.driver_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />{opportunity.driver_contact_no}
+                      </a>
+                </div>
+              </div>
+              <StatusBadge status={opportunity.status_name || opportunity.status} />
+            </div>
 
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <User className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="font-medium text-gray-500 shrink-0">Driver:</span>
-                  <span className="truncate">{opportunity.driverName || 'Unassigned'}</span>
-                  {opportunity.driverPhone && (
-                    <span className="text-gray-400 text-xs truncate flex items-center gap-1">
-                      <Phone className="w-3 h-3" />{opportunity.driverPhone}
+            {/* Body */}
+            <div className="p-4 space-y-4 flex-1">
+              {/* Donor Location */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Donor Location</p>
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">{opportunity.donor_name || 'Donor TBD'}</p>
+                    {opportunity.pickup_location && (
+                      <p className="text-xs text-gray-500">{opportunity.pickup_location}</p>
+                    )}
+                    {opportunity.pickup_contact_no && (
+                      <a href={`tel:${opportunity.pickup_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />{opportunity.pickup_contact_no}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Hunger Spot */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hunger Spot</p>
+                <div className="flex items-start gap-2">
+                  <Building2 className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">{opportunity.hunger_spot_name || 'Hunger Spot TBD'}</p>
+                    {opportunity.drop_location && (
+                      <p className="text-xs text-gray-500">{opportunity.drop_location}</p>
+                    )}
+                    {opportunity.drop_location_contact_no && (
+                      <a href={`tel:${opportunity.drop_location_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />{opportunity.drop_location_contact_no}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                    {opportunity.pickup_eta && (
+                      <p className="text-xs text-orange-600 mt-0.5">
+                        Pickup By: {new Date(opportunity.pickup_eta).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                      </p>
+                    )}
+                </div>
+                <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                    {opportunity.delivery_by && (
+                      <p className="text-xs text-orange-600 mt-0.5">
+                        Deliver by: {new Date(opportunity.delivery_by).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                      </p>
+                    )}
+                  </div>
+              </div>
+
+
+              {/* Vehicle & Estimated */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <Truck className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-gray-700">Vehicle: {opportunity.vehicle_name || 'No Vehicle'}</span>
+                </div>
+                {opportunity.estimated_count != null && (
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+                    {opportunity.estimated_unit === 'people'
+                      ? <Users className="w-4 h-4 text-blue-500" />
+                      : <Scale className="w-4 h-4 text-blue-500" />
+                    }
+                    <span className="text-sm text-blue-700 font-medium">
+                      Estimated: {opportunity.estimated_count} {opportunity.estimated_unit === 'people' ? 'people' : 'kg'}
                     </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Food Collected & People Fed — shown only for delivered/completed */}
+              {['delivered', 'completed'].includes((opportunity.status_name || opportunity.status)?.toLowerCase()) && (
+                <div className="flex items-center gap-3">
+                  {opportunity.food_collected != null && (
+                    <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                      <Scale className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-700 font-medium">
+                        Collected: {opportunity.food_collected} kg
+                      </span>
+                    </div>
+                  )}
+                  {opportunity.feeding_count != null && (
+                    <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                      <Users className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-700 font-medium">
+                        Fed: {opportunity.feeding_count} people
+                      </span>
+                    </div>
                   )}
                 </div>
+              )}
 
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Truck className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="font-medium text-gray-500 shrink-0">Vehicle:</span>
-                  <span className="truncate">{opportunity.vehicleNumber || 'Unassigned'}</span>
+              {/* Notes */}
+              {opportunity.notes && (
+                <div className="flex items-start gap-2 px-3 py-2 bg-yellow-50 rounded-lg">
+                  <FileText className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+                  <span className="text-sm text-yellow-800 line-clamp-2">{opportunity.notes}</span>
                 </div>
+              )}
+            </div>
 
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="font-medium text-gray-500 shrink-0">Created:</span>
-                  <span>{new Date(opportunity.created_at).toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-2 pt-1">
-                <Button variant="secondary" className="flex-1" onClick={() => handleView(opportunity)}>
-                  <Eye className="w-4 h-4 mr-1" />
-                  View
-                </Button>
-                <Button
-                  variant="primary"
-                  className="flex-1"
-                  onClick={() => handleEdit(opportunity)}
-                  disabled={opportunity.status === 'Completed' || opportunity.status === 'completed' || ['inpickup', 'inpicked'].includes(opportunity.status?.toLowerCase())}
-                >
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
+            {/* Footer */}
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex gap-2">
+              <Button variant="secondary" className="flex-1" onClick={() => handleView(opportunity)}>
+                <Eye className="w-4 h-4 mr-1" />
+                View
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={() => handleEdit(opportunity)}
+                disabled={['completed', 'inpickup', 'inpicked'].includes(opportunity.status_name?.toLowerCase())}
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
 

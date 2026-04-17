@@ -33,7 +33,7 @@ export const CoordinatorDashboard = () => {
 
         <TileCard
           icon={FileCheck}
-          title="Review Opportunities"
+          title="Review Opportunity"
           description="Review submitted opportunity proofs"
           to="/coordinator/review-opportunities"
           color="blue"

@@ -76,7 +76,7 @@ export function applyDateRange(tasks, dateRange, customFrom, customTo) {
 export const STATUS_FILTER_OPTIONS = [
   { value: 'active',    label: 'Active (Assigned + In Progress)' },
   { value: 'assigned',  label: 'Assigned' },
-  { value: 'inpicked',  label: 'In Progress' },
+  { value: 'inpickup',  label: 'In Progress' },
   { value: 'delivered', label: 'Delivered / Verified' },
   { value: 'rejected',  label: 'Rejected' },
   { value: 'all',       label: 'All' },
@@ -87,7 +87,7 @@ export function applyStatusFilter(assignment, statusFilter) {
   if (statusFilter === 'active' || statusFilter === '')
     return !['completed', 'rejected', 'delivered', 'verified'].includes(s);
   if (statusFilter === 'assigned')  return s === 'assigned';
-  if (statusFilter === 'inpicked')  return s === 'inpicked';
+  if (statusFilter === 'inpickup')  return s === 'inpickup';
   if (statusFilter === 'delivered') return ['delivered', 'verified', 'completed'].includes(s);
   if (statusFilter === 'rejected')  return s === 'rejected';
   return true; // 'all'
@@ -97,7 +97,7 @@ export function applyStatusFilter(assignment, statusFilter) {
 
 // Priority rank: lower = shown first.
 // Today's in-progress (0) → today's assigned (1) → today's other (2) → past tasks (3)
-const STATUS_PRIORITY = { inpicked: 0, assigned: 1 };
+const STATUS_PRIORITY = { inpickup: 0, assigned: 1 };
 
 export function sortAssignments(list) {
   return [...list].sort((a, b) => {

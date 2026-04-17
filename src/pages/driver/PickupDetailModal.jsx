@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Modal, Button, showToast } from '../../components/common';
 import { ConfirmDialog } from '../../components/ui';
 import { VoiceInputPanel } from './VoiceInputPanel';
-import { MapPin, Building2, Truck, Phone, Camera, X, Loader2, Check, AlertCircle } from 'lucide-react';
+import { MapPin, Building2, Truck, Phone, Camera, X, Loader2, Check, AlertCircle, Users, Scale } from 'lucide-react';
 import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
 import { uploadImageToDrive } from '../../services/api/googleDriveService';
 import {
@@ -36,12 +36,12 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
 
   if (!assignment) return null;
 
-  const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
+  const { pickup, delivery, vehicle, status, estimated_count, estimated_unit, notes } = assignment;
   const driverName = user?.name || user?.mobileNumber || `Driver${user?.id || ''}`;
   const opportunityId = String(assignment.id || '');
 
   const canSubmit = status === 'assigned';        // Assigned → fill items → InPicked
-  const canMarkDelivered = status === 'inpicked'; // InPicked → confirm delivery → Delivered
+  const canMarkDelivered = status === 'inpickup'; // InPicked → confirm delivery → Delivered
   const canReject = status === 'assigned';        // Only rejectable while still assigned
 
   const handleSubmit = async () => {
@@ -68,7 +68,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
         assignment.notes
       );
 
-      onStatusUpdate(assignment.id, 'inpicked', {
+      onStatusUpdate(assignment.id, 'inpickup', {
         submittedDetails: {
           pickupTime: new Date().toISOString(),
           pickupFolderUrl,
@@ -186,9 +186,13 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
                     {pickup.contactNumber}
                   </a>
                 )}
-                {feeding_count != null && (
+                {estimated_count != null && (
                   <span className="flex items-center gap-1 text-blue-600 shrink-0">
-                    <span className="font-medium">{feeding_count} servings</span>
+                    {estimated_unit === 'people'
+                      ? <Users className="w-4 h-4" />
+                      : <Scale className="w-4 h-4" />
+                    }
+                    <span className="font-medium">{estimated_count} {estimated_unit === 'people' ? 'people' : 'kg'}</span>
                   </span>
                 )}
               </div>

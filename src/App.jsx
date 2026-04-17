@@ -76,7 +76,7 @@ function App() {
             <Route path="coordinators" element={<Coordinators />} />
             <Route path="drivers" element={<Drivers />} />
             <Route path="feature-flag" element={<FeatureFlag />} />
-             <Route path="report" element={<ReportScreen />} />
+            <Route path="report" element={<ReportScreen />} />
             <Route path="settings" element={<div className="text-center py-12 text-ngo-gray">Settings page coming soon...</div>} />
           </Route>
 
@@ -87,6 +87,8 @@ function App() {
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="donors" element={<PickupLocations />} />
             <Route path="hungerspots" element={<HungerSpots />} />
+            <Route path="feature-flag" element={<FeatureFlag />} />
+            <Route path="report" element={<ReportScreen />} />
             <Route path="review-opportunities" element={<ReviewOpportunities />} />
             <Route path="review-opportunities/:id" element={<ReviewOpportunityDetail />} />
           </Route>

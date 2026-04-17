@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { MapPin, Phone, Clock, Truck, Building2, Navigation, Users, FileText } from 'lucide-react';
+import { MapPin, Phone, Clock, Truck, Building2, Navigation, Users, Scale, FileText } from 'lucide-react';
 import { StatusBadge, Button } from '../../components/common';
 import { ConfirmDialog } from '../../components/ui';
 import { navigateTo } from '../../utils/navigationUtils';
 
 export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onReject, disabled = false }) {
-  const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
+  const { pickup, delivery, vehicle, status, estimated_count, estimated_unit, food_collected, feeding_count, notes } = assignment;
   const canOpenDetails     = status === 'assigned';
-  const canConfirmDelivery = status === 'inpicked';
+  const canConfirmDelivery = status === 'inpickup';
   const isCompleted = ['delivered', 'verified', 'completed'].includes(status);
 
   const [showReject, setShowReject] = useState(false);
@@ -51,7 +51,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
       <div className="px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-semibold text-gray-900 line-clamp-1">
-            {pickup.organizationName}
+                  {`${pickup.organizationName} → ${delivery.hungerSpotName}`}
           </h3>
           {pickup.contactPerson && (
             <p className="text-sm text-gray-500">{pickup.contactPerson}</p>
@@ -67,59 +67,36 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
             Donor Location
           </p>
-          <div className="space-y-2">
-            {pickup.location.address && (
-              <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                <span className="text-sm text-gray-600 line-clamp-2 flex-1">
-                  {pickup.location.address}
-                </span>
-                {(pickup.location.lat || pickup.location.address) && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); navigateTo(pickup.location); }}
-                    className="shrink-0 text-blue-500 hover:text-blue-700"
-                    title="Navigate to Pickup"
-                  >
-                    <Navigation className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            )}
-            {pickup.contactNumber && (
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-gray-400" />
-                <a
-                  href={`tel:${pickup.contactNumber}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-sm text-primary-600 hover:underline"
-                >
-                  {pickup.contactNumber}
-                </a>
-              </div>
-            )}
-            {pickup.scheduledTime && (
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">
-                  ETA: {new Date(pickup.scheduledTime).toLocaleString([], {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </span>
-              </div>
-            )}
-            {delivery.deliveryBy && (
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-400" />
-                <span className="text-sm text-orange-600">
-                  Deliver by: {new Date(delivery.deliveryBy).toLocaleString([], {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </span>
-              </div>
-            )}
+          <div className="flex items-start gap-2">
+            <MapPin className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-700">
+                {pickup.organizationName}
+              </p>
+              {pickup.location.address && (
+                <div className="flex items-start gap-1">
+                  <p className="text-xs text-gray-500 flex-1">{pickup.location.address}</p>
+                  {(pickup.location.lat || pickup.location.address) && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navigateTo(pickup.location); }}
+                      className="shrink-0 text-blue-500 hover:text-blue-700"
+                      title="Navigate to Pickup Location"
+                    >
+                      <Navigation className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {pickup.contactNumber && (
+                <div className="flex items-center gap-2">
+                  <a href={`tel:${pickup.contactNumber}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                    <Phone className="w-3 h-3" />{pickup.contactNumber}
+                  </a>              
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -149,9 +126,35 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
                   )}
                 </div>
               )}
+
+            {delivery.contactNumber && (
+              <div className="flex items-center gap-2">
+                <a href={`tel:${delivery.contactNumber}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                  <Phone className="w-3 h-3" />{delivery.contactNumber}
+                </a>              
+              </div>
+            )}
             </div>
           </div>
         </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+              {pickup.scheduledTime && (
+                <p className="text-xs text-orange-600 mt-0.5">
+                  Pickup By: {new Date(pickup.scheduledTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                </p>
+              )}
+          </div>
+          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+              {delivery.deliveryBy && (
+                <p className="text-xs text-orange-600 mt-0.5">
+                  Deliver by: {new Date(delivery.deliveryBy).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                </p>
+              )}
+            </div>
+        </div>
+
 
         {/* Vehicle & Feeding Info */}
         <div className="flex items-center gap-3">
@@ -161,13 +164,40 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
               Vehicle {vehicle.number}{vehicle.type ? ` (${vehicle.type})` : ''}
             </span>
           </div>
-          {feeding_count != null && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
-              <Users className="w-4 h-4 text-blue-500" />
-              <span className="text-sm text-blue-700 font-medium">{feeding_count}</span>
+          {estimated_count != null && (
+            <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              {estimated_unit === 'people'
+                ? <Users className="w-4 h-4 text-blue-500" />
+                : <Scale className="w-4 h-4 text-blue-500" />
+              }
+              <span className="text-sm text-blue-700 font-medium">
+               {'Estimated: '} {estimated_count} {estimated_unit === 'people' ? 'people' : 'kg'}
+              </span>
             </div>
           )}
         </div>
+
+        {/* Food Collected & People Fed — shown only for delivered/completed */}
+        {['delivered', 'completed'].includes(status) && (
+          <div className="flex items-center gap-3">
+            {food_collected != null && (
+              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                <Scale className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-green-700 font-medium">
+                  Collected: {food_collected} kg
+                </span>
+              </div>
+            )}
+            {feeding_count != null && (
+              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                <Users className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-green-700 font-medium">
+                  Fed: {feeding_count} people
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Notes */}
         {notes && (

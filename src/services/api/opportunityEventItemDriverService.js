@@ -19,10 +19,9 @@ function parseQuantity(quantityStr = '') {
   if (match) {
     return {
       quantity_value: parseFloat(match[1]),
-      quantity_unit: match[2].trim() || 'unit',
     };
   }
-  return { quantity_value: 1, quantity_unit: 'unit' };
+  return { quantity_value: 1};
 }
 
 /**
@@ -43,13 +42,12 @@ export async function submitPickupItems(opportunityId, foodItems, actorId, previ
       notes: notes || null,
     },
     items_data: foodItems.map((item) => {
-      const { quantity_value, quantity_unit } = parseQuantity(item.quantity);
+      const { quantity_value } = parseQuantity(item.quantity);
       return {
         opportunity_id: opportunityId,
         food_name: item.foodName,
         quality: item.quality || null,
         quantity_value,
-        quantity_unit,
       };
     }),
   };

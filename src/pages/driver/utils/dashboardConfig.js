@@ -23,12 +23,12 @@ export const DASHBOARD_FILTERS = [
     statuses:  ['assigned'],
   },
   {
-    key:       'inpicked',
+    key:       'inpickup',
     label:     'In Progress',
     icon:      Clock,
     color:     'bg-orange-100',
     iconColor: 'text-orange-600',
-    statuses:  ['inpicked'],
+    statuses:  ['inpickup'],
   },
   {
     key:       'delivered',

@@ -19,7 +19,7 @@ const statusStyles = {
     text: 'text-green-800',
     dot: 'bg-green-500',
   },
-  inpicked: {
+  inpickup: {
     bg: 'bg-orange-100',
     text: 'text-orange-800',
     dot: 'bg-orange-500',
@@ -61,7 +61,7 @@ const statusLabels = {
   reached: 'Reached Pickup',
   submitted: 'Details Submitted',
   delivered: 'Delivered',
-  inpicked:  'In Pickup',
+  inpickup:  'In Pickup',
   rejected:  'Rejected',
   verified:  'Verified',
   completed: 'Completed',
@@ -71,8 +71,9 @@ const statusLabels = {
 };
 
 export function StatusBadge({ status, showDot = true, className = '' }) {
-  const style = statusStyles[status] || statusStyles.pending;
-  const label = statusLabels[status] || status;
+  const key = status?.toLowerCase() || '';
+  const style = statusStyles[key] || statusStyles.pending;
+  const label = statusLabels[key] || status;
 
   return (
     <span

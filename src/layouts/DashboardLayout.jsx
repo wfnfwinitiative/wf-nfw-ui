@@ -31,8 +31,8 @@ export const DashboardLayout = () => {
       { icon: MapPin, label: 'HungerSpots', path: '/coordinator/hungerspots' },
       { icon: Truck, label: 'Create Opportunity', path: '/coordinator/create-opportunity' },
       { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' },
-      { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
-      { icon: BarChart, label: 'Report', path: '/admin/report' },
+      { icon: Flag, label: 'Feature Flag', path: '/coordinator/feature-flag' },
+      { icon: BarChart, label: 'Report', path: '/coordinator/report' },
     ],
     driver: [
       { icon: Home, label: 'Dashboard', path: '/driver/dashboard' },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Phone } from 'lucide-react';
 import { Card, CardBody, CardHeader, Input, Select, Textarea, Button } from '../../components/common';
 import { DonorApi } from '../../services/api/donorService';
 import { UserApi } from '../../services/api/userService';
@@ -35,6 +35,7 @@ export const CreatePickup = () => {
     driverId: '',
     scheduledDateTime: currentDateTime,
     estimatedQuantity: '',
+    estimatedUnit: 'kg',
     vehicleId: '',
     notes: ''
   });
@@ -87,7 +88,9 @@ export const CreatePickup = () => {
       status_id: hasDriver ? 2 : 1, // 2=Assigned when driver is set, 1=Created otherwise
       driver_id: parseInt(formData.driverId) || 0,
       vehicle_id: parseInt(formData.vehicleId) || 0,
-      feeding_count: parseInt(formData.estimatedQuantity) || 0,
+      estimated_count: parseInt(formData.estimatedQuantity) || 0,
+      estimated_unit: formData.estimatedUnit,
+      feeding_count: 0,
       pickup_eta: new Date(formData.scheduledDateTime).toISOString(),
       delivery_by: new Date(formData.scheduledDateTime).toISOString(),
       notes: formData.notes || '',
@@ -160,21 +163,51 @@ export const CreatePickup = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
-              <Select
-                label="Donor Location"
-                value={String(formData.pickupLocationId)}
-                onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
-                required
-                options={pickupLocations.map((loc) => ({ value: String(loc.id), label: loc.name }))}
-              />
+              <div>
+                <Select
+                  label="Donor Location"
+                  value={String(formData.pickupLocationId)}
+                  onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
+                  required
+                  options={pickupLocations.map((loc) => ({ value: String(loc.id), label: loc.name }))}
+                />
+                {(() => {
+                  const loc = pickupLocations.find(l => String(l.id) === String(formData.pickupLocationId));
+                  return loc ? (
+                    <div className="mt-1.5 px-1 space-y-0.5">
+                      {loc.address && <p className="text-xs text-gray-500">{loc.address}</p>}
+                      {loc.phone && (
+                        <a href={`tel:${loc.phone}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1">
+                          <Phone className="w-3 h-3" />{loc.phone}
+                        </a>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+              </div>
 
-              <Select
-                label="Hunger Spot"
-                value={String(formData.hungerSpotId)}
-                onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
-                required
-                options={hungerSpots.map((loc) => ({ value: String(loc.id), label: loc.name }))}
-              />
+              <div>
+                <Select
+                  label="Hunger Spot"
+                  value={String(formData.hungerSpotId)}
+                  onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
+                  required
+                  options={hungerSpots.map((loc) => ({ value: String(loc.id), label: loc.name }))}
+                />
+                {(() => {
+                  const loc = hungerSpots.find(h => String(h.id) === String(formData.hungerSpotId));
+                  return loc ? (
+                    <div className="mt-1.5 px-1 space-y-0.5">
+                      {loc.address && <p className="text-xs text-gray-500">{loc.address}</p>}
+                      {loc.phone && (
+                        <a href={`tel:${loc.phone}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1">
+                          <Phone className="w-3 h-3" />{loc.phone}
+                        </a>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+              </div>
             </div>
 
             <div>
@@ -215,14 +248,30 @@ export const CreatePickup = () => {
               />
             </div>
 
-            <Input
-              label="Estimated Quantity"
-              type="text"
-              value={formData.estimatedQuantity}
-              onChange={(e) => setFormData({ ...formData, estimatedQuantity: e.target.value })}
-              placeholder="e.g., 50 meals, 20kg"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Quantity <span className="text-red-500">*</span></label>
+              <div className="flex items-stretch border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-ngo-orange">
+                <input
+                  type="tel"
+                  value={formData.estimatedQuantity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d+$/.test(val)) setFormData({ ...formData, estimatedQuantity: val });
+                  }}
+                  placeholder="e.g. 50"
+                  required
+                  className="flex-1 px-4 py-3 outline-none bg-white text-gray-800"
+                />
+                <select
+                  value={formData.estimatedUnit}
+                  onChange={(e) => setFormData({ ...formData, estimatedUnit: e.target.value })}
+                  className="px-3 py-3 bg-gray-50 border-l border-gray-300 text-gray-700 text-sm outline-none cursor-pointer"
+                >
+                  <option value="kg">kg of food</option>
+                  <option value="people">no. of people</option>
+                </select>
+              </div>
+            </div>
 
             <Textarea
               label="Notes (Optional)"

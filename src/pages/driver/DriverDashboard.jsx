@@ -11,7 +11,7 @@ export const DriverDashboard = () => {
   const counts = useMemo(() => ({
     all:       assignments.length,
     assigned:  assignments.filter(a => a.status === 'assigned').length,
-    inpicked:  assignments.filter(a => a.status === 'inpicked').length,
+    inpickup:  assignments.filter(a => a.status === 'inpickup').length,
     delivered: assignments.filter(a => ['delivered', 'verified', 'completed'].includes(a.status)).length,
     rejected:  assignments.filter(a => a.status === 'rejected').length,
   }), [assignments]);

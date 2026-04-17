@@ -351,7 +351,7 @@ export const AdminDashboard = () => {
         {[
           { label: 'Total Opportunities', value: filtered.opTotal,    Icon: TrendingUp,  iconBg: 'bg-blue-100',   iconColor: 'text-blue-600',   to: '/coordinator/review-opportunities' },
           { label: 'Assigned',            value: filtered.opAssigned, Icon: Clock,       iconBg: 'bg-amber-100',  iconColor: 'text-amber-600',  to: '/coordinator/review-opportunities?status=assigned' },
-          { label: 'In Pickup',           value: filtered.opInpicked, Icon: Truck,       iconBg: 'bg-orange-100', iconColor: 'text-ngo-orange', to: '/coordinator/review-opportunities?status=InPickup' },
+          { label: 'In-Pickup',           value: filtered.opInpicked, Icon: Truck,       iconBg: 'bg-orange-100', iconColor: 'text-ngo-orange', to: '/coordinator/review-opportunities?status=InPickup' },
           { label: 'Delivered',           value: filtered.opDelivered,Icon: MapPin,      iconBg: 'bg-purple-100', iconColor: 'text-purple-600', to: '/coordinator/review-opportunities?status=delivered' },
           { label: 'Rejected',            value: filtered.opRejected, Icon: TrendingUp,  iconBg: 'bg-red-100',    iconColor: 'text-red-500',    to: '/coordinator/review-opportunities?status=rejected', valueColor: 'text-red-600', hoverBorder: 'hover:border-red-300', iconRotate: 'rotate-180' },
           { label: 'Completed',           value: filtered.opCompleted,Icon: CheckCircle, iconBg: 'bg-green-100',  iconColor: 'text-ngo-green',  to: '/coordinator/review-opportunities?status=completed' },
