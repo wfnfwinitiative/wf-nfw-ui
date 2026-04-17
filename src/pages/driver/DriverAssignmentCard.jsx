@@ -142,7 +142,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
             {['assigned', 'rejected', 'created'].includes(status) ? (
               pickup.scheduledTime && (
                 <>
-                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-orange-200">
                     <Clock className="w-3 h-3 text-orange-600 shrink-0" />
                     <p className="text-xs text-orange-700 font-medium">
                       Pickup By: {new Date(pickup.scheduledTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
@@ -153,7 +153,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
             ) : (
               pickup.pickedUpAt && (
                 <>
-                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
                     <Clock className="w-3 h-3 text-green-600 shrink-0" />
                     <p className="text-xs text-green-700 font-medium">
                       Picked Up: {new Date(pickup.pickedUpAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
@@ -165,7 +165,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
             {['assigned', 'rejected', 'created', 'inpickup'].includes(status) ? (
               delivery.deliveryBy && (
                 <>
-                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-orange-200">
                     <Clock className="w-3 h-3 text-orange-600 shrink-0" />
                     <p className="text-xs text-orange-700 font-medium">
                       Deliver by: {new Date(delivery.deliveryBy).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
@@ -176,7 +176,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
             ) : (
               delivery.deliveredAt && (
                 <>
-                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
                     <Clock className="w-3 h-3 text-green-600 shrink-0" />
                     <p className="text-xs text-green-700 font-medium">
                       Delivered: {new Date(delivery.deliveredAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
@@ -190,19 +190,19 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
 
         {/* Vehicle & Feeding Info */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-            <Truck className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-700">
+          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-blue-200">
+            <Truck className="w-4 h-4 text-blue-500 shrink-0" />
+            <span className="text-xs text-blue-700 font-medium">
               Vehicle {vehicle.number}{vehicle.type ? ` (${vehicle.type})` : ''}
             </span>
           </div>
           {estimated_count != null && (
-            <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-blue-200">
               {estimated_unit === 'people'
-                ? <Users className="w-4 h-4 text-blue-500" />
-                : <Scale className="w-4 h-4 text-blue-500" />
+                ? <Users className="w-4 h-4 text-blue-500 shrink-0" />
+                : <Scale className="w-4 h-4 text-blue-500 shrink-0" />
               }
-              <span className="text-sm text-blue-700 font-medium">
+              <span className="text-xs text-blue-700 font-medium">
                {'Estimated: '} {estimated_count} {estimated_unit === 'people' ? 'people' : 'kg'}
               </span>
             </div>
@@ -213,7 +213,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
         {['delivered', 'completed'].includes(status) && (
           <div className="flex items-center gap-3">
             {food_collected != null && (
-              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
                 <Scale className="w-4 h-4 text-green-600" />
                 <span className="text-sm text-green-700 font-medium">
                   Collected: {food_collected} kg
@@ -221,7 +221,7 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
               </div>
             )}
             {feeding_count != null && (
-              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
                 <Users className="w-4 h-4 text-green-600" />
                 <span className="text-sm text-green-700 font-medium">
                   Fed: {feeding_count} people

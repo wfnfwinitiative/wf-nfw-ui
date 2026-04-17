@@ -264,16 +264,17 @@ pdf.text(`Report Date: ${today}`, 10, 30);
 
     body: tableData,
 
-    // ORANGE HEADER
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+    },
+
     headStyles: {
       fillColor: [249, 115, 22],
       textColor: 255,
       fontStyle: "bold",
-    },
-
-    styles: {
-      fontSize: 9,
-      cellPadding: 3,
+      overflow: "linebreak",
+      minCellHeight: 10,
     },
 
     alternateRowStyles: {
@@ -284,22 +285,22 @@ pdf.text(`Report Date: ${today}`, 10, 30);
     didDrawCell: (data) => {
       if (data.column.index === 4 && data.cell.section === "body") {
         const status = data.cell.raw;
-
-        if (status === "Completed") {
-          data.cell.styles.textColor = [0, 128, 0];
-        }
-
-        if (status === "Created") {
-          data.cell.styles.textColor = [249, 115, 22];
-        }
+        if (status === "Completed") data.cell.styles.textColor = [0, 128, 0];
+        if (status === "Created") data.cell.styles.textColor = [249, 115, 22];
       }
     },
 
     columnStyles: {
-      0: { cellWidth: 10 },
-      5: { cellWidth: 15 },
-      6: { cellWidth: 30 },
-      7: { cellWidth: 30 },
+      0: { cellWidth: 10 },           // ID
+      1: { cellWidth: 30 },           // Donor
+      2: { cellWidth: 30 },           // Spot
+      3: { cellWidth: 28 },           // Driver
+      4: { cellWidth: 20 },           // Status
+      5: { cellWidth: 24 },           // Food Collected
+      6: { cellWidth: 20 },           // People Fed
+      7: { cellWidth: 36 },           // Pickup
+      8: { cellWidth: 36 },           // Delivery
+      9: { cellWidth: 22 },           // Vehicle
     },
   });
 
