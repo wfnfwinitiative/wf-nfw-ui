@@ -25,32 +25,21 @@ export const CreatePickup = () => {
   const drivers = (metadata?.drivers || []).filter(d => d.status === 'active');
   const vehicles = (metadata?.vehicles || []).filter(v => v.is_active !== false);
 
-  // Initialize with current timestamp
   const now = new Date();
-  const currentDateTime = now.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
+  const pad = (n) => String(n).padStart(2, '0');
+  const currentDateTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
   const [formData, setFormData] = useState({
     pickupLocationId: '',
     hungerSpotId: '',
     driverId: '',
-    scheduledDateTime: currentDateTime,
+    pickupEta: currentDateTime,
+    deliveryBy: currentDateTime,
     estimatedQuantity: '',
     estimatedUnit: 'kg',
     vehicleId: '',
     notes: ''
   });
-
-  // Helper to update just the date part
-  const updateScheduledDate = (newDate) => {
-    const [, time] = formData.scheduledDateTime.split('T');
-    setFormData({ ...formData, scheduledDateTime: `${newDate}T${time}` });
-  };
-
-  // Helper to update just the time part
-  const updateScheduledTime = (newTime) => {
-    const [date] = formData.scheduledDateTime.split('T');
-    setFormData({ ...formData, scheduledDateTime: `${date}T${newTime}` });
-  };
 
   useEffect(() => {
     loadData();
@@ -91,8 +80,8 @@ export const CreatePickup = () => {
       estimated_count: parseInt(formData.estimatedQuantity) || 0,
       estimated_unit: formData.estimatedUnit,
       feeding_count: 0,
-      pickup_eta: new Date(formData.scheduledDateTime).toISOString(),
-      delivery_by: new Date(formData.scheduledDateTime).toISOString(),
+      pickup_eta: new Date(formData.pickupEta).toISOString(),
+      delivery_by: new Date(formData.deliveryBy).toISOString(),
       notes: formData.notes || '',
       image_link: '',
       creator_id: user?.id, // Get creator_id from logged-in user
@@ -232,18 +221,17 @@ export const CreatePickup = () => {
 
             <div className="grid md:grid-cols-2 gap-6">
               <Input
-                label="Scheduled Date"
-                type="date"
-                value={formData.scheduledDateTime.split('T')[0]}
-                onChange={(e) => updateScheduledDate(e.target.value)}
+                label="Pickup ETA"
+                type="datetime-local"
+                value={formData.pickupEta}
+                onChange={(e) => setFormData({ ...formData, pickupEta: e.target.value })}
                 required
               />
-
               <Input
-                label="Scheduled Time"
-                type="time"
-                value={formData.scheduledDateTime.split('T')[1]}
-                onChange={(e) => updateScheduledTime(e.target.value)}
+                label="Delivery ETA"
+                type="datetime-local"
+                value={formData.deliveryBy}
+                onChange={(e) => setFormData({ ...formData, deliveryBy: e.target.value })}
                 required
               />
             </div>

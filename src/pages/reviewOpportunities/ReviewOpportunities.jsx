@@ -11,7 +11,7 @@ import { VehicleApi } from '../../services/api/vehicleService';
 import { StatusApi } from '../../services/api/statusService.js';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
-import { Edit, Eye, RefreshCw, MapPin, Building2, Truck, Phone, Scale, Users, FileText, User } from 'lucide-react';
+import { Edit, Eye, RefreshCw, MapPin, Building2, Truck, Phone, Scale, Users, FileText, User, Clock } from 'lucide-react';
 
 export const ReviewOpportunities = () => {
   const navigate = useNavigate();
@@ -285,21 +285,21 @@ export const ReviewOpportunities = () => {
       {/* Opportunities Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {paginated.map((opportunity) => (
-        <div key={opportunity.opportunity_id} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden transition-all duration-200 flex flex-col hover:shadow-lg">
+          <div key={opportunity.opportunity_id} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden transition-all duration-200 flex flex-col hover:shadow-lg">
             {/* Header */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="font-semibold text-gray-900 line-clamp-1">
                   {`${opportunity.donor_name} → ${opportunity.hunger_spot_name}`}
                 </h3>
-                <div className="flex 1">
-                  <User className="w-4 h-4 text-orange-500" />
-                  <span className="text-sm text-orange-500">Driver: {opportunity.driver_name}</span>
+                <div className="flex 1 gap 2">
+                  <User className="w-3 h-3 text-orange-500 mt-0.5 shrink-0" />
+                  <span className="text-sm font-medium text-orange-500">Driver: {opportunity.driver_name}</span>
                 </div>
                 <div className="flex items-center gap-1 flex-1 px-1 py-1   rounded-lg ">
-                      <a href={`tel:${opportunity.driver_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3" />{opportunity.driver_contact_no}
-                      </a>
+                  <a href={`tel:${opportunity.driver_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                    <Phone className="w-3 h-3" />{opportunity.driver_contact_no}
+                  </a>
                 </div>
               </div>
               <StatusBadge status={opportunity.status_name || opportunity.status} />
@@ -345,29 +345,50 @@ export const ReviewOpportunities = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                    {opportunity.pickup_eta && (
-                      <p className="text-xs text-orange-600 mt-0.5">
-                        Pickup By: {new Date(opportunity.pickup_eta).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                      </p>
+              {(() => {
+                const oppStatus = (opportunity.status_name || opportunity.status || '').toLowerCase();
+                const isPickcupPending = ['assigned', 'rejected', 'created'].includes(oppStatus);
+                const isDeliveryPending = ['assigned', 'rejected', 'created', 'inpickup'].includes(oppStatus);
+                const fmt = (dt) => new Date(dt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', hour12: true, timeZone: 'Asia/Kolkata' });
+                return (
+                  <div className="flex items-center gap-3">
+                    {isPickcupPending ? (
+                      opportunity.pickup_eta && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200">
+                          <><Clock className="w-3 h-3 text-orange-700 shrink-0" /><p className="text-xs text-orange-700 font-medium">Pickup By: {fmt(opportunity.pickup_eta)}</p></>
+                        </div>
+                      )
+                    ) : (
+                      opportunity.picked_up_at && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                          <><Clock className="w-3 h-3 text-green-700 shrink-0" /><p className="text-xs text-green-700 font-medium">Picked Up: {fmt(opportunity.picked_up_at)}</p></>
+                        </div>
+                      )
                     )}
-                </div>
-                <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                    {opportunity.delivery_by && (
-                      <p className="text-xs text-orange-600 mt-0.5">
-                        Deliver by: {new Date(opportunity.delivery_by).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                      </p>
-                    )}
+
+                      {isDeliveryPending ? (
+                        opportunity.delivery_by && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200">
+                          <><Clock className="w-3 h-3 text-orange-700 shrink-0" /><p className="text-xs text-orange-700 font-medium">Deliver by: {fmt(opportunity.delivery_by)}</p></>
+                        </div>
+                        )
+                      ) : (
+                        opportunity.delivered_at && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                          <><Clock className="w-3 h-3 text-green-700 shrink-0" /><p className="text-xs text-green-700 font-medium">Delivered: {fmt(opportunity.delivered_at)}</p></>
+                        </div>     
+                        )
+                      )}
                   </div>
-              </div>
+                );
+              })()}
 
 
               {/* Vehicle & Estimated */}
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                   <Truck className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-700">Vehicle: {opportunity.vehicle_name || 'No Vehicle'}</span>
+                  <span className="text-xs text-gray-700">Vehicle: {opportunity.vehicle_name || 'No Vehicle'}</span>
                 </div>
                 {opportunity.estimated_count != null && (
                   <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
@@ -375,7 +396,7 @@ export const ReviewOpportunities = () => {
                       ? <Users className="w-4 h-4 text-blue-500" />
                       : <Scale className="w-4 h-4 text-blue-500" />
                     }
-                    <span className="text-sm text-blue-700 font-medium">
+                    <span className="text-xs text-blue-700 font-medium">
                       Estimated: {opportunity.estimated_count} {opportunity.estimated_unit === 'people' ? 'people' : 'kg'}
                     </span>
                   </div>
@@ -388,7 +409,7 @@ export const ReviewOpportunities = () => {
                   {opportunity.food_collected != null && (
                     <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
                       <Scale className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-700 font-medium">
+                      <span className="text-xs text-green-700 font-medium">
                         Collected: {opportunity.food_collected} kg
                       </span>
                     </div>
@@ -396,7 +417,7 @@ export const ReviewOpportunities = () => {
                   {opportunity.feeding_count != null && (
                     <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
                       <Users className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-700 font-medium">
+                      <span className="text-xs text-green-700 font-medium">
                         Fed: {opportunity.feeding_count} people
                       </span>
                     </div>

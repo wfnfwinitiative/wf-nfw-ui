@@ -72,6 +72,7 @@ export function toDriverAssignment(opp) {
       organizationName: opp.donor_name,
       contactNumber:    opp.pickup_contact_no,
       scheduledTime:    opp.pickup_eta,
+      pickedUpAt:       opp.picked_up_at || null,
       location: {
         address: opp.pickup_location,
         lat:     opp.pickup_lat ?? null,
@@ -88,6 +89,7 @@ export function toDriverAssignment(opp) {
         lng:     opp.drop_lng ?? null,
       },
       deliveryBy:     opp.delivery_by,
+      deliveredAt:    opp.delivered_at || null,
     },
     vehicle:  { number: opp.vehicle_name || `#${opp.vehicle_id}` },
     driver:   { name: opp.driver_name },

@@ -138,21 +138,53 @@ export function DriverAssignmentCard({ assignment, onClick, onStatusUpdate, onRe
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              {pickup.scheduledTime && (
-                <p className="text-xs text-orange-600 mt-0.5">
-                  Pickup By: {new Date(pickup.scheduledTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                </p>
-              )}
-          </div>
-          <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              {delivery.deliveryBy && (
-                <p className="text-xs text-orange-600 mt-0.5">
-                  Deliver by: {new Date(delivery.deliveryBy).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                </p>
-              )}
-            </div>
+          <div className="flex items-center gap-3">
+            {['assigned', 'rejected', 'created'].includes(status) ? (
+              pickup.scheduledTime && (
+                <>
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200">
+                    <Clock className="w-3 h-3 text-orange-600 shrink-0" />
+                    <p className="text-xs text-orange-700 font-medium">
+                      Pickup By: {new Date(pickup.scheduledTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                </>
+              )
+            ) : (
+              pickup.pickedUpAt && (
+                <>
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                    <Clock className="w-3 h-3 text-green-600 shrink-0" />
+                    <p className="text-xs text-green-700 font-medium">
+                      Picked Up: {new Date(pickup.pickedUpAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                </>
+              )
+            )}
+            {['assigned', 'rejected', 'created', 'inpickup'].includes(status) ? (
+              delivery.deliveryBy && (
+                <>
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200">
+                    <Clock className="w-3 h-3 text-orange-600 shrink-0" />
+                    <p className="text-xs text-orange-700 font-medium">
+                      Deliver by: {new Date(delivery.deliveryBy).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                </>
+              )
+            ) : (
+              delivery.deliveredAt && (
+                <>
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                    <Clock className="w-3 h-3 text-green-600 shrink-0" />
+                    <p className="text-xs text-green-700 font-medium">
+                      Delivered: {new Date(delivery.deliveredAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                </>
+              )
+            )}
         </div>
 
 

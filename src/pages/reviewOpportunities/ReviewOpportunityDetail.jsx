@@ -40,23 +40,12 @@ export const ReviewOpportunityDetail = () => {
     hungerSpotId: '',
     driverId: '',
     vehicleId: '',
-    scheduledDateTime: '',
+    pickupEta: '',
+    deliveryBy: '',
     estimatedQuantity: '',
     estimatedUnit: 'kg',
     notes: ''
   });
-
-  // Helper to update just the date part
-  const updateScheduledDate = (newDate) => {
-    const [, time] = formData.scheduledDateTime.split('T');
-    setFormData({ ...formData, scheduledDateTime: `${newDate}T${time || '00:00'}` });
-  };
-
-  // Helper to update just the time part
-  const updateScheduledTime = (newTime) => {
-    const [date] = formData.scheduledDateTime.split('T');
-    setFormData({ ...formData, scheduledDateTime: `${date || new Date().toISOString().slice(0, 10)}T${newTime}` });
-  };
 
   useEffect(() => {
     // Clear previous data when id changes
@@ -67,7 +56,8 @@ export const ReviewOpportunityDetail = () => {
       hungerSpotId: '',
       driverId: '',
       vehicleId: '',
-      scheduledDateTime: '',
+      pickupEta: '',
+      deliveryBy: '',
       estimatedQuantity: '',
       estimatedUnit: 'kg',
       notes: ''
@@ -122,7 +112,8 @@ export const ReviewOpportunityDetail = () => {
         hungerSpotId: opp.hunger_spot_id?.toString() || '',
         driverId: opp.driver_id?.toString() || '',
         vehicleId: opp.vehicle_id?.toString() || '',
-        scheduledDateTime: opp.pickup_eta ? new Date(opp.pickup_eta).toISOString().slice(0, 16) : '',
+        pickupEta: opp.pickup_eta ? new Date(new Date(opp.pickup_eta).getTime() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 16) : '',
+        deliveryBy: opp.delivery_by ? new Date(new Date(opp.delivery_by).getTime() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 16) : '',
         estimatedQuantity: opp.estimated_count?.toString() || '',
         estimatedUnit: opp.estimated_unit || 'kg',
         notes: opp.notes || '',
@@ -157,15 +148,13 @@ export const ReviewOpportunityDetail = () => {
       vehicle_id: parseInt(formData.vehicleId) || opportunity.vehicle_id,
       estimated_count: parseInt(formData.estimatedQuantity) || opportunity.estimated_count,
       estimated_unit: formData.estimatedUnit,
-      pickup_eta: new Date(formData.scheduledDateTime).toISOString(),
-      delivery_by: new Date(formData.scheduledDateTime).toISOString(),
+      pickup_eta: new Date(new Date(formData.pickupEta).getTime() - 5.5 * 60 * 60 * 1000).toISOString(),
+      delivery_by: new Date(new Date(formData.deliveryBy).getTime() - 5.5 * 60 * 60 * 1000).toISOString(),
       notes: formData.notes || '',
       creator_id: user?.id, // Use logged-in user's ID instead of original creator
       image_link: opportunity.image_link || '',
       pickup_folder_id: opportunity.pickup_folder_id || null,
       delivery_folder_id: opportunity.delivery_folder_id || null,
-      start_time: opportunity.start_time || null,
-      end_time: opportunity.end_time || null,
     };
   };
 
@@ -385,18 +374,17 @@ export const ReviewOpportunityDetail = () => {
 
           <div className="grid md:grid-cols-2 gap-6">
             <Input
-              label="Scheduled Date"
-              type="date"
-              value={formData.scheduledDateTime.split('T')[0]}
-              onChange={(e) => updateScheduledDate(e.target.value)}
+              label="Pickup ETA"
+              type="datetime-local"
+              value={formData.pickupEta}
+              onChange={(e) => setFormData({ ...formData, pickupEta: e.target.value })}
               disabled={isReadonly || isLimitedEdit}
             />
-
             <Input
-              label="Scheduled Time"
-              type="time"
-              value={formData.scheduledDateTime.split('T')[1]}
-              onChange={(e) => updateScheduledTime(e.target.value)}
+              label="Delivery ETA"
+              type="datetime-local"
+              value={formData.deliveryBy}
+              onChange={(e) => setFormData({ ...formData, deliveryBy: e.target.value })}
               disabled={isReadonly || isLimitedEdit}
             />
           </div>
