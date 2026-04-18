@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from '../components/Logo';
 import { ProfileDropdown } from '../components/ProfileDropdown';
-import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag, ShieldCheck,BarChart   } from 'lucide-react';
+import { Menu, X, Home, Users, Truck, MapPin, FileCheck, Flag, ShieldCheck, ClipboardList   } from 'lucide-react';
 import { ToastContainer, useToast } from '../components/common/Toast';
 import { Footer } from '../components/Footer';
 
@@ -21,7 +21,7 @@ export const DashboardLayout = () => {
       { icon: Users, label: 'Coordinators', path: '/admin/coordinators' },
       { icon: Truck, label: 'Drivers', path: '/admin/drivers' },
       { icon: Flag, label: 'Feature Flag', path: '/admin/feature-flag' },
-      { icon: BarChart, label: 'Report', path: '/admin/report' },
+      { icon: ClipboardList , label: 'Report', path: '/admin/report' },
     ],
     coordinator: [
       { icon: Home, label: 'Dashboard', path: '/coordinator/dashboard' },
@@ -32,7 +32,7 @@ export const DashboardLayout = () => {
       { icon: Truck, label: 'Create Opportunity', path: '/coordinator/create-opportunity' },
       { icon: FileCheck, label: 'Review Opportunities', path: '/coordinator/review-opportunities' },
       { icon: Flag, label: 'Feature Flag', path: '/coordinator/feature-flag' },
-      { icon: BarChart, label: 'Report', path: '/coordinator/report' },
+      { icon: ClipboardList , label: 'Report', path: '/coordinator/report' },
     ],
     driver: [
       { icon: Home, label: 'Dashboard', path: '/driver/dashboard' },

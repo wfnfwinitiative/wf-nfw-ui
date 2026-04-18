@@ -13,7 +13,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { TrendingUp, CheckCircle, Clock, Truck, Users, Home, MapPin, Download, ShieldCheck, Loader2 } from 'lucide-react';
+import { TrendingUp, CheckCircle, Clock, Truck, Users, Home, MapPin, Download, ShieldCheck, Loader2, ClipboardList} from 'lucide-react';
 
 import { HeroBanner } from '../../components/common';
 import { useAuth } from '../../auth/AuthContext';
@@ -233,10 +233,6 @@ export const AdminDashboard = () => {
             <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)}
               className="rounded-xl border border-gray-300 px-3 py-2 text-sm text-ngo-dark bg-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none min-h-[44px]" />
           </div>
-          <Button onClick={() => navigate(isAdmin ? '/admin/report' : '/coordinator/report')} variant="primary" className="w-full sm:w-auto shrink-0 touch-manipulation">
-            <Download className="w-5 h-5" />
-            Download Report
-          </Button>
         </div>
       </div>
       {loading && !data ? (
