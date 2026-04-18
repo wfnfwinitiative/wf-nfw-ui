@@ -11,7 +11,7 @@ import { VehicleApi } from '../../services/api/vehicleService';
 import { StatusApi } from '../../services/api/statusService.js';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
-import { Edit, Eye, RefreshCw, MapPin, Building2, Truck, Phone, Scale, Users, FileText, User, Clock } from 'lucide-react';
+import { Edit, Eye, RefreshCw, MapPin, Building2, Truck, Phone, Scale, Users, FileText, User, Clock, Loader2 } from 'lucide-react';
 
 export const ReviewOpportunities = () => {
   const navigate = useNavigate();
@@ -191,17 +191,6 @@ export const ReviewOpportunities = () => {
     navigate(`/coordinator/review-opportunities/${opportunity.opportunity_id}?mode=edit`);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner size="lg" />
-          <div className="text-lg text-gray-600">Loading opportunities...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="mb-4 md:mb-6">
@@ -283,6 +272,12 @@ export const ReviewOpportunities = () => {
       </div>
 
       {/* Opportunities Grid */}
+      {loading ? (
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {paginated.map((opportunity) => (
           <div key={opportunity.opportunity_id} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden transition-all duration-200 flex flex-col hover:shadow-lg">
@@ -453,16 +448,17 @@ export const ReviewOpportunities = () => {
           </div>
         ))}
       </div>
+      )}
 
-      {paginated.length === 0 && (
+      {!loading && paginated.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           No opportunities found matching your criteria.
         </div>
       )}
 
       {/* Pagination */}
-      {filtered.length > ITEMS_PER_PAGE && (
-        <div className="mt-8">
+      {!loading && (
+        <div className="mt-6">
           <Pagination
             totalItems={filtered.length}
             currentPage={currentPage}

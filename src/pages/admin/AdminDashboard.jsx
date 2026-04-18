@@ -13,7 +13,7 @@ import {
   Line,
   LabelList
 } from 'recharts';
-import { TrendingUp, CheckCircle, Clock, Truck, Users, Home, MapPin, Download, ShieldCheck } from 'lucide-react';
+import { TrendingUp, CheckCircle, Clock, Truck, Users, Home, MapPin, Download, ShieldCheck, Loader2 } from 'lucide-react';
 
 import { HeroBanner } from '../../components/common';
 import { useAuth } from '../../auth/AuthContext';
@@ -224,14 +224,6 @@ export const AdminDashboard = () => {
     return () => { isCancelled = true; };
   }, [dateRange]);
 
-  if (loading && !data) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <p className="text-ngo-gray">Loading dashboard...</p>
-      </div>
-    );
-  }
-
   const handleDownload = () => {
     if (!data) return;
 
@@ -325,22 +317,19 @@ export const AdminDashboard = () => {
           <p className="text-sm md:text-base text-ngo-gray">Operational and analytics overview</p>
         </div>
         <div className="flex flex-row items-center justify-end gap-3 flex-wrap md:flex-nowrap min-h-[44px]">
-          <span className="text-sm md:text-base text-ngo-gray whitespace-nowrap">Date range:</span>
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm md:text-base text-ngo-dark bg-white focus:ring-2 focus:ring-ngo-orange focus:border-transparent outline-none min-h-[44px] touch-manipulation"
-          >
-            <option value="today">Today</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </select>
-           <Button onClick={handleDownload} variant="primary" className="w-full sm:w-auto shrink-0 touch-manipulation">
+          <Button onClick={() => navigate(isAdmin ? '/admin/report' : '/coordinator/report')} variant="primary" className="w-full sm:w-auto shrink-0 touch-manipulation">
             <Download className="w-5 h-5" />
             Download Report
           </Button>
         </div>
       </div>
+      {loading && !data ? (
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
+        </div>
+      ) : (
+      <>
 
       {isCoordinator && (
       <section>
@@ -457,6 +446,8 @@ export const AdminDashboard = () => {
           </div>
         </div>
       </section>
+      </>
+      )}
     </div>
   );
 };

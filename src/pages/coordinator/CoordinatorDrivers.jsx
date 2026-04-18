@@ -63,14 +63,6 @@ export const CoordinatorDrivers = () => {
     setCurrentPage(1);
   }, [searchQuery, sortBy]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <Loader2 className="w-8 h-8 animate-spin text-ngo-orange" />
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -85,7 +77,12 @@ export const CoordinatorDrivers = () => {
         <SortDropdown value={sortBy} onChange={setSortBy} />
       </div>
 
-      {paginated.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
+        </div>
+      ) : paginated.length === 0 ? (
         <p className="text-center text-ngo-gray py-8">No drivers found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -109,11 +106,15 @@ export const CoordinatorDrivers = () => {
         </div>
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalItems={sorted.length}
-        onPageChange={setCurrentPage}
-      />
+      {!loading && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={sorted.length}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
     </div>
   );
 };

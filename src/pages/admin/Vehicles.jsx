@@ -336,8 +336,9 @@ export const Vehicles = () => {
       />
 
       {loading ? (
-        <div className="flex justify-center items-center p-16">
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
           <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
         </div>
       ) : (
         <>

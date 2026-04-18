@@ -26,7 +26,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
 import { Button } from "../../components/ui/Button";
-import { Search, Download } from "lucide-react";
+import { Search, Download, Loader2 } from "lucide-react";
 import logo from "../../assets/NoFoodWaste_Logo_Orange.png";
 
 const ReportScreen = () => {
@@ -60,6 +60,7 @@ const ReportScreen = () => {
   people_fed: 0,
   });
 
+  const [loading, setLoading] = useState(false);
   const [drivers, setDrivers] = useState([]);
   const [spots, setSpots] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -153,20 +154,16 @@ const ReportScreen = () => {
   });
 
   // ---------------- API ----------------
-  const handleSearch = async () => {
+  const handleSearch = async (overrideFilters) => {
+    setLoading(true);
+    const f = overrideFilters || filters;
     const payload = {
-      ...filters,
-      driver_ids: filters.driver_ids.length ? filters.driver_ids : null,
-      hunger_spot_ids: filters.hunger_spot_ids.length
-        ? filters.hunger_spot_ids
-        : null,
-      vehicle_ids: filters.vehicle_ids.length ? filters.vehicle_ids : null,
-      start_date: filters.start_date
-        ? filters.start_date + "T00:00:00"
-        : null,
-      end_date: filters.end_date
-        ? filters.end_date + "T23:59:59"
-        : null,
+      ...f,
+      driver_ids: f.driver_ids?.length ? f.driver_ids : null,
+      hunger_spot_ids: f.hunger_spot_ids?.length ? f.hunger_spot_ids : null,
+      vehicle_ids: f.vehicle_ids?.length ? f.vehicle_ids : null,
+      start_date: f.start_date ? f.start_date + "T00:00:00" : null,
+      end_date: f.end_date ? f.end_date + "T23:59:59" : null,
     };
 
     const res = await getReport(payload);
@@ -174,6 +171,7 @@ const ReportScreen = () => {
     setSummary(res.summary);
     setData(res.grid);
     setGraph(res.graph);
+    setLoading(false);
   };
 
   // ---------------- DATE FORMAT ----------------
@@ -320,30 +318,15 @@ pdf.text(`Report Date: ${today}`, 10, 30);
   pdf.save(`NoFoodWaste_Report_${fileDate}.pdf`);
 };
   return (
-    <div className="report-container">
-      <div className="report-title">Operations Summary Report</div>
-
-      {/* KPI */}
-      <div className="summary-container">
-        <div className="card">
-          <div className="card-title">Opportunity Count</div>
-          <div className="card-value text-[#f97316] font-bold">
-          {summary.opportunity_count}
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-title">Food Collected</div>
-          <div className="card-value text-[#f97316] font-bold">
-            {summary.total_food} kg
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-title">People Fed</div>
-          <div className="card-value text-[#f97316] font-bold">
-            {summary.people_fed} people
-          </div>
-        </div>        
-      </div>
+    <div>
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-1 md:mb-2">
+          Operations Summary Report
+        </h1>
+        <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
+          Report of the food rescue operations conducted by NoFoodWaste team, including key metrics, trends, and insights.
+        </p>
+     </div>
 
       {/* FILTERS */}
       <div className="flex flex-wrap gap-3 items-center mb-6">
@@ -351,18 +334,22 @@ pdf.text(`Report Date: ${today}`, 10, 30);
           type="date"
           className="custom-date-input"
           value={filters.start_date}
-          onChange={(e) =>
-            setFilters({ ...filters, start_date: e.target.value })
-          }
+          onChange={(e) => {
+            const updated = { ...filters, start_date: e.target.value };
+            setFilters(updated);
+            handleSearch(updated);
+          }}
         />
 
         <input
           type="date"
           className="custom-date-input"
           value={filters.end_date}
-          onChange={(e) =>
-            setFilters({ ...filters, end_date: e.target.value })
-          }
+          onChange={(e) => {
+            const updated = { ...filters, end_date: e.target.value };
+            setFilters(updated);
+            handleSearch(updated);
+          }}
         />
 
         <MultiSelectDropdown
@@ -399,7 +386,7 @@ pdf.text(`Report Date: ${today}`, 10, 30);
           }
           options={donorOptions}
           placeholder="Donor"
-        />        
+        />
         <MultiSelectDropdown
           value={filters.status_ids}
           onChange={(val) =>
@@ -416,6 +403,35 @@ pdf.text(`Report Date: ${today}`, 10, 30);
         <Button onClick={downloadPDF}>
           <Download className="w-4 h-4" /> Download
         </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
+        </div>
+      ) : (
+      <>
+      {/* KPI */}
+      <div className="summary-container">
+        <div className="card">
+          <div className="card-title">Opportunity Count</div>
+          <div className="card-value text-[#f97316] font-bold">
+          {summary.opportunity_count}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-title">Food Collected</div>
+          <div className="card-value text-[#f97316] font-bold">
+            {summary.total_food} kg
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-title">People Fed</div>
+          <div className="card-value text-[#f97316] font-bold">
+            {summary.people_fed} people
+          </div>
+        </div>
       </div>
 
       {/* GRAPH */}
@@ -478,6 +494,8 @@ pdf.text(`Report Date: ${today}`, 10, 30);
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </div>
   );
 };
