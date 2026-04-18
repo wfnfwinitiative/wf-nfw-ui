@@ -152,16 +152,20 @@ export const ReviewOpportunities = () => {
       );
     }
 
-    // Date filters
-    if (fromDate) {
-      const from = new Date(fromDate);
-      list = list.filter((opp) => new Date(opp.createdAt || opp.created_at) >= from);
-    }
-
-    if (toDate) {
-      const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999); // End of day
-      list = list.filter((opp) => new Date(opp.createdAt || opp.created_at) <= to);
+    // Date filters — pending ops filter by delivery_by, completed ops filter by delivered_at
+    if (fromDate || toDate) {
+      const from = fromDate ? new Date(fromDate) : null;
+      const to = toDate ? (() => { const d = new Date(toDate); d.setHours(23, 59, 59, 999); return d; })() : null;
+      list = list.filter((opp) => {
+        const oppStatus = (opp.status_name || opp.status || '').toLowerCase();
+        const isDeliveryPending = ['assigned', 'rejected', 'created', 'inpickup'].includes(oppStatus);
+        const rawDate = isDeliveryPending ? opp.delivery_by : opp.delivered_at;
+        const relevantDate = rawDate ? new Date(rawDate) : (opp.created_at ? new Date(opp.created_at) : null);
+        if (!relevantDate || isNaN(relevantDate)) return true;
+        if (from && relevantDate < from) return false;
+        if (to && relevantDate > to) return false;
+        return true;
+      });
     }
 
     // Status filter - case insensitive
