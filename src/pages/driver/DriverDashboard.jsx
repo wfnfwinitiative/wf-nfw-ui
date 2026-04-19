@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DriverAssignmentsGrid } from './DriverAssignmentsGrid';
 import { HeroBanner } from '../../components/common';
 import { DASHBOARD_FILTERS } from './utils/dashboardConfig';
+import { useDriverTasksContext } from '../../contexts/DriverTasksContext';
 
 export const DriverDashboard = () => {
   const [activeFilter, setActiveFilter] = useState('all');
-  const [counts, setCounts] = useState({ all: 0, assigned: 0, inpicked: 0, delivered: 0 });
+  const { assignments } = useDriverTasksContext();
+
+  const counts = useMemo(() => ({
+    all:       assignments.length,
+    assigned:  assignments.filter(a => a.status === 'assigned').length,
+    inpickup:  assignments.filter(a => a.status === 'inpickup').length,
+    delivered: assignments.filter(a => ['delivered', 'verified', 'completed'].includes(a.status)).length,
+    rejected:  assignments.filter(a => a.status === 'rejected').length,
+  }), [assignments]);
 
   return (
     <div className="space-y-6">
       <HeroBanner />
 
       {/* Filter Cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
         {DASHBOARD_FILTERS.map((filter) => {
           const Icon = filter.icon;
           const isActive = activeFilter === filter.key;
@@ -47,7 +56,6 @@ export const DriverDashboard = () => {
         </h2>
         <DriverAssignmentsGrid
           statusFilter={DASHBOARD_FILTERS.find((f) => f.key === activeFilter)?.statuses}
-          onCountsChange={setCounts}
         />
       </div>
     </div>

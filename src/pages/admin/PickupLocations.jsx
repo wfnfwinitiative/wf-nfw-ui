@@ -64,7 +64,7 @@ export const PickupLocations = () => {
       // Align with error handling in other admin pages (e.g., Coordinators)
       // which console logs but does not always show a UI error for the initial load.
       setLocations([]);
-      setPageError('Failed to load pickup locations. See console for details.');
+      setPageError('Failed to load donor locations. See console for details.');
     } finally {
       setLoading(false);
     }
@@ -439,7 +439,7 @@ export const PickupLocations = () => {
 
       <ConfirmationModal
         open={deleteConfirm.open}
-        message="Are you sure you want to deactivate this pickup location?"
+        message="Are you sure you want to deactivate this donor location?"
         confirmLabel="Deactivate"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
@@ -447,15 +447,16 @@ export const PickupLocations = () => {
 
       <ConfirmationModal
         open={activateConfirm.open}
-        message="Are you sure you want to activate this pickup location?"
+        message="Are you sure you want to activate this donor location?"
         confirmLabel="Activate"
         onConfirm={handleActivateConfirm}
         onCancel={() => setActivateConfirm({ open: false, id: null })}
       />
 
       {loading ? (
-        <div className="flex justify-center items-center p-16">
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
           <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
         </div>
       ) : (
         <>

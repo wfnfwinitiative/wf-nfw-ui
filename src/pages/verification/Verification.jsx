@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockApi } from '../../services/mockApi';
 import { DataTable } from '../../components/DataTable';
-import { Button } from '../../components/ui/Button';
-import { StatusBadge } from '../../components/StatusBadge';
+import { StatusBadge, Button } from '../../components/common';
 import { Eye } from 'lucide-react';
 
 export const Verification = () => {

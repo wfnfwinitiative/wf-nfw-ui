@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from '../../components/ui';
 import { Button, Input, Select, Card, CardHeader, CardBody, StatusBadge } from '../../components/common';
 import { Pagination, ITEMS_PER_PAGE } from '../../components/pagination/Pagination';
@@ -11,30 +11,44 @@ import { VehicleApi } from '../../services/api/vehicleService';
 import { StatusApi } from '../../services/api/statusService.js';
 import { useReviewOpportunitiesMetadata } from '../../contexts/ReviewOpportunitiesContext';
 import { Spinner } from '../../components/common/Spinner';
-import { Edit, Eye } from 'lucide-react';
+import { Edit, Eye, RefreshCw, MapPin, Building2, Truck, Phone, Scale, Users, FileText, User, Clock, Loader2 } from 'lucide-react';
 
 export const ReviewOpportunities = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Pre-apply status filter when navigated from dashboard with ?status=xxx
+  const initialStatus = new URLSearchParams(location.search).get('status') || 'all';
   const { metadata, updateMetadata } = useReviewOpportunitiesMetadata();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const today = new Date().toISOString().slice(0, 10);
+  const oneMonthAgo = (() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
   const [searchQuery, setSearchQuery] = useState('');
-  const [fromDate, setFromDate] = useState(today);
+  const [fromDate, setFromDate] = useState(oneMonthAgo);
   const [toDate, setToDate] = useState(today);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [currentPage, setCurrentPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use metadata from context instead of local state
   const { pickupLocations, hungerSpots, drivers, vehicles, statuses, statusMap } = metadata;
 
+  // Refetch every time the user navigates to this page (location.key changes on each visit)
+  // Also re-apply any ?status= filter from the URL
   useEffect(() => {
+    const status = new URLSearchParams(location.search).get('status') || 'all';
+    setStatusFilter(status);
     loadOpportunities();
-  }, []);
+  }, [location.key]);
 
-  const loadOpportunities = async () => {
+  const loadOpportunities = async (silent = false) => {
     try {
-      setLoading(true);
+      if (silent) setRefreshing(true); else setLoading(true);
 
       // Check if we need to load metadata
       const needsMetadata = !pickupLocations.length || !hungerSpots.length || !drivers.length || !vehicles.length || !statuses.length;
@@ -120,6 +134,7 @@ export const ReviewOpportunities = () => {
       console.error('Error loading opportunities:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -137,16 +152,20 @@ export const ReviewOpportunities = () => {
       );
     }
 
-    // Date filters
-    if (fromDate) {
-      const from = new Date(fromDate);
-      list = list.filter((opp) => new Date(opp.createdAt || opp.created_at) >= from);
-    }
-
-    if (toDate) {
-      const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999); // End of day
-      list = list.filter((opp) => new Date(opp.createdAt || opp.created_at) <= to);
+    // Date filters — pending ops filter by delivery_by, completed ops filter by delivered_at
+    if (fromDate || toDate) {
+      const from = fromDate ? new Date(fromDate) : null;
+      const to = toDate ? (() => { const d = new Date(toDate); d.setHours(23, 59, 59, 999); return d; })() : null;
+      list = list.filter((opp) => {
+        const oppStatus = (opp.status_name || opp.status || '').toLowerCase();
+        const isDeliveryPending = ['assigned', 'rejected', 'created', 'inpickup'].includes(oppStatus);
+        const rawDate = isDeliveryPending ? opp.delivery_by : opp.delivered_at;
+        const relevantDate = rawDate ? new Date(rawDate) : (opp.created_at ? new Date(opp.created_at) : null);
+        if (!relevantDate || isNaN(relevantDate)) return true;
+        if (from && relevantDate < from) return false;
+        if (to && relevantDate > to) return false;
+        return true;
+      });
     }
 
     // Status filter - case insensitive
@@ -175,17 +194,6 @@ export const ReviewOpportunities = () => {
     // navigate to detail page in edit mode
     navigate(`/coordinator/review-opportunities/${opportunity.opportunity_id}?mode=edit`);
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner size="lg" />
-          <div className="text-lg text-gray-600">Loading opportunities...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -240,7 +248,7 @@ export const ReviewOpportunities = () => {
               />
             </div>
 
-            <div className="w-full flex items-end">
+            <div className="w-full flex items-end gap-2">
               <Button
                 onClick={() => {
                   setSearchQuery('');
@@ -249,9 +257,18 @@ export const ReviewOpportunities = () => {
                   setStatusFilter('all');
                 }}
                 variant="secondary"
-                className="w-full"
+                className="flex-1"
               >
                 Clear Filters
+              </Button>
+              <Button
+                onClick={() => loadOpportunities(true)}
+                variant="outline"
+                disabled={refreshing}
+                className="shrink-0"
+                title="Refresh status"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
@@ -259,73 +276,193 @@ export const ReviewOpportunities = () => {
       </div>
 
       {/* Opportunities Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      {loading ? (
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
+        </div>
+      ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {paginated.map((opportunity) => (
-          <Card key={opportunity.opportunity_id} className="h-full">
-            <CardHeader className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 break-words">
-                  {opportunity.name || 'Unnamed Opportunity'}
+          <div key={opportunity.opportunity_id} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden transition-all duration-200 flex flex-col hover:shadow-lg">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-gray-900 line-clamp-1">
+                  {`${opportunity.donor_name} → ${opportunity.hunger_spot_name}`}
                 </h3>
-                <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-ngo-orange">
-                  {opportunity.pickupLocationName || opportunity.hungerSpotName || 'No location'}
-                </p>
+                <div className="flex 1 gap 2">
+                  <User className="w-3 h-3 text-orange-500 mt-0.5 shrink-0" />
+                  <span className="text-sm font-medium text-orange-500">Driver: {opportunity.driver_name}</span>
+                </div>
+                <div className="flex items-center gap-1 flex-1 px-1 py-1   rounded-lg ">
+                  <a href={`tel:${opportunity.driver_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                    <Phone className="w-3 h-3" />{opportunity.driver_contact_no}
+                  </a>
+                </div>
               </div>
-              <StatusBadge status={opportunity.status} />
-            </CardHeader>
+              <StatusBadge status={opportunity.status_name || opportunity.status} />
+            </div>
 
-            <CardBody className="space-y-2">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Description:</span>{' '}
-                {opportunity.description || 'No description'}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Hunger Spot:</span>{' '}
-                {opportunity.hungerSpotName || 'Unknown'}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Driver:</span>{' '}
-                {opportunity.driverName || 'Unassigned'}
-                {opportunity.driverPhone ? ` (${opportunity.driverPhone})` : ''}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Vehicle:</span>{' '}
-                {opportunity.vehicleNumber || 'Unassigned'}
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Created:</span>{' '}
-                {new Date(opportunity.created_at).toLocaleDateString()}
-              </p>
-
-              <div className="mt-4 flex gap-2">
-                <Button variant="secondary" className="flex-1" onClick={() => handleView(opportunity)}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  View
-                </Button>
-                <Button 
-                  variant="primary" 
-                  className="flex-1" 
-                  onClick={() => handleEdit(opportunity)}
-                  disabled={opportunity.status === 'Completed' || opportunity.status === 'completed' || ['inpickup', 'inpicked'].includes(opportunity.status?.toLowerCase())}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
+            {/* Body */}
+            <div className="p-4 space-y-4 flex-1">
+              {/* Donor Location */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Donor Location</p>
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">{opportunity.donor_name || 'Donor TBD'}</p>
+                    {opportunity.pickup_location && (
+                      <p className="text-xs text-gray-500">{opportunity.pickup_location}</p>
+                    )}
+                    {opportunity.pickup_contact_no && (
+                      <a href={`tel:${opportunity.pickup_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />{opportunity.pickup_contact_no}
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
-            </CardBody>
-          </Card>
+
+              {/* Hunger Spot */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hunger Spot</p>
+                <div className="flex items-start gap-2">
+                  <Building2 className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">{opportunity.hunger_spot_name || 'Hunger Spot TBD'}</p>
+                    {opportunity.drop_location && (
+                      <p className="text-xs text-gray-500">{opportunity.drop_location}</p>
+                    )}
+                    {opportunity.drop_location_contact_no && (
+                      <a href={`tel:${opportunity.drop_location_contact_no}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />{opportunity.drop_location_contact_no}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {(() => {
+                const oppStatus = (opportunity.status_name || opportunity.status || '').toLowerCase();
+                const isPickcupPending = ['assigned', 'rejected', 'created'].includes(oppStatus);
+                const isDeliveryPending = ['assigned', 'rejected', 'created', 'inpickup'].includes(oppStatus);
+                const fmt = (dt) => new Date(dt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', hour12: true, timeZone: 'Asia/Kolkata' });
+                return (
+                  <div className="flex items-center gap-3">
+                    {isPickcupPending ? (
+                      opportunity.pickup_eta && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-orange-200">
+                          <><Clock className="w-3 h-3 text-orange-700 shrink-0" /><p className="text-xs text-orange-700 font-medium">Pickup By: {fmt(opportunity.pickup_eta)}</p></>
+                        </div>
+                      )
+                    ) : (
+                      opportunity.picked_up_at && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
+                          <><Clock className="w-3 h-3 text-green-700 shrink-0" /><p className="text-xs text-green-700 font-medium">Picked Up: {fmt(opportunity.picked_up_at)}</p></>
+                        </div>
+                      )
+                    )}
+
+                      {isDeliveryPending ? (
+                        opportunity.delivery_by && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-orange-200">
+                          <><Clock className="w-3 h-3 text-orange-700 shrink-0" /><p className="text-xs text-orange-700 font-medium">Deliver by: {fmt(opportunity.delivery_by)}</p></>
+                        </div>
+                        )
+                      ) : (
+                        opportunity.delivered_at && (
+                        <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
+                          <><Clock className="w-3 h-3 text-green-700 shrink-0" /><p className="text-xs text-green-700 font-medium">Delivered: {fmt(opportunity.delivered_at)}</p></>
+                        </div>     
+                        )
+                      )}
+                  </div>
+                );
+              })()}
+
+
+              {/* Vehicle & Estimated */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-blue-200">
+                  <Truck className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs text-blue-700 font-medium">Vehicle: {opportunity.vehicle_name || 'No Vehicle'}</span>
+                </div>
+                {opportunity.estimated_count != null && (
+                  <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-blue-200">
+                    {opportunity.estimated_unit === 'people'
+                      ? <Users className="w-4 h-4 text-blue-500" />
+                      : <Scale className="w-4 h-4 text-blue-500" />
+                    }
+                    <span className="text-xs text-blue-700 font-medium">
+                      Estimated: {opportunity.estimated_count} {opportunity.estimated_unit === 'people' ? 'people' : 'kg'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Food Collected & People Fed — shown only for delivered/completed */}
+              {['delivered', 'completed'].includes((opportunity.status_name || opportunity.status)?.toLowerCase()) && (
+                <div className="flex items-center gap-3">
+                  {opportunity.food_collected != null && (
+                    <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
+                      <Scale className="w-4 h-4 text-green-600" />
+                      <span className="text-xs text-green-700 font-medium">
+                        Collected: {opportunity.food_collected} kg
+                      </span>
+                    </div>
+                  )}
+                  {opportunity.feeding_count != null && (
+                    <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-green-200">
+                      <Users className="w-4 h-4 text-green-600" />
+                      <span className="text-xs text-green-700 font-medium">
+                        Fed: {opportunity.feeding_count} people
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Notes */}
+              {opportunity.notes && (
+                <div className="flex items-start gap-2 px-3 py-2 bg-yellow-50 rounded-lg">
+                  <FileText className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+                  <span className="text-sm text-yellow-800 line-clamp-2">{opportunity.notes}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex gap-2">
+              <Button variant="secondary" className="flex-1" onClick={() => handleView(opportunity)}>
+                <Eye className="w-4 h-4 mr-1" />
+                View
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={() => handleEdit(opportunity)}
+                disabled={['completed', 'inpickup', 'inpicked'].includes(opportunity.status_name?.toLowerCase())}
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
+      )}
 
-      {paginated.length === 0 && (
+      {!loading && paginated.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           No opportunities found matching your criteria.
         </div>
       )}
 
       {/* Pagination */}
-      {filtered.length > ITEMS_PER_PAGE && (
-        <div className="mt-8">
+      {!loading && (
+        <div className="mt-6">
           <Pagination
             totalItems={filtered.length}
             currentPage={currentPage}

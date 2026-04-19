@@ -278,6 +278,25 @@ export const Admins = () => {
     }
   };
 
+  const handleRemoveRole = async (roleName) => {
+    if (!editingId || editingRoles.length <= 1) return;
+    const roleObj = allRoles.find((r) => r.role_name === roleName);
+    if (!roleObj) return;
+    try {
+      await UserApi.removeRole(editingId, roleObj.role_id);
+      setEditingRoles((prev) => prev.filter((r) => r !== roleName));
+      setSuccessMessage(`Role "${roleName}" removed successfully.`);
+      setTimeout(() => setSuccessMessage(''), 5000);
+      loadAdmins();
+    } catch (error) {
+      console.error('Failed to remove role:', error);
+      const errorMessage =
+        (typeof error.response?.data?.detail === 'string' && error.response.data.detail) ||
+        'Failed to remove role.';
+      setFormError(errorMessage);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4 md:mb-6">
@@ -420,8 +439,18 @@ export const Admins = () => {
                 <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Roles</label>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {editingRoles.map((r) => (
-                    <span key={r} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                    <span key={r} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                       {r}
+                      {editingRoles.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveRole(r)}
+                          className="ml-1 hover:text-red-600 transition-colors"
+                          aria-label={`Remove ${r} role`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
                     </span>
                   ))}
                 </div>
@@ -472,8 +501,9 @@ export const Admins = () => {
 
       {/* List */}
       {loading ? (
-        <div className="flex justify-center items-center p-16">
+        <div className="flex flex-col justify-center items-center p-16 gap-3">
           <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <p className="text-gray-500">Loading data...</p>
         </div>
       ) : (
         <>

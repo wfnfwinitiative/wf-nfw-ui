@@ -164,10 +164,19 @@ export const UserApi = {
     async assignRole(userId, roleId) {
         try {
             const response = await serviceApi.post(`/api/user-roles/?user_id=${userId}&role_id=${roleId}`);
-            console.log(`Role ${roleId} assigned to user ${userId}:`, response);
             return response;
         } catch (error) {
             console.error(`Error assigning role ${roleId} to user ${userId}:`, error);
+            throw error;
+        }
+    },
+
+    async removeRole(userId, roleId) {
+        try {
+            const response = await serviceApi.delete(`/api/user-roles/?user_id=${userId}&role_id=${roleId}`);
+            return response;
+        } catch (error) {
+            console.error(`Error removing role ${roleId} from user ${userId}:`, error);
             throw error;
         }
     },

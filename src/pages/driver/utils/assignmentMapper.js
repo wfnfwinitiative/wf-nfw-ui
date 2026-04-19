@@ -1,8 +1,8 @@
 // Maps DB status_name (lowercase) → UI status token.
-// Schema: 2=Assigned, 3=InPicked, 4=Rejected, 5=Delivered, 6=Verified, 7=Completed
+// Schema: 2=Assigned, 3=inpickup, 4=Rejected, 5=Delivered, 6=Verified, 7=Completed
 const STATUS_NAME_MAP = {
   assigned:  'assigned',
-  inpicked:  'inpicked',
+  inpickup:  'inpickup',
   rejected:  'rejected',
   delivered: 'delivered',
   verified:  'verified',
@@ -11,7 +11,7 @@ const STATUS_NAME_MAP = {
 
 const STATUS_ID_TO_UI = {
   2: 'assigned',
-  3: 'inpicked',
+  3: 'inpickup',
   4: 'rejected',
   5: 'delivered',
   6: 'verified',
@@ -43,7 +43,7 @@ function resolveEffectiveStatus(opp) {
 export function getStatusNote(status) {
   const notes = {
     assigned:  'Opportunity assigned to driver',
-    inpicked:  'Pickup details submitted',
+    inpickup:  'Pickup details submitted',
     delivered: 'Food delivered to hunger spot',
     verified:  'Verified by coordinator',
     completed: 'Opportunity completed',
@@ -63,12 +63,16 @@ export function toDriverAssignment(opp) {
     status_name: effective.statusName,
     id:              opp.opportunity_id,
     opportunityName: opp.opportunity_name,
-    feeding_count:   opp.feeding_count,
+    estimated_count:   opp.estimated_count,
+    estimated_unit: opp.estimated_unit,
+    food_collected: opp.food_collected,
+    feeding_count: opp.feeding_count,
     notes:           opp.notes,
     pickup: {
       organizationName: opp.donor_name,
       contactNumber:    opp.pickup_contact_no,
       scheduledTime:    opp.pickup_eta,
+      pickedUpAt:       opp.picked_up_at || null,
       location: {
         address: opp.pickup_location,
         lat:     opp.pickup_lat ?? null,
@@ -77,7 +81,7 @@ export function toDriverAssignment(opp) {
       },
     },
     delivery: {
-      hungerSpotName: opp.drop_location,
+      hungerSpotName: opp.hunger_spot_name,
       contactNumber:  opp.drop_location_contact_no,
       location:       {
         address: opp.drop_location,
@@ -85,6 +89,7 @@ export function toDriverAssignment(opp) {
         lng:     opp.drop_lng ?? null,
       },
       deliveryBy:     opp.delivery_by,
+      deliveredAt:    opp.delivered_at || null,
     },
     vehicle:  { number: opp.vehicle_name || `#${opp.vehicle_id}` },
     driver:   { name: opp.driver_name },

@@ -5,6 +5,7 @@ import { serviceApi } from './apiClient';
 const STATUS_IDS = {
   ASSIGNED:  2,
   IN_PICKED: 3,
+  REJECTED:  4,
   DELIVERED: 5,
 };
 
@@ -18,10 +19,9 @@ function parseQuantity(quantityStr = '') {
   if (match) {
     return {
       quantity_value: parseFloat(match[1]),
-      quantity_unit: match[2].trim() || 'unit',
     };
   }
-  return { quantity_value: 1, quantity_unit: 'unit' };
+  return { quantity_value: 1};
 }
 
 /**
@@ -42,13 +42,12 @@ export async function submitPickupItems(opportunityId, foodItems, actorId, previ
       notes: notes || null,
     },
     items_data: foodItems.map((item) => {
-      const { quantity_value, quantity_unit } = parseQuantity(item.quantity);
+      const { quantity_value } = parseQuantity(item.quantity);
       return {
         opportunity_id: opportunityId,
         food_name: item.foodName,
         quality: item.quality || null,
         quantity_value,
-        quantity_unit,
       };
     }),
   };
@@ -69,4 +68,19 @@ export async function submitDelivery(opportunityId, actorId, previousStatusId) {
   });
 }
 
-
+/**
+ * Submits a rejection event — driver cannot pick up the assigned opportunity.
+ * @param {number} opportunityId
+ * @param {number} actorId - logged-in driver's user ID
+ * @param {number} previousStatusId - should be STATUS_IDS.ASSIGNED (2)
+ * @param {string} [reason] - optional rejection reason
+ */
+export async function submitRejection(opportunityId, actorId, previousStatusId, reason = '') {
+  return await serviceApi.post('/api/opportunity-events/', {
+    opportunity_id: opportunityId,
+    previous_status_id: previousStatusId || STATUS_IDS.ASSIGNED,
+    new_status_id: STATUS_IDS.REJECTED,
+    creator_id: actorId,
+    notes: reason || null,
+  });
+}

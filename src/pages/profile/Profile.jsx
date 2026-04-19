@@ -61,7 +61,11 @@ export const Profile = () => {
               <input
                 type="tel"
                 value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d+$/.test(val)) setForm((f) => ({ ...f, phone: val }));
+                }}
+                maxLength={10}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-ngo-orange outline-none"
               />
             ) : (
@@ -86,7 +90,7 @@ export const Profile = () => {
         {isEdit ? (
           <div className="mt-6 flex gap-3">
             <Button type="button" variant="primary" onClick={handleSave}>Save</Button>
-            <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>Cancel</Button>
+            <Button type="button" variant="secondary" onClick={() => { setForm({ name: user.name ?? '', phone: user.phone ?? '', email: user.email ?? '' }); navigate('/profile'); }}>Cancel</Button>
           </div>
         ) : (
           <div className="mt-6">

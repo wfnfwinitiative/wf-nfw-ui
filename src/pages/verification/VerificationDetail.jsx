@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { mockApi } from '../../services/mockApi';
-import { StatusBadge } from '../../components/StatusBadge';
-import { Button } from '../../components/ui/Button';
+import { StatusBadge, Button } from '../../components/common';
 import { ArrowLeft, MapPin, Camera, Mic, CheckCircle, XCircle, AlertCircle, User, Clock, Package } from 'lucide-react';
 
 export const VerificationDetail = () => {
@@ -82,7 +81,7 @@ export const VerificationDetail = () => {
             <div className="p-4 border border-orange-200 rounded-xl">
               <div className="flex items-start gap-2 mb-2">
                 <MapPin className="w-4 h-4 text-ngo-orange mt-1" />
-                <p className="text-xs text-ngo-gray">PICKUP FROM</p>
+                <p className="text-xs text-ngo-gray">DONOR LOCATION</p>
               </div>
               <p className="font-semibold text-ngo-dark">{pickup.pickupLocationName}</p>
             </div>
@@ -90,7 +89,7 @@ export const VerificationDetail = () => {
             <div className="p-4 border border-green-200 rounded-xl">
               <div className="flex items-start gap-2 mb-2">
                 <MapPin className="w-4 h-4 text-ngo-green mt-1" />
-                <p className="text-xs text-ngo-gray">DELIVERED TO</p>
+                <p className="text-xs text-ngo-gray">HUNGER SPOT</p>
               </div>
               <p className="font-semibold text-ngo-dark">{pickup.hungerSpotName}</p>
             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button, Input, Select, Textarea, StatusBadge } from '../../components/common';
-import { ArrowLeft, X, Edit } from 'lucide-react';
+import { ArrowLeft, X, Edit, Scale, Users, Phone } from 'lucide-react';
 import { opportunityApi } from '../../services/api/oppurtunityService';
 import { FoodItemsGrid } from '../../pages/driver/FoodItemsGrid';
 import { HungerSpotApi } from '../../services/api/hungerSpotService';
@@ -40,22 +40,12 @@ export const ReviewOpportunityDetail = () => {
     hungerSpotId: '',
     driverId: '',
     vehicleId: '',
-    scheduledDateTime: '',
+    pickupEta: '',
+    deliveryBy: '',
     estimatedQuantity: '',
+    estimatedUnit: 'kg',
     notes: ''
   });
-
-  // Helper to update just the date part
-  const updateScheduledDate = (newDate) => {
-    const [, time] = formData.scheduledDateTime.split('T');
-    setFormData({ ...formData, scheduledDateTime: `${newDate}T${time || '00:00'}` });
-  };
-
-  // Helper to update just the time part
-  const updateScheduledTime = (newTime) => {
-    const [date] = formData.scheduledDateTime.split('T');
-    setFormData({ ...formData, scheduledDateTime: `${date || new Date().toISOString().slice(0, 10)}T${newTime}` });
-  };
 
   useEffect(() => {
     // Clear previous data when id changes
@@ -66,8 +56,10 @@ export const ReviewOpportunityDetail = () => {
       hungerSpotId: '',
       driverId: '',
       vehicleId: '',
-      scheduledDateTime: '',
+      pickupEta: '',
+      deliveryBy: '',
       estimatedQuantity: '',
+      estimatedUnit: 'kg',
       notes: ''
     });
     setError(null);
@@ -113,15 +105,17 @@ export const ReviewOpportunityDetail = () => {
       setItems((opp.opportunity_items || []).map(item => ({
         id: item.opportunity_item_id,
         foodName: item.food_name,
-        quantity: `${item.quantity_value} ${item.quantity_unit}`
+        quantity: `${item.quantity_value}`
       })));
       setFormData({
         pickupLocationId: opp.donor_id?.toString() || '',
         hungerSpotId: opp.hunger_spot_id?.toString() || '',
         driverId: opp.driver_id?.toString() || '',
         vehicleId: opp.vehicle_id?.toString() || '',
-        scheduledDateTime: opp.pickup_eta ? new Date(opp.pickup_eta).toISOString().slice(0, 16) : '',
-        estimatedQuantity: opp.feeding_count?.toString() || '',
+        pickupEta: opp.pickup_eta ? new Date(new Date(opp.pickup_eta).getTime() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 16) : '',
+        deliveryBy: opp.delivery_by ? new Date(new Date(opp.delivery_by).getTime() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 16) : '',
+        estimatedQuantity: opp.estimated_count?.toString() || '',
+        estimatedUnit: opp.estimated_unit || 'kg',
         notes: opp.notes || '',
       });
     } catch (err) {
@@ -133,22 +127,34 @@ export const ReviewOpportunityDetail = () => {
   };
 
   const transformToOpportunity = () => {
+    const effectiveStatusId = opportunity.new_status_id || opportunity.status_id;
+    const assignedStatusId = 2;  // DB: 'Assigned'
+    const completedStatusId = 7; // DB: 'Completed'
+
+    let newStatusId;
+    if (isDelivered) {
+      newStatusId = completedStatusId; // Delivered → Completed
+    } else if ([1, 4].includes(effectiveStatusId) && formData.driverId) {
+      newStatusId = assignedStatusId;  // Created/Rejected → Assigned when driver set
+    } else {
+      newStatusId = effectiveStatusId;
+    }
+
     return {
       donor_id: parseInt(formData.pickupLocationId) || opportunity.donor_id,
       hunger_spot_id: parseInt(formData.hungerSpotId) || opportunity.hunger_spot_id,
-      status_id: parseInt(Object.keys(statusMap).find(key => statusMap[key] === 'Completed')) || opportunity.status_id,
+      status_id: newStatusId,
       driver_id: parseInt(formData.driverId) || opportunity.driver_id,
       vehicle_id: parseInt(formData.vehicleId) || opportunity.vehicle_id,
-      feeding_count: parseInt(formData.estimatedQuantity) || opportunity.feeding_count,
-      pickup_eta: new Date(formData.scheduledDateTime).toISOString(),
-      delivery_by: new Date(formData.scheduledDateTime).toISOString(),
+      estimated_count: parseInt(formData.estimatedQuantity) || opportunity.estimated_count,
+      estimated_unit: formData.estimatedUnit,
+      pickup_eta: new Date(new Date(formData.pickupEta).getTime() - 5.5 * 60 * 60 * 1000).toISOString(),
+      delivery_by: new Date(new Date(formData.deliveryBy).getTime() - 5.5 * 60 * 60 * 1000).toISOString(),
       notes: formData.notes || '',
       creator_id: user?.id, // Use logged-in user's ID instead of original creator
       image_link: opportunity.image_link || '',
       pickup_folder_id: opportunity.pickup_folder_id || null,
       delivery_folder_id: opportunity.delivery_folder_id || null,
-      start_time: opportunity.start_time || null,
-      end_time: opportunity.end_time || null,
     };
   };
 
@@ -197,7 +203,6 @@ export const ReviewOpportunityDetail = () => {
         const response = await opportunityApi.addOpportunityItem(id, {
           food_name: item.foodName,
           quantity_value: parseFloat(value) || 0,
-          quantity_unit: unit || 'unit'
         });
         // Update the item with real id
         item.id = response.opportunity_item_id || response.id || item.id;
@@ -207,9 +212,9 @@ export const ReviewOpportunityDetail = () => {
       for (const item of updated) {
         const [value, unit] = item.quantity.split(' ');
         await opportunityApi.updateOpportunityItem(item.id, {
-          food_name: item.foodName,
-          quantity_value: parseFloat(value) || 0,
-          quantity_unit: unit || 'unit'
+           opportunity_item_id: item.id,
+           food_name: item.foodName,
+           quantity_value: parseFloat(value) || 0,
         });
       }
 
@@ -278,7 +283,7 @@ export const ReviewOpportunityDetail = () => {
         </div>
         <p className="text-ngo-gray mb-8">
           {isViewMode 
-            ? 'View opportunity details (readonly)' 
+            ? 'View opportunity details (readonly)'
             : isLimitedEdit 
               ? 'Review and update items, quantity, and comments only'
               : 'Review and update opportunity details'
@@ -294,23 +299,53 @@ export const ReviewOpportunityDetail = () => {
 
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
-            <Select
-              label="Pickup Location"
-              value={formData.pickupLocationId}
-              onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
-              options={pickupLocations.map((loc) => ({ value: loc.id, label: loc.name }))}
-              placeholder="Select Pickup Location"
-              disabled={isReadonly || isLimitedEdit}
-            />
+            <div>
+              <Select
+                label="Donor Location"
+                value={formData.pickupLocationId}
+                onChange={(e) => setFormData({ ...formData, pickupLocationId: e.target.value })}
+                options={pickupLocations.map((loc) => ({ value: loc.id, label: loc.name }))}
+                placeholder="Select Donor Location"
+                disabled={isReadonly || isLimitedEdit}
+              />
+              {(() => {
+                const loc = pickupLocations.find(l => String(l.id) === String(formData.pickupLocationId));
+                return loc ? (
+                  <div className="mt-1.5 px-1 space-y-0.5">
+                    {loc.address && <p className="text-xs text-gray-500">{loc.address}</p>}
+                    {loc.phone && (
+                      <a href={`tel:${loc.phone}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1">
+                        <Phone className="w-3 h-3" />{loc.phone}
+                      </a>
+                    )}
+                  </div>
+                ) : null;
+              })()}
+            </div>
 
-            <Select
-              label="Delivery Location"
-              value={formData.hungerSpotId}
-              onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
-              options={hungerSpots.map((loc) => ({ value: loc.id, label: loc.name }))}
-              placeholder="Select HungerSpot"
-              disabled={isReadonly || isLimitedEdit}
-            />
+            <div>
+              <Select
+                label="Hunger Spot"
+                value={formData.hungerSpotId}
+                onChange={(e) => setFormData({ ...formData, hungerSpotId: e.target.value })}
+                options={hungerSpots.map((loc) => ({ value: loc.id, label: loc.name }))}
+                placeholder="Select HungerSpot"
+                disabled={isReadonly || isLimitedEdit}
+              />
+              {(() => {
+                const loc = hungerSpots.find(h => String(h.id) === String(formData.hungerSpotId));
+                return loc ? (
+                  <div className="mt-1.5 px-1 space-y-0.5">
+                    {loc.address && <p className="text-xs text-gray-500">{loc.address}</p>}
+                    {loc.phone && (
+                      <a href={`tel:${loc.phone}`} className="text-xs text-primary-600 hover:underline flex items-center gap-1">
+                        <Phone className="w-3 h-3" />{loc.phone}
+                      </a>
+                    )}
+                  </div>
+                ) : null;
+              })()}
+            </div>
           </div>
 
           <Select
@@ -339,31 +374,70 @@ export const ReviewOpportunityDetail = () => {
 
           <div className="grid md:grid-cols-2 gap-6">
             <Input
-              label="Scheduled Date"
-              type="date"
-              value={formData.scheduledDateTime.split('T')[0]}
-              onChange={(e) => updateScheduledDate(e.target.value)}
+              label="Pickup ETA"
+              type="datetime-local"
+              value={formData.pickupEta}
+              onChange={(e) => setFormData({ ...formData, pickupEta: e.target.value })}
               disabled={isReadonly || isLimitedEdit}
             />
-
             <Input
-              label="Scheduled Time"
-              type="time"
-              value={formData.scheduledDateTime.split('T')[1]}
-              onChange={(e) => updateScheduledTime(e.target.value)}
+              label="Delivery ETA"
+              type="datetime-local"
+              value={formData.deliveryBy}
+              onChange={(e) => setFormData({ ...formData, deliveryBy: e.target.value })}
               disabled={isReadonly || isLimitedEdit}
             />
           </div>
 
-          <Input
-            label="Estimated Quantity"
-            type="text"
-            value={formData.estimatedQuantity}
-            onChange={(e) => setFormData({ ...formData, estimatedQuantity: e.target.value })}
-            placeholder="e.g., 50 meals, 20kg"
-            disabled={isReadonly}
-          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Quantity</label>
+            <div className={`flex items-stretch border border-gray-300 rounded-xl overflow-hidden ${!isReadonly ? 'focus-within:ring-2 focus-within:ring-ngo-orange' : 'bg-gray-50 opacity-75'}`}>
+              <input
+                type="tel"
+                value={formData.estimatedQuantity}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d+$/.test(val)) setFormData({ ...formData, estimatedQuantity: val });
+                }}
+                placeholder="e.g. 50"
+                disabled={isReadonly}
+                className="flex-1 px-4 py-3 outline-none bg-transparent text-gray-800 disabled:cursor-not-allowed"
+              />
+              <select
+                value={formData.estimatedUnit}
+                onChange={(e) => setFormData({ ...formData, estimatedUnit: e.target.value })}
+                disabled={isReadonly}
+                className="px-3 py-3 bg-gray-50 border-l border-gray-300 text-gray-700 text-sm outline-none cursor-pointer disabled:cursor-not-allowed"
+              >
+                <option value="kg">kg of food</option>
+                <option value="people">no. of people</option>
+              </select>
+            </div>
+          </div>
         </form>
+
+        {/* Food Collected & People Fed — shown only for delivered/completed */}
+        {(isDelivered || isCompleted) && (
+          <div className="mt-8 flex items-center gap-3">
+            {opportunity?.food_collected != null && (
+              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                <Scale className="w-4 h-4 text-gray-600 shrink-0" />
+                <span className="text-sm text-gray-700 font-medium">
+                  Food Collected: {opportunity.food_collected} kg
+                </span>
+              </div>
+            )}
+            {opportunity?.feeding_count != null && (
+              <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                <Users className="w-4 h-4 text-gray-600 shrink-0" />
+                <span className="text-sm text-gray-700 font-medium">
+                  People Fed: {opportunity.feeding_count}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Food Items Section */}
         {showFoodItemsSection && (

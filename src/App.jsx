@@ -28,6 +28,7 @@ import { CoordinatorDrivers } from './pages/coordinator/CoordinatorDrivers';
 import { DriverDashboard } from './pages/driver/DriverDashboard';
 import { DriverTasksPage } from './pages/driver/DriverTasksPage';
 import { TaskDetail } from './pages/driver/TaskDetail';
+import { DriverTasksProvider } from './contexts/DriverTasksContext';
 
 import { ReviewOpportunities } from './pages/reviewOpportunities/ReviewOpportunities';
 import { ReviewOpportunityDetail } from './pages/reviewOpportunities/ReviewOpportunityDetail';
@@ -75,7 +76,7 @@ function App() {
             <Route path="coordinators" element={<Coordinators />} />
             <Route path="drivers" element={<Drivers />} />
             <Route path="feature-flag" element={<FeatureFlag />} />
-             <Route path="report" element={<ReportScreen />} />
+            <Route path="report" element={<ReportScreen />} />
             <Route path="settings" element={<div className="text-center py-12 text-ngo-gray">Settings page coming soon...</div>} />
           </Route>
 
@@ -86,11 +87,13 @@ function App() {
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="donors" element={<PickupLocations />} />
             <Route path="hungerspots" element={<HungerSpots />} />
+            <Route path="feature-flag" element={<FeatureFlag />} />
+            <Route path="report" element={<ReportScreen />} />
             <Route path="review-opportunities" element={<ReviewOpportunities />} />
             <Route path="review-opportunities/:id" element={<ReviewOpportunityDetail />} />
           </Route>
 
-          <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DashboardLayout /></RoleGuard>}>
+          <Route path="/driver" element={<RoleGuard allowedRoles={['driver']}><DriverTasksProvider><DashboardLayout /></DriverTasksProvider></RoleGuard>}>
             <Route path="dashboard" element={<DriverDashboard />} />
             <Route path="tasks" element={<DriverTasksPage />} />
             <Route path="task/:id" element={<TaskDetail />} />

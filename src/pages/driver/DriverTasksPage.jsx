@@ -41,7 +41,6 @@ export const DriverTasksPage = () => {
 
   return (
     <div className="space-y-5">
-      {/* Page header */}
       <div>
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-ngo-dark dark:text-gray-200 mb-1">
           My Tasks

@@ -1,48 +1,48 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Clock, Building2, Phone, User, Truck, ArrowLeft } from 'lucide-react';
+import { MapPin, Clock, Building2, Phone, Truck, ArrowLeft } from 'lucide-react';
+import { useDriverTasksContext } from '../../contexts/DriverTasksContext';
+
+function InfoRow({ icon: Icon, color, label, value, href }) {
+  return (
+    <div className="flex gap-3">
+      <Icon className={`w-5 h-5 ${color} shrink-0 mt-1`} />
+      <div>
+        <p className="text-sm font-medium text-gray-600">{label}</p>
+        {href
+          ? <a href={href} className="text-primary-600 hover:underline font-medium">{value}</a>
+          : <p className="text-gray-900 font-medium">{value}</p>
+        }
+      </div>
+    </div>
+  );
+}
 
 export const TaskDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { assignments, loading } = useDriverTasksContext();
 
-  // Mock data - in a real app, this would come from an API
-  const task = {
-    id: 1,
-    status: 'reached',
-    pickup: {
-      organizationName: 'Taj Krishna Hotel',
-      contactPerson: 'Nargis Siddique',
-      contactNumber: '+91 98765 43210',
-      location: {
-        address: 'Road No. 1, Banjara Hills, Hyderabad',
-        coordinates: { lat: 17.4156, lng: 78.4347 },
-        mapLink: 'https://maps.google.com/?q=17.4156,78.4347',
-      },
-      scheduledTime: '2026-02-14T10:00:00',
-      estimatedQuantity: '50 kg',
-    },
-    delivery: {
-      hungerSpotName: 'Akshaya Patra - Gachibowli',
-      location: {
-        address: 'DLF Cyber City, Gachibowli, Hyderabad',
-      },
-    },
-    vehicle: {
-      number: 'TS-09-AB-1234',
-      type: 'Mini Truck',
-    },
-  };
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
+  const task = assignments.find(a => String(a.id) === String(id));
+
+  if (!task) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-gray-500">Task not found.</p>
+        <Button variant="secondary" onClick={() => navigate(-1)} className="mt-4">Back</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
+        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div>
@@ -52,97 +52,39 @@ export const TaskDetail = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pickup Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Pickup Location</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Donor Location</h2>
           <div className="space-y-4">
-            <div className="flex gap-3">
-              <Building2 className="w-5 h-5 text-orange-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Organization</p>
-                <p className="text-gray-900 font-medium">{task.pickup.organizationName}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <User className="w-5 h-5 text-blue-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Contact Person</p>
-                <p className="text-gray-900 font-medium">{task.pickup.contactPerson}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Phone className="w-5 h-5 text-green-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Phone</p>
-                <a href={`tel:${task.pickup.contactNumber}`} className="text-primary-600 hover:underline">
-                  {task.pickup.contactNumber}
-                </a>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <MapPin className="w-5 h-5 text-red-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Address</p>
-                <p className="text-gray-900">{task.pickup.location.address}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Clock className="w-5 h-5 text-purple-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Scheduled Time</p>
-                <p className="text-gray-900">
-                  {new Date(task.pickup.scheduledTime).toLocaleString()}
-                </p>
-              </div>
-            </div>
+            <InfoRow icon={Building2} color="text-orange-600" label="Organization" value={task.pickup.organizationName} />
+            {task.pickup.contactNumber && (
+              <InfoRow icon={Phone} color="text-green-600" label="Phone" value={task.pickup.contactNumber} href={`tel:${task.pickup.contactNumber}`} />
+            )}
+            {task.pickup.location?.address && (
+              <InfoRow icon={MapPin} color="text-red-600" label="Address" value={task.pickup.location.address} />
+            )}
+            {task.pickup.scheduledTime && (
+              <InfoRow icon={Clock} color="text-purple-600" label="Scheduled Time" value={new Date(task.pickup.scheduledTime).toLocaleString()} />
+            )}
           </div>
         </div>
 
-        {/* Delivery Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Location</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Hunger Spot</h2>
           <div className="space-y-4">
-            <div className="flex gap-3">
-              <Building2 className="w-5 h-5 text-green-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Hunger Spot</p>
-                <p className="text-gray-900 font-medium">{task.delivery.hungerSpotName}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <MapPin className="w-5 h-5 text-red-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Address</p>
-                <p className="text-gray-900">{task.delivery.location.address}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Truck className="w-5 h-5 text-orange-600 shrink-0 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Vehicle Information</p>
-                <p className="text-gray-900 font-medium">{task.vehicle.number}</p>
-                <p className="text-sm text-gray-500">{task.vehicle.type}</p>
-              </div>
-            </div>
+            <InfoRow icon={Building2} color="text-green-600" label="Hunger Spot" value={task.delivery?.hungerSpotName || 'TBD'} />
+            {task.delivery?.location?.address && (
+              <InfoRow icon={MapPin} color="text-red-600" label="Address" value={task.delivery.location.address} />
+            )}
+            <InfoRow icon={Truck} color="text-orange-600" label="Vehicle" value={task.vehicle?.number || '—'} />
           </div>
         </div>
       </div>
 
-      {/* Action Button */}
-      <div className="flex gap-3">
-        <Button variant="secondary" onClick={() => navigate(-1)}>
-          Back
-        </Button>
-        <Button variant="primary">
-          Start Task
-        </Button>
+      <div>
+        <Button variant="secondary" onClick={() => navigate(-1)}>Back</Button>
       </div>
     </div>
   );
 };
+
+

@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Modal, Button, showToast } from '../../components/common';
+import { ConfirmDialog } from '../../components/ui';
 import { VoiceInputPanel } from './VoiceInputPanel';
-import { MapPin, Building2, Truck, Phone, Camera, X, Loader2, Check, AlertCircle } from 'lucide-react';
+import { MapPin, Building2, Truck, Phone, Camera, X, Loader2, Check, AlertCircle, Users, Scale } from 'lucide-react';
 import { useFeatureFlags } from '../../contexts/FeatureFlagsContext';
 import { uploadImageToDrive } from '../../services/api/googleDriveService';
 import {
   submitPickupItems,
   submitDelivery,
+  submitRejection,
 } from '../../services/api/opportunityEventItemDriverService';
 import { useAuth } from '../../auth/AuthContext';
 
@@ -15,6 +17,8 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [deliveryImages, setDeliveryImages] = useState([]);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const voicePanelRef = useRef(null);
   const deliveryFileInputRef = useRef(null);
   const deliveryFolderUrlRef = useRef(null);
@@ -32,12 +36,13 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
 
   if (!assignment) return null;
 
-  const { pickup, delivery, vehicle, status, feeding_count, notes } = assignment;
+  const { pickup, delivery, vehicle, status, estimated_count, estimated_unit, notes } = assignment;
   const driverName = user?.name || user?.mobileNumber || `Driver${user?.id || ''}`;
   const opportunityId = String(assignment.id || '');
 
   const canSubmit = status === 'assigned';        // Assigned → fill items → InPicked
-  const canMarkDelivered = status === 'inpicked'; // InPicked → confirm delivery → Delivered
+  const canMarkDelivered = status === 'inpickup'; // InPicked → confirm delivery → Delivered
+  const canReject = status === 'assigned';        // Only rejectable while still assigned
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -63,7 +68,7 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
         assignment.notes
       );
 
-      onStatusUpdate(assignment.id, 'inpicked', {
+      onStatusUpdate(assignment.id, 'inpickup', {
         submittedDetails: {
           pickupTime: new Date().toISOString(),
           pickupFolderUrl,
@@ -100,6 +105,26 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
       if (img?.preview) URL.revokeObjectURL(img.preview);
       return prev.filter(i => i.id !== id);
     });
+  };
+
+  const handleReject = async () => {
+    setRejecting(true);
+    try {
+      await submitRejection(
+        assignment.id,
+        user?.id,
+        assignment.status_id,
+      );
+      onStatusUpdate(assignment.id, 'rejected', {});
+      showToast('Assignment rejected.', 'info');
+      setShowRejectConfirm(false);
+      onClose();
+    } catch (error) {
+      console.error('Rejection error:', error);
+      showToast('Failed to reject assignment. Please try again.', 'error');
+    } finally {
+      setRejecting(false);
+    }
   };
 
   const handleMarkDelivered = async () => {
@@ -161,9 +186,13 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
                     {pickup.contactNumber}
                   </a>
                 )}
-                {feeding_count != null && (
+                {estimated_count != null && (
                   <span className="flex items-center gap-1 text-blue-600 shrink-0">
-                    <span className="font-medium">{feeding_count} servings</span>
+                    {estimated_unit === 'people'
+                      ? <Users className="w-4 h-4" />
+                      : <Scale className="w-4 h-4" />
+                    }
+                    <span className="font-medium">{estimated_count} {estimated_unit === 'people' ? 'people' : 'kg'}</span>
                   </span>
                 )}
               </div>
@@ -319,10 +348,24 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
               </div>
               )}
             </div>
+          ) : status === 'rejected' ? (
+            <div className="p-6">
+              <div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
+                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-500" />
+                </div>
+                <h4 className="font-semibold text-gray-900">Assignment Rejected</h4>
+                <p className="text-sm text-gray-500 max-w-xs">
+                  You have rejected this pickup. The coordinator has been notified and may reassign it.
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="p-6">
               <div className="text-center py-8">
-                <h4 className="font-semibold text-gray-900 mb-2">Delivered</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  {['completed', 'verified'].includes(status) ? 'Completed' : 'Delivered'}
+                </h4>
                 {assignment.submittedDetails?.actualDeliveryTime && (
                   <p className="text-green-600 text-sm mt-2">
                     Delivered at: {new Date(assignment.submittedDetails.actualDeliveryTime).toLocaleString()}
@@ -334,31 +377,57 @@ export function PickupDetailModal({ isOpen, onClose, assignment, onStatusUpdate,
         </div>
       </div>
 
+      {/* Reject confirmation dialog */}
+      <ConfirmDialog
+        isOpen={showRejectConfirm}
+        title="Reject Assignment"
+        message="Are you sure you want to reject this pickup? This action cannot be undone."
+        confirmLabel="Reject"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        loading={rejecting}
+        onConfirm={handleReject}
+        onCancel={() => setShowRejectConfirm(false)}
+      />
+
       {/* Footer Actions */}
-      <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-white flex justify-end gap-2 sm:gap-3">
-        <Button variant="secondary" onClick={onClose} className="text-sm sm:text-base">
-          Close
-        </Button>
-        {!readOnly && canSubmit && (
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            loading={submitting}
-            className="text-sm sm:text-base"
-          >
-            Confirm
+      <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-white flex justify-between gap-2 sm:gap-3">
+        <div>
+          {!readOnly && canReject && !showRejectConfirm && (
+            <Button
+              variant="danger"
+              onClick={() => setShowRejectConfirm(true)}
+              className="text-sm sm:text-base"
+            >
+              Reject
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2 sm:gap-3">
+          <Button variant="secondary" onClick={onClose} className="text-sm sm:text-base">
+            Close
           </Button>
-        )}
-        {!readOnly && canMarkDelivered && (
-          <Button
-            variant="success"
-            onClick={handleMarkDelivered}
-            loading={submitting}
-            className="text-sm sm:text-base"
-          >
-            Delivered
-          </Button>
-        )}
+          {!readOnly && canSubmit && (
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              loading={submitting}
+              className="text-sm sm:text-base"
+            >
+              Confirm Pickup
+            </Button>
+          )}
+          {!readOnly && canMarkDelivered && (
+            <Button
+              variant="success"
+              onClick={handleMarkDelivered}
+              loading={submitting}
+              className="text-sm sm:text-base"
+            >
+              Delivered
+            </Button>
+          )}
+        </div>
       </div>
     </Modal>
   );

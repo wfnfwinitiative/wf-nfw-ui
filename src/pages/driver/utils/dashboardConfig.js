@@ -1,4 +1,4 @@
-import { Truck, Clock, Check, List } from 'lucide-react';
+import { Truck, Clock, Check, List, XCircle } from 'lucide-react';
 
 /**
  * Dashboard filter card definitions.
@@ -23,12 +23,12 @@ export const DASHBOARD_FILTERS = [
     statuses:  ['assigned'],
   },
   {
-    key:       'inpicked',
+    key:       'inpickup',
     label:     'In Progress',
     icon:      Clock,
     color:     'bg-orange-100',
     iconColor: 'text-orange-600',
-    statuses:  ['inpicked'],
+    statuses:  ['inpickup'],
   },
   {
     key:       'delivered',
@@ -37,5 +37,13 @@ export const DASHBOARD_FILTERS = [
     color:     'bg-green-100',
     iconColor: 'text-green-600',
     statuses:  ['delivered', 'verified', 'completed'],
+  },
+  {
+    key:       'rejected',
+    label:     'Rejected',
+    icon:      XCircle,
+    color:     'bg-red-100',
+    iconColor: 'text-red-600',
+    statuses:  ['rejected'],
   },
 ];
